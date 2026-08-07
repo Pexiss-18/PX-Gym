@@ -4,13 +4,13 @@ import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
-import { CloudOff, KeyRound, MapPin, Menu, Navigation } from "lucide-react-native";
+import { CloudOff, MapPin, Menu, Navigation } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import type { GeoPoint, NearbyGym } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { findNearbyGymsUseCase, hasPlacesKey } from "@/lib/gyms";
+import { findNearbyGymsUseCase } from "@/lib/gyms";
 
 const RADIUS_METERS = 4000;
 
@@ -40,12 +40,10 @@ export default function AcademiasScreen() {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
-      const gyms = hasPlacesKey
-        ? await findNearbyGymsUseCase.execute({
-            center,
-            radiusMeters: RADIUS_METERS,
-          })
-        : [];
+      const gyms = await findNearbyGymsUseCase.execute({
+        center,
+        radiusMeters: RADIUS_METERS,
+      });
       setState({ status: "ready", center, gyms });
     } catch {
       setState({ status: "error" });
@@ -142,21 +140,7 @@ export default function AcademiasScreen() {
             </MapView>
           </View>
 
-          {!hasPlacesKey ? (
-            <GlassCard className="items-center py-8">
-              <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
-                <KeyRound size={24} color={colors.fogMuted} />
-              </View>
-              <Text className="mt-4 font-sans-semibold text-base text-paper">
-                Busca ainda não configurada
-              </Text>
-              <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-                Falta a chave do Google em EXPO_PUBLIC_GOOGLE_MAPS_KEY no .env
-                do app. O mapa já funciona; a lista de academias aparece com a
-                chave.
-              </Text>
-            </GlassCard>
-          ) : state.gyms.length === 0 ? (
+          {state.gyms.length === 0 ? (
             <GlassCard className="items-center py-8">
               <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
                 <MapPin size={24} color={colors.fogMuted} />
