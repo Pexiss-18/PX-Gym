@@ -1,7 +1,13 @@
 import { Pressable, Text, View } from "react-native";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
-import { ChevronRight, ClipboardList, LogOut, Settings } from "lucide-react-native";
+import {
+  Camera,
+  ChevronRight,
+  ClipboardList,
+  LogOut,
+  Settings,
+} from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
@@ -18,6 +24,11 @@ export default function PerfilScreen() {
       icon: ClipboardList,
       label: "Avaliações",
       onPress: () => navigation.dispatch(DrawerActions.jumpTo("avaliacoes")),
+    },
+    {
+      icon: Camera,
+      label: "Fotos de progresso",
+      onPress: () => navigation.dispatch(DrawerActions.jumpTo("fotos")),
     },
     {
       icon: Settings,

@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
-import { Link } from "expo-router";
-import { ChevronRight, Timer } from "lucide-react-native";
+import { Link, router } from "expo-router";
+import { ChevronRight, ScanLine, Timer } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
@@ -22,11 +22,24 @@ export default function TreinoScreen() {
 
   return (
     <Screen>
-      <View className="mb-6">
-        <Text className="font-sans text-sm text-fog">{todayWorkout.label}</Text>
-        <Text className="font-sans-semibold text-3xl text-paper">
-          {todayWorkout.name}
-        </Text>
+      <View className="mb-6 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="font-sans text-sm text-fog">
+            {todayWorkout.label}
+          </Text>
+          <Text className="font-sans-semibold text-3xl text-paper">
+            {todayWorkout.name}
+          </Text>
+        </View>
+        {/* QR do aparelho abre o exercício direto */}
+        <Pressable
+          onPress={() => router.push("/scanner")}
+          className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-glass-fill"
+        >
+          <ScanLine size={18} color={colors.paperForeground} />
+        </Pressable>
+      </View>
+      <View className="mb-6 -mt-4">
         <View className="mt-2 flex-row items-center gap-3">
           <View className="flex-row items-center gap-1">
             <Timer size={13} color={colors.fogMuted} />

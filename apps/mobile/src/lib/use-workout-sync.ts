@@ -3,12 +3,13 @@ import { AppState } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { useAuth } from "./auth-context";
 import { trySyncSetLogs } from "./workout";
+import { trySyncPhotos } from "./photos";
 
 /**
- * Mantém o SQLite e o Supabase em dia: tenta sincronizar os registros
- * pendentes ao entrar no app, quando a conexão volta (NetInfo) e quando o
- * app volta pro foreground. Falhas são silenciosas — os registros continuam
- * pending e a próxima janela tenta de novo.
+ * Mantém o SQLite e o Supabase em dia: tenta sincronizar os registros e as
+ * fotos pendentes ao entrar no app, quando a conexão volta (NetInfo) e quando
+ * o app volta pro foreground. Falhas são silenciosas — tudo continua pending
+ * e a próxima janela tenta de novo.
  */
 export function useWorkoutSync() {
   const { session } = useAuth();
@@ -23,6 +24,7 @@ export function useWorkoutSync() {
       running = true;
       try {
         await trySyncSetLogs(userId);
+        await trySyncPhotos();
       } finally {
         running = false;
       }

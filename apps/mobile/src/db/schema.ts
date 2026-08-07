@@ -36,3 +36,29 @@ export const setLogs = sqliteTable(
 );
 
 export type SetLogRow = typeof setLogs.$inferSelect;
+
+/**
+ * Fotos de progresso — o arquivo mora no diretório de documentos do app
+ * (local_uri); remote_path aponta pro bucket depois do upload.
+ */
+export const progressPhotos = sqliteTable(
+  "progress_photos",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    localUri: text("local_uri").notNull(),
+    remotePath: text("remote_path"),
+    takenAt: integer("taken_at", { mode: "timestamp_ms" }).notNull(),
+    note: text("note"),
+    syncStatus: text("sync_status")
+      .$type<"pending" | "synced">()
+      .notNull()
+      .default("pending"),
+  },
+  (t) => [
+    index("progress_photos_user_taken_idx").on(t.userId, t.takenAt),
+    index("progress_photos_sync_status_idx").on(t.syncStatus),
+  ],
+);
+
+export type ProgressPhotoLocalRow = typeof progressPhotos.$inferSelect;
