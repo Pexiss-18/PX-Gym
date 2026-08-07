@@ -137,6 +137,8 @@ export default function ExercicioScreen() {
           if (session) void trySyncSetLogs(session.user.id);
         }
         update(set.setNumber, { completed: false, logId: null });
+        // desfez a série: o descanso dela não faz mais sentido
+        setRestEndsAt(null);
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } else {
         const { setLog } = await registerSetUseCase.execute({
