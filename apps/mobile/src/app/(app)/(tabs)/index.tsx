@@ -1,22 +1,26 @@
+import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
-import { Flame, Menu } from "lucide-react-native";
+import { ArrowRight, Flame, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
-import type { BodyAssessment } from "@px/core";
+import { buildBodyHistory, type BodyAssessment } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { Readout, Delta } from "@/components/readout";
 import { PillButton } from "@/components/pill-button";
 import { ProgressBar } from "@/components/progress-bar";
+import { WeekStrip } from "@/components/week-strip";
+import { LineChart } from "@/components/charts/line-chart";
 import { todayWorkout } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { displayName } from "@/lib/identity";
 import {
   useStreakDays,
   useTodayDoneByExercise,
+  useWeekActivity,
 } from "@/lib/use-workout-data";
-import { useBodyMetrics, useLatestPlan } from "@/lib/remote";
+import { useAssessments, useBodyMetrics, useLatestPlan } from "@/lib/remote";
 
 function formatShortDate(date: Date): string {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -71,8 +75,17 @@ export default function InicioScreen() {
 
   const streakDays = useStreakDays();
   const doneByExercise = useTodayDoneByExercise();
+  const weekDays = useWeekActivity();
   const metrics = useBodyMetrics();
+  const assessments = useAssessments();
   const plan = useLatestPlan();
+
+  // Sparkline: só o peso, sem eixo nem rótulo — é textura de tendência,
+  // a leitura exata já está nos números logo acima.
+  const weightTrend = useMemo(() => {
+    const history = buildBodyHistory(assessments.data ?? []);
+    return history.map((p) => p.weightKg);
+  }, [assessments.data]);
 
   const totalSets = todayWorkout.exercises.reduce(
     (n, e) => n + e.sets.length,
@@ -120,11 +133,24 @@ export default function InicioScreen() {
       </View>
 
       <View className="gap-5">
+        {/* últimos 7 dias de treino */}
+        <WeekStrip days={weekDays} />
+
         {/* avaliação corporal atual */}
         <GlassCard>
-          <Text className="font-sans-medium text-xs uppercase tracking-wide text-fog">
-            Avaliação corporal
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="font-sans-medium text-xs uppercase tracking-wide text-fog">
+              Avaliação corporal
+            </Text>
+            <Pressable
+              onPress={() => router.push("/progresso")}
+              hitSlop={8}
+              className="flex-row items-center gap-1"
+            >
+              <Text className="font-sans text-xs text-fog">Ver evolução</Text>
+              <ArrowRight size={13} color={colors.fogMuted} strokeWidth={2.25} />
+            </Pressable>
+          </View>
           {metrics.status === "ready" && metrics.data.latest?.extracted ? (
             <>
               <View className="mt-3 flex-row justify-between">
@@ -158,7 +184,24 @@ export default function InicioScreen() {
                   label="músculo"
                 />
               </View>
-              <Text className="mt-4 font-sans text-xs text-fog">
+              {weightTrend.filter((v) => v !== null).length > 1 ? (
+                <View className="mt-4">
+                  <LineChart
+                    labels={weightTrend.map(() => "")}
+                    series={[
+                      {
+                        key: "weight-spark",
+                        values: weightTrend,
+                        color: colors.voltLime,
+                        area: true,
+                      },
+                    ]}
+                    height={72}
+                    showDots={false}
+                  />
+                </View>
+              ) : null}
+              <Text className="mt-3 font-sans text-xs text-fog">
                 Última avaliação: {assessmentDate(metrics.data.latest)}
               </Text>
             </>

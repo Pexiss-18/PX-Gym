@@ -17,6 +17,10 @@ export * from "./entities/gym";
 export * from "./ports";
 
 export * from "./services/streak";
+export * from "./services/load-progression";
+export * from "./services/measurements";
+export * from "./services/body-history";
+export * from "./services/week-activity";
 
 export * from "./use-cases/register-set";
 export * from "./use-cases/unregister-set";

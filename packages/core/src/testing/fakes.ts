@@ -77,6 +77,11 @@ export class InMemorySetLogs implements SetLogRepository {
       (l) => l.sessionDate === sessionDate && l.syncStatus !== "deleted",
     );
   }
+  async byExercise(exerciseId: string) {
+    return this.logs.filter(
+      (l) => l.exerciseId === exerciseId && l.syncStatus !== "deleted",
+    );
+  }
 }
 
 export class FakeSyncGateway implements WorkoutSyncGateway {

@@ -7,8 +7,10 @@ import { colors } from "@px/tokens";
 import { Load } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
+import { LoadProgressionCard } from "@/components/load-progression-card";
 import { todayWorkout } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
+import { useLoadProgression } from "@/lib/use-workout-data";
 import {
   registerSetUseCase,
   setLogRepository,
@@ -45,6 +47,9 @@ export default function ExercicioScreen() {
   const { exercicioId } = useLocalSearchParams<{ exercicioId: string }>();
   const { session } = useAuth();
   const exercise = todayWorkout.exercises.find((e) => e.id === exercicioId);
+
+  // Ao vivo: marcar uma série já move a curva de progressão logo acima.
+  const progression = useLoadProgression(exercicioId ?? "");
 
   const [sets, setSets] = useState<SetState[]>(
     () =>
@@ -215,6 +220,10 @@ export default function ExercicioScreen() {
           <Text className="font-sans text-xs text-fog">s</Text>
         </View>
       )}
+
+      <View className="mb-4">
+        <LoadProgressionCard summary={progression} />
+      </View>
 
       <View className="gap-3">
         {sets.map((set) => {

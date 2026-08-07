@@ -1,9 +1,16 @@
 import { useMemo } from "react";
 import { and, eq, ne } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { computeStreakDays } from "@px/core";
+import {
+  computeLoadProgression,
+  computeStreakDays,
+  computeWeekActivity,
+  type LoadProgressionSummary,
+  type WeekActivityDay,
+} from "@px/core";
 import { db } from "@/db";
 import { setLogs } from "@/db/schema";
+import { rowToSetLog } from "@/db/set-log-repository";
 import { todayIsoDate } from "./workout";
 
 /*
@@ -40,20 +47,48 @@ export function useTodayDoneByExercise(): Map<string, number> {
   }, [rows]);
 }
 
-/** Streak real: dias consecutivos com pelo menos uma série registrada. */
-export function useStreakDays(): number {
+/** Dias distintos com treino registrado — base da streak e da faixa semanal. */
+function useSessionDates(): string[] {
   const { data } = useLiveQuery(
     db
       .selectDistinct({ sessionDate: setLogs.sessionDate })
       .from(setLogs)
       .where(ne(setLogs.syncStatus, "deleted")),
   );
-  return useMemo(
-    () =>
-      computeStreakDays(
-        (data ?? []).map((d) => d.sessionDate),
-        todayIsoDate(),
+  return useMemo(() => (data ?? []).map((d) => d.sessionDate), [data]);
+}
+
+/** Streak real: dias consecutivos com pelo menos uma série registrada. */
+export function useStreakDays(): number {
+  const dates = useSessionDates();
+  return useMemo(() => computeStreakDays(dates, todayIsoDate()), [dates]);
+}
+
+/** Últimos 7 dias com marcação de treino, pra faixa semanal do dashboard. */
+export function useWeekActivity(): WeekActivityDay[] {
+  const dates = useSessionDates();
+  return useMemo(() => computeWeekActivity(dates, todayIsoDate()), [dates]);
+}
+
+/**
+ * Progressão de carga de um exercício, ao vivo: marcar uma série já move a
+ * curva, porque o useLiveQuery reexecuta quando o SQLite muda.
+ */
+export function useLoadProgression(exerciseId: string): LoadProgressionSummary {
+  const { data } = useLiveQuery(
+    db
+      .select()
+      .from(setLogs)
+      .where(
+        and(
+          eq(setLogs.exerciseId, exerciseId),
+          ne(setLogs.syncStatus, "deleted"),
+        ),
       ),
+    [exerciseId],
+  );
+  return useMemo(
+    () => computeLoadProgression((data ?? []).map(rowToSetLog)),
     [data],
   );
 }

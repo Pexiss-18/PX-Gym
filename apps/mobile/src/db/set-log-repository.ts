@@ -3,7 +3,8 @@ import { Load, SetLog, type SetLogRepository } from "@px/core";
 import type { Db } from "./index";
 import { setLogs, type SetLogRow } from "./schema";
 
-function toEntity(row: SetLogRow): SetLog {
+/** Linha do SQLite → entidade do domínio. Exportado pros hooks de useLiveQuery. */
+export function rowToSetLog(row: SetLogRow): SetLog {
   return SetLog.restore({
     id: row.id,
     sessionDate: row.sessionDate,
@@ -47,7 +48,7 @@ export class DrizzleSetLogRepository implements SetLogRepository {
       .from(setLogs)
       .where(eq(setLogs.id, id))
       .limit(1);
-    return rows[0] ? toEntity(rows[0]) : null;
+    return rows[0] ? rowToSetLog(rows[0]) : null;
   }
 
   async pending(): Promise<SetLog[]> {
@@ -56,7 +57,7 @@ export class DrizzleSetLogRepository implements SetLogRepository {
       .from(setLogs)
       .where(eq(setLogs.syncStatus, "pending"))
       .orderBy(setLogs.completedAt);
-    return rows.map(toEntity);
+    return rows.map(rowToSetLog);
   }
 
   async markSynced(ids: string[]): Promise<void> {
@@ -103,6 +104,20 @@ export class DrizzleSetLogRepository implements SetLogRepository {
     return rows[0]?.loadKg ?? null;
   }
 
+  async byExercise(exerciseId: string): Promise<SetLog[]> {
+    const rows = await this.db
+      .select()
+      .from(setLogs)
+      .where(
+        and(
+          eq(setLogs.exerciseId, exerciseId),
+          ne(setLogs.syncStatus, "deleted"),
+        ),
+      )
+      .orderBy(setLogs.completedAt);
+    return rows.map(rowToSetLog);
+  }
+
   async bySessionDate(sessionDate: string): Promise<SetLog[]> {
     const rows = await this.db
       .select()
@@ -114,6 +129,6 @@ export class DrizzleSetLogRepository implements SetLogRepository {
         ),
       )
       .orderBy(setLogs.completedAt);
-    return rows.map(toEntity);
+    return rows.map(rowToSetLog);
   }
 }

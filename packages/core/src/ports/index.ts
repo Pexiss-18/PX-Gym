@@ -48,6 +48,8 @@ export interface SetLogRepository {
   /** Última carga registrada por exercício, pra calcular progressão. */
   lastLoadKgForExercise(exerciseId: string): Promise<number | null>;
   bySessionDate(sessionDate: string): Promise<SetLog[]>;
+  /** Histórico completo de um exercício, pra montar a curva de progressão. */
+  byExercise(exerciseId: string): Promise<SetLog[]>;
 }
 
 /** Envio dos registros locais pro backend quando a conexão volta. */

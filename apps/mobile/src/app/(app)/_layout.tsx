@@ -5,7 +5,13 @@ import {
   DrawerItem,
   type DrawerContentComponentProps,
 } from "expo-router/drawer";
-import { Camera, ClipboardList, MapPin, Settings } from "lucide-react-native";
+import {
+  Camera,
+  ClipboardList,
+  MapPin,
+  Settings,
+  TrendingUp,
+} from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { useAuth } from "@/lib/auth-context";
 import { displayName } from "@/lib/identity";
@@ -26,6 +32,18 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
           {displayName(session)}
         </Text>
       </View>
+      <DrawerItem
+        label="Progresso"
+        labelStyle={{
+          color: colors.paperForeground,
+          fontFamily: "Geist_500Medium",
+          fontSize: 14,
+        }}
+        icon={({ size }) => (
+          <TrendingUp size={size ?? 20} color={colors.fogMuted} />
+        )}
+        onPress={() => props.navigation.navigate("progresso")}
+      />
       <DrawerItem
         label="Avaliações"
         labelStyle={{
@@ -96,6 +114,7 @@ export default function AppLayout() {
       }}
     >
       <Drawer.Screen name="(tabs)" />
+      <Drawer.Screen name="progresso" />
       <Drawer.Screen name="avaliacoes" />
       <Drawer.Screen name="configuracoes" />
       <Drawer.Screen name="fotos" />
