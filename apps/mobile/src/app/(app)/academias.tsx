@@ -21,8 +21,35 @@ function formatDistance(meters: number): string {
 
 type SearchState =
   | { status: "locating" }
-  | { status: "error" }
+  | { status: "error"; reason: "location" | "search" }
   | { status: "ready"; center: GeoPoint; gyms: NearbyGym[] };
+
+function toPoint(position: Location.LocationObject): GeoPoint {
+  return {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+  };
+}
+
+/**
+ * Posição do usuário com plano B: um fix novo pode simplesmente não sair
+ * (GPS frio, ambiente fechado, emulador) e aí `getCurrentPositionAsync`
+ * estoura. Pra um raio de 4 km a última posição conhecida serve igual, então
+ * ela vale mais que uma tela de erro — sem limite de idade de propósito.
+ */
+async function resolveCenter(): Promise<GeoPoint> {
+  try {
+    return toPoint(
+      await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      }),
+    );
+  } catch (error) {
+    const lastKnown = await Location.getLastKnownPositionAsync();
+    if (!lastKnown) throw error;
+    return toPoint(lastKnown);
+  }
+}
 
 /**
  * Academias perto do usuário: busca via Overpass/OSM; mapa Apple Maps no iOS
@@ -35,21 +62,23 @@ export default function AcademiasScreen() {
 
   const search = useCallback(async () => {
     setState({ status: "locating" });
+
+    let center: GeoPoint;
     try {
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const center: GeoPoint = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      };
+      center = await resolveCenter();
+    } catch {
+      setState({ status: "error", reason: "location" });
+      return;
+    }
+
+    try {
       const gyms = await findNearbyGymsUseCase.execute({
         center,
         radiusMeters: RADIUS_METERS,
       });
       setState({ status: "ready", center, gyms });
     } catch {
-      setState({ status: "error" });
+      setState({ status: "error", reason: "search" });
     }
   }, []);
 
@@ -102,13 +131,21 @@ export default function AcademiasScreen() {
       ) : state.status === "error" ? (
         <GlassCard className="items-center py-10">
           <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
-            <CloudOff size={24} color={colors.fogMuted} />
+            {state.reason === "location" ? (
+              <Navigation size={24} color={colors.fogMuted} />
+            ) : (
+              <CloudOff size={24} color={colors.fogMuted} />
+            )}
           </View>
           <Text className="mt-4 font-sans-semibold text-base text-paper">
-            Não deu pra buscar agora
+            {state.reason === "location"
+              ? "Não achamos sua localização"
+              : "Não deu pra buscar agora"}
           </Text>
           <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-            Confira GPS e internet e tente de novo.
+            {state.reason === "location"
+              ? "Ligue o GPS e vá pra um lugar mais aberto."
+              : "Confira sua internet e tente de novo."}
           </Text>
           <View className="mt-5 w-full px-6">
             <PillButton onPress={() => void search()}>
