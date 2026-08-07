@@ -5,7 +5,7 @@ import {
   DrawerItem,
   type DrawerContentComponentProps,
 } from "expo-router/drawer";
-import { Camera, ClipboardList, Settings } from "lucide-react-native";
+import { Camera, ClipboardList, MapPin, Settings } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { useAuth } from "@/lib/auth-context";
 import { displayName } from "@/lib/identity";
@@ -51,6 +51,18 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
         onPress={() => props.navigation.navigate("fotos")}
       />
       <DrawerItem
+        label="Academias por perto"
+        labelStyle={{
+          color: colors.paperForeground,
+          fontFamily: "Geist_500Medium",
+          fontSize: 14,
+        }}
+        icon={({ size }) => (
+          <MapPin size={size ?? 20} color={colors.fogMuted} />
+        )}
+        onPress={() => props.navigation.navigate("academias")}
+      />
+      <DrawerItem
         label="Configurações"
         labelStyle={{
           color: colors.paperForeground,
@@ -87,6 +99,7 @@ export default function AppLayout() {
       <Drawer.Screen name="avaliacoes" />
       <Drawer.Screen name="configuracoes" />
       <Drawer.Screen name="fotos" />
+      <Drawer.Screen name="academias" />
       <Drawer.Screen name="camera" options={{ swipeEnabled: false }} />
       <Drawer.Screen name="scanner" options={{ swipeEnabled: false }} />
     </Drawer>

@@ -7,6 +7,8 @@ import type {
 } from "../entities/nutrition-plan";
 import type { ProgressPhoto } from "../entities/progress-photo";
 import type { CardioSession } from "../entities/cardio-session";
+import type { Gym } from "../entities/gym";
+import type { GeoPoint } from "../value-objects/geo";
 
 /*
  * Ports (interfaces) da Clean Architecture: o domínio define o contrato,
@@ -76,6 +78,11 @@ export interface ProgressPhotoRepository {
 /** Upload da foto pro storage remoto; retorna o caminho no bucket. */
 export interface ProgressPhotoUploader {
   upload(photo: ProgressPhoto): Promise<string>;
+}
+
+/** Fonte de academias próximas (Overpass/OSM no mobile; trocável por Places). */
+export interface NearbyGymsFinder {
+  search(center: GeoPoint, radiusMeters: number): Promise<Gym[]>;
 }
 
 export interface CardioSessionRepository {

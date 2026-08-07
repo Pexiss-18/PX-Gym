@@ -12,6 +12,7 @@ export * from "./entities/body-assessment";
 export * from "./entities/nutrition-plan";
 export * from "./entities/progress-photo";
 export * from "./entities/cardio-session";
+export * from "./entities/gym";
 
 export * from "./ports";
 
@@ -22,3 +23,4 @@ export * from "./use-cases/sync-pending-set-logs";
 export * from "./use-cases/save-progress-photo";
 export * from "./use-cases/generate-nutrition-plan";
 export * from "./use-cases/record-cardio-session";
+export * from "./use-cases/find-nearby-gyms";

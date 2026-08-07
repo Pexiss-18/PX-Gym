@@ -44,6 +44,12 @@
           "cameraPermission": "O Px GYM usa a câmera pra registrar fotos de progresso e ler QR codes dos aparelhos.",
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Px GYM usa sua localização pra mostrar academias perto de você."
+        }
       ]
     ],
     "experiments": {
