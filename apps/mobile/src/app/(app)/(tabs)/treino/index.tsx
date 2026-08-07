@@ -6,9 +6,19 @@ import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { ProgressBar } from "@/components/progress-bar";
 import { todayWorkout } from "@/lib/mock-data";
+import { useTodayDoneByExercise } from "@/lib/use-workout-data";
 
 export default function TreinoScreen() {
-  const progress = todayWorkout.progress();
+  const doneByExercise = useTodayDoneByExercise();
+  const totalSets = todayWorkout.exercises.reduce(
+    (n, e) => n + e.sets.length,
+    0,
+  );
+  const completedSets = todayWorkout.exercises.reduce(
+    (n, e) => n + Math.min(doneByExercise.get(e.id) ?? 0, e.sets.length),
+    0,
+  );
+  const fraction = totalSets === 0 ? 0 : completedSets / totalSets;
 
   return (
     <Screen>
@@ -33,22 +43,21 @@ export default function TreinoScreen() {
 
       <View className="mb-5 flex-row items-center gap-3">
         <View className="flex-1">
-          <ProgressBar fraction={progress.fraction} color={colors.voltLime} />
+          <ProgressBar fraction={fraction} color={colors.voltLime} />
         </View>
         <View className="flex-row items-baseline gap-0.5">
-          <Text className="font-mono text-sm text-volt">
-            {progress.completedSets}
-          </Text>
+          <Text className="font-mono text-sm text-volt">{completedSets}</Text>
           <Text className="font-sans text-sm text-fog">/</Text>
-          <Text className="font-mono text-sm text-fog">
-            {progress.totalSets}
-          </Text>
+          <Text className="font-mono text-sm text-fog">{totalSets}</Text>
         </View>
       </View>
 
       <View className="gap-4">
         {todayWorkout.exercises.map((exercise) => {
-          const done = exercise.sets.filter((s) => s.completed).length;
+          const done = Math.min(
+            doneByExercise.get(exercise.id) ?? 0,
+            exercise.sets.length,
+          );
           return (
             <Link
               key={exercise.id}

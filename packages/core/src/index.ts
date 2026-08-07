@@ -15,6 +15,8 @@ export * from "./entities/cardio-session";
 
 export * from "./ports";
 
+export * from "./services/streak";
+
 export * from "./use-cases/register-set";
 export * from "./use-cases/sync-pending-set-logs";
 export * from "./use-cases/save-progress-photo";

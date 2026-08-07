@@ -6,11 +6,12 @@ import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { useAuth } from "@/lib/auth-context";
-import { user } from "@/lib/mock-data";
+import { displayName, initials } from "@/lib/identity";
 
 export default function PerfilScreen() {
   const { session, signOut } = useAuth();
   const navigation = useNavigation();
+  const name = displayName(session);
 
   const rows = [
     {
@@ -29,9 +30,7 @@ export default function PerfilScreen() {
     <Screen>
       <View className="mb-6">
         <Text className="font-sans text-sm text-fog">Perfil</Text>
-        <Text className="font-sans-semibold text-3xl text-paper">
-          {user.name}
-        </Text>
+        <Text className="font-sans-semibold text-3xl text-paper">{name}</Text>
       </View>
 
       <View className="gap-5">
@@ -39,21 +38,16 @@ export default function PerfilScreen() {
           <View className="flex-row items-center gap-4">
             <View className="h-14 w-14 items-center justify-center rounded-full bg-volt">
               <Text className="font-sans-semibold text-base text-surface">
-                {user.avatarInitials}
+                {initials(name)}
               </Text>
             </View>
             <View className="flex-1">
               <Text className="font-sans-semibold text-base text-paper">
-                {user.name}
+                {name}
               </Text>
               <Text className="font-sans text-sm text-fog">
                 {session?.user.email}
               </Text>
-              <View className="mt-1.5 self-start rounded-full border border-hairline bg-glass-fill px-2.5 py-0.5">
-                <Text className="font-sans-medium text-[11px] text-volt">
-                  {user.goal}
-                </Text>
-              </View>
             </View>
           </View>
         </GlassCard>

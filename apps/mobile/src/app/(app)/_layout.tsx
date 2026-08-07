@@ -7,10 +7,12 @@ import {
 } from "expo-router/drawer";
 import { ClipboardList, Settings } from "lucide-react-native";
 import { colors } from "@px/tokens";
-import { user } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-context";
+import { displayName } from "@/lib/identity";
 import { useWorkoutSync } from "@/lib/use-workout-sync";
 
 function PxDrawerContent(props: DrawerContentComponentProps) {
+  const { session } = useAuth();
   return (
     <DrawerContentScrollView
       {...props}
@@ -20,7 +22,9 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
         <Text className="font-sans-semibold text-2xl text-paper">
           Px <Text className="text-volt">GYM</Text>
         </Text>
-        <Text className="mt-1 font-sans text-sm text-fog">{user.name}</Text>
+        <Text className="mt-1 font-sans text-sm text-fog">
+          {displayName(session)}
+        </Text>
       </View>
       <DrawerItem
         label="Avaliações"

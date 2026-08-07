@@ -1,25 +1,10 @@
 /**
- * Dados de demonstração do shell mobile — mesmo conteúdo do mock do web.
- * Substituídos por SQLite/Supabase nas etapas 4 e 5.
+ * Único mock restante: o plano de treino do dia. Não existe tabela de
+ * treinos ainda — o plano vira dado real quando houver montagem de treino.
+ * O que foi FEITO (séries, cargas, progresso) já é 100% real via SQLite;
+ * os flags `completed` daqui são ignorados pelas telas.
  */
 import { Workout } from "@px/core";
-
-export const user = {
-  name: "Paulo",
-  goal: "Hipertrofia",
-  streakDays: 12,
-  avatarInitials: "PR",
-};
-
-export const bodyMetrics = {
-  weightKg: 78.4,
-  weightDeltaKg: -0.6,
-  bodyFatPct: 15.2,
-  bodyFatDeltaPct: -0.8,
-  muscleMassKg: 34.7,
-  muscleMassDeltaKg: 0.4,
-  lastAssessment: "22 jul",
-};
 
 export const todayWorkout = new Workout(
   "treino-a",
@@ -34,8 +19,8 @@ export const todayWorkout = new Workout(
       muscleGroup: "Peito",
       restSeconds: 90,
       sets: [
-        { setNumber: 1, targetReps: 10, targetLoadKg: 60, previousLoadKg: 57.5, completed: true },
-        { setNumber: 2, targetReps: 10, targetLoadKg: 60, previousLoadKg: 60, completed: true },
+        { setNumber: 1, targetReps: 10, targetLoadKg: 60, previousLoadKg: 57.5, completed: false },
+        { setNumber: 2, targetReps: 10, targetLoadKg: 60, previousLoadKg: 60, completed: false },
         { setNumber: 3, targetReps: 8, targetLoadKg: 65, previousLoadKg: 60, completed: false },
         { setNumber: 4, targetReps: 8, targetLoadKg: 65, previousLoadKg: 60, completed: false },
       ],
@@ -46,7 +31,7 @@ export const todayWorkout = new Workout(
       muscleGroup: "Peito",
       restSeconds: 75,
       sets: [
-        { setNumber: 1, targetReps: 12, targetLoadKg: 24, previousLoadKg: 22, completed: true },
+        { setNumber: 1, targetReps: 12, targetLoadKg: 24, previousLoadKg: 22, completed: false },
         { setNumber: 2, targetReps: 12, targetLoadKg: 24, previousLoadKg: 24, completed: false },
         { setNumber: 3, targetReps: 10, targetLoadKg: 26, previousLoadKg: 24, completed: false },
       ],
@@ -85,19 +70,3 @@ export const todayWorkout = new Workout(
     },
   ],
 );
-
-export const nutritionDay = {
-  caloriesTarget: 2600,
-  caloriesConsumed: 1840,
-  macros: [
-    { key: "protein" as const, label: "Proteína", currentG: 128, targetG: 170 },
-    { key: "carbs" as const, label: "Carboidrato", currentG: 210, targetG: 290 },
-    { key: "fat" as const, label: "Gordura", currentG: 48, targetG: 75 },
-  ],
-  meals: [
-    { id: "cafe", name: "Café da manhã", time: "07h30", logged: true, calories: 520 },
-    { id: "almoco", name: "Almoço", time: "12h30", logged: true, calories: 780 },
-    { id: "lanche", name: "Lanche da tarde", time: "16h00", logged: true, calories: 340 },
-    { id: "jantar", name: "Jantar", time: "20h00", logged: false, calories: 620 },
-  ],
-};
