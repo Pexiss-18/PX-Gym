@@ -10,8 +10,10 @@
     "@px/db": "*",
     "@px/tokens": "*",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/netinfo": "12.0.1",
     "@supabase/supabase-js": "^2.112.2",
     "aes-js": "^3.1.2",
+    "drizzle-orm": "^0.45.2",
     "expo": "~57.0.11",
     "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.9",
@@ -24,6 +26,7 @@
     "expo-router": "~57.0.11",
     "expo-secure-store": "~57.0.1",
     "expo-splash-screen": "~57.0.5",
+    "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.2",
@@ -45,6 +48,8 @@
   "devDependencies": {
     "@types/aes-js": "^3.1.4",
     "@types/react": "~19.2.2",
+    "babel-plugin-inline-import": "^3.0.0",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.3"
   },

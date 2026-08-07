@@ -13,8 +13,11 @@ import {
   Geist_600SemiBold,
 } from "@expo-google-fonts/geist";
 import { GeistMono_600SemiBold } from "@expo-google-fonts/geist-mono";
+import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { colors } from "@px/tokens";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { db } from "@/db";
+import migrations from "../../drizzle/migrations";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,7 +31,11 @@ function RootNavigator() {
     GeistMono_600SemiBold,
   });
 
-  const ready = fontsLoaded && !loading;
+  // Aplica as migrations do SQLite antes de qualquer tela tocar no banco.
+  const { success: dbReady, error: dbError } = useMigrations(db, migrations);
+  if (dbError) throw dbError;
+
+  const ready = fontsLoaded && !loading && dbReady;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Check, Minus, Plus, Timer } from "lucide-react-native";
@@ -7,6 +7,13 @@ import { Load } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { todayWorkout } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-context";
+import {
+  registerSetUseCase,
+  setLogRepository,
+  todayIsoDate,
+  trySyncSetLogs,
+} from "@/lib/workout";
 
 type SetState = {
   setNumber: number;
@@ -14,6 +21,8 @@ type SetState = {
   previousLoadKg: number;
   loadKg: number;
   completed: boolean;
+  /** id do SetLog no SQLite quando a série está registrada. */
+  logId: string | null;
 };
 
 /**
@@ -22,11 +31,13 @@ type SetState = {
  * em passos de 2.5kg (sem teclado durante o treino) e delta em volt quando
  * a carga de hoje supera a anterior.
  *
- * Nesta etapa o estado é local (mock); a etapa 4 pluga o RegisterSetUseCase
- * com SQLite offline-first.
+ * Offline-first: o check grava via RegisterSetUseCase no SQLite (pending) e
+ * tenta um sync oportunista; desmarcar remove o registro local. O estado do
+ * dia é hidratado do banco, então fechar e reabrir a tela não perde nada.
  */
 export default function ExercicioScreen() {
   const { exercicioId } = useLocalSearchParams<{ exercicioId: string }>();
+  const { session } = useAuth();
   const exercise = todayWorkout.exercises.find((e) => e.id === exercicioId);
 
   const [sets, setSets] = useState<SetState[]>(
@@ -36,9 +47,40 @@ export default function ExercicioScreen() {
         targetReps: s.targetReps,
         previousLoadKg: s.previousLoadKg,
         loadKg: s.targetLoadKg,
-        completed: s.completed,
+        completed: false,
+        logId: null,
       })) ?? [],
   );
+
+  // Séries com escrita em andamento — ignora toques repetidos no check.
+  const busySets = useRef(new Set<number>());
+
+  useEffect(() => {
+    if (!exercicioId) return;
+    let cancelled = false;
+    setLogRepository.bySessionDate(todayIsoDate()).then((logs) => {
+      if (cancelled) return;
+      const mine = logs.filter((l) => l.exerciseId === exercicioId);
+      if (mine.length === 0) return;
+      setSets((prev) =>
+        prev.map((s) => {
+          const log = mine.find((l) => l.setNumber === s.setNumber);
+          return log
+            ? {
+                ...s,
+                completed: true,
+                logId: log.id,
+                loadKg: log.load.kg,
+                previousLoadKg: log.previousLoad.kg,
+              }
+            : s;
+        }),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [exercicioId]);
 
   if (!exercise) {
     return (
@@ -54,6 +96,33 @@ export default function ExercicioScreen() {
     setSets((prev) =>
       prev.map((s) => (s.setNumber === setNumber ? { ...s, ...patch } : s)),
     );
+  }
+
+  async function toggleSet(set: SetState) {
+    if (busySets.current.has(set.setNumber)) return;
+    busySets.current.add(set.setNumber);
+    try {
+      if (set.completed) {
+        if (set.logId) await setLogRepository.remove([set.logId]);
+        update(set.setNumber, { completed: false, logId: null });
+      } else {
+        const { setLog } = await registerSetUseCase.execute({
+          exerciseId: exercise!.id,
+          exerciseName: exercise!.name,
+          setNumber: set.setNumber,
+          targetReps: set.targetReps,
+          loadKg: set.loadKg,
+        });
+        update(set.setNumber, {
+          completed: true,
+          logId: setLog.id,
+          previousLoadKg: setLog.previousLoad.kg,
+        });
+        if (session) void trySyncSetLogs(session.user.id);
+      }
+    } finally {
+      busySets.current.delete(set.setNumber);
+    }
   }
 
   return (
@@ -94,9 +163,7 @@ export default function ExercicioScreen() {
               <View className="flex-row items-center gap-4">
                 {/* check circular */}
                 <Pressable
-                  onPress={() =>
-                    update(set.setNumber, { completed: !set.completed })
-                  }
+                  onPress={() => void toggleSet(set)}
                   className={`h-11 w-11 items-center justify-center rounded-full border ${
                     set.completed
                       ? "border-volt bg-volt"
@@ -136,9 +203,12 @@ export default function ExercicioScreen() {
                   </View>
                 </View>
 
-                {/* stepper de carga */}
-                <View className="flex-row items-center gap-2">
+                {/* stepper de carga (travado com a série registrada — desmarque pra ajustar) */}
+                <View
+                  className={`flex-row items-center gap-2 ${set.completed ? "opacity-50" : ""}`}
+                >
                   <Pressable
+                    disabled={set.completed}
                     onPress={() =>
                       update(set.setNumber, {
                         loadKg: Load.fromKg(set.loadKg).decrement().kg,
@@ -155,6 +225,7 @@ export default function ExercicioScreen() {
                     <Text className="font-sans text-[11px] text-fog">kg</Text>
                   </View>
                   <Pressable
+                    disabled={set.completed}
                     onPress={() =>
                       update(set.setNumber, {
                         loadKg: Load.fromKg(set.loadKg).increment().kg,

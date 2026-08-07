@@ -8,6 +8,7 @@ import {
 import { ClipboardList, Settings } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { user } from "@/lib/mock-data";
+import { useWorkoutSync } from "@/lib/use-workout-sync";
 
 function PxDrawerContent(props: DrawerContentComponentProps) {
   return (
@@ -50,6 +51,9 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
 }
 
 export default function AppLayout() {
+  // Área logada montada = sessão garantida (Stack.Protected no layout raiz).
+  useWorkoutSync();
+
   return (
     <Drawer
       drawerContent={(props) => <PxDrawerContent {...props} />}

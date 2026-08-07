@@ -49,6 +49,9 @@ export class InMemorySetLogs implements SetLogRepository {
       ids.includes(l.id) ? l.markSynced() : l,
     );
   }
+  async remove(ids: string[]) {
+    this.logs = this.logs.filter((l) => !ids.includes(l.id));
+  }
   async lastLoadKgForExercise(exerciseId: string) {
     const forExercise = this.logs.filter((l) => l.exerciseId === exerciseId);
     const last = forExercise[forExercise.length - 1];

@@ -32,6 +32,8 @@ export interface SetLogRepository {
   /** Registros ainda não enviados ao backend. */
   pending(): Promise<SetLog[]>;
   markSynced(ids: string[]): Promise<void>;
+  /** Apaga registros locais (série desmarcada pelo usuário). */
+  remove(ids: string[]): Promise<void>;
   /** Última carga registrada por exercício, pra calcular progressão. */
   lastLoadKgForExercise(exerciseId: string): Promise<number | null>;
   bySessionDate(sessionDate: string): Promise<SetLog[]>;
