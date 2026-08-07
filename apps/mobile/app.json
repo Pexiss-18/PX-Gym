@@ -50,7 +50,8 @@
         {
           "locationWhenInUsePermission": "O Px GYM usa sua localização pra mostrar academias perto de você."
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,

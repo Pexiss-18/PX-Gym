@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
-import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { CloudOff, MapPin, Menu, Navigation } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import type { GeoPoint, NearbyGym } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
+import { GymMap } from "@/components/gym-map";
 import { PillButton } from "@/components/pill-button";
 import { findNearbyGymsUseCase } from "@/lib/gyms";
 
@@ -24,7 +24,10 @@ type SearchState =
   | { status: "error" }
   | { status: "ready"; center: GeoPoint; gyms: NearbyGym[] };
 
-/** Academias perto do usuário: Apple/Google Maps + Places API (New). */
+/**
+ * Academias perto do usuário: busca via Overpass/OSM; mapa Apple Maps no iOS
+ * e MapLibre+OSM no Android (GymMap resolve por extensão de plataforma).
+ */
 export default function AcademiasScreen() {
   const navigation = useNavigation();
   const [permission, requestPermission] = Location.useForegroundPermissions();
@@ -116,28 +119,7 @@ export default function AcademiasScreen() {
       ) : (
         <View className="gap-5">
           <View className="h-64 overflow-hidden rounded-px-lg border border-hairline">
-            <MapView
-              style={{ flex: 1 }}
-              initialRegion={{
-                latitude: state.center.latitude,
-                longitude: state.center.longitude,
-                latitudeDelta: 0.045,
-                longitudeDelta: 0.045,
-              }}
-              showsUserLocation
-            >
-              {state.gyms.map((gymItem) => (
-                <Marker
-                  key={gymItem.id}
-                  coordinate={{
-                    latitude: gymItem.location.latitude,
-                    longitude: gymItem.location.longitude,
-                  }}
-                  title={gymItem.name}
-                  description={gymItem.address ?? undefined}
-                />
-              ))}
-            </MapView>
+            <GymMap center={state.center} gyms={state.gyms} />
           </View>
 
           {state.gyms.length === 0 ? (
