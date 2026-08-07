@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { Load, SetLog, type SetLogRepository } from "@px/core";
 import type { Db } from "./index";
 import { setLogs, type SetLogRow } from "./schema";
@@ -41,6 +41,15 @@ export class DrizzleSetLogRepository implements SetLogRepository {
       .onConflictDoUpdate({ target: setLogs.id, set: row });
   }
 
+  async byId(id: string): Promise<SetLog | null> {
+    const rows = await this.db
+      .select()
+      .from(setLogs)
+      .where(eq(setLogs.id, id))
+      .limit(1);
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
   async pending(): Promise<SetLog[]> {
     const rows = await this.db
       .select()
@@ -58,6 +67,22 @@ export class DrizzleSetLogRepository implements SetLogRepository {
       .where(inArray(setLogs.id, ids));
   }
 
+  async markDeleted(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.db
+      .update(setLogs)
+      .set({ syncStatus: "deleted" })
+      .where(inArray(setLogs.id, ids));
+  }
+
+  async deletedIds(): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: setLogs.id })
+      .from(setLogs)
+      .where(eq(setLogs.syncStatus, "deleted"));
+    return rows.map((r) => r.id);
+  }
+
   async remove(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
     await this.db.delete(setLogs).where(inArray(setLogs.id, ids));
@@ -67,7 +92,12 @@ export class DrizzleSetLogRepository implements SetLogRepository {
     const rows = await this.db
       .select({ loadKg: setLogs.loadKg })
       .from(setLogs)
-      .where(eq(setLogs.exerciseId, exerciseId))
+      .where(
+        and(
+          eq(setLogs.exerciseId, exerciseId),
+          ne(setLogs.syncStatus, "deleted"),
+        ),
+      )
       .orderBy(desc(setLogs.completedAt))
       .limit(1);
     return rows[0]?.loadKg ?? null;
@@ -77,7 +107,12 @@ export class DrizzleSetLogRepository implements SetLogRepository {
     const rows = await this.db
       .select()
       .from(setLogs)
-      .where(eq(setLogs.sessionDate, sessionDate))
+      .where(
+        and(
+          eq(setLogs.sessionDate, sessionDate),
+          ne(setLogs.syncStatus, "deleted"),
+        ),
+      )
       .orderBy(setLogs.completedAt);
     return rows.map(toEntity);
   }

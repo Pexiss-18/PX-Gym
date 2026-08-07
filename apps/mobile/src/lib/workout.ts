@@ -1,6 +1,7 @@
 import {
   RegisterSetUseCase,
   SyncPendingSetLogsUseCase,
+  UnregisterSetUseCase,
   type SyncResult,
 } from "@px/core";
 import { SupabaseWorkoutSyncGateway } from "@px/db";
@@ -22,6 +23,8 @@ export const registerSetUseCase = new RegisterSetUseCase(
   cryptoIds,
 );
 
+export const unregisterSetUseCase = new UnregisterSetUseCase(setLogRepository);
+
 export function syncUseCaseFor(userId: string): SyncPendingSetLogsUseCase {
   return new SyncPendingSetLogsUseCase(
     setLogRepository,
@@ -38,7 +41,7 @@ export async function trySyncSetLogs(userId: string): Promise<SyncResult> {
   try {
     return await syncUseCaseFor(userId).execute();
   } catch {
-    return { status: "offline", synced: 0 };
+    return { status: "offline", synced: 0, removed: 0 };
   }
 }
 

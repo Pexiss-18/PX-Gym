@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Animated, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Check, Minus, Plus, Timer } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { ArrowLeft, Check, Minus, Plus, Timer, X } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Load } from "@px/core";
 import { Screen } from "@/components/screen";
@@ -13,6 +14,7 @@ import {
   setLogRepository,
   todayIsoDate,
   trySyncSetLogs,
+  unregisterSetUseCase,
 } from "@/lib/workout";
 
 type SetState = {
@@ -32,8 +34,12 @@ type SetState = {
  * a carga de hoje supera a anterior.
  *
  * Offline-first: o check grava via RegisterSetUseCase no SQLite (pending) e
- * tenta um sync oportunista; desmarcar remove o registro local. O estado do
- * dia é hidratado do banco, então fechar e reabrir a tela não perde nada.
+ * tenta um sync oportunista; desmarcar usa o UnregisterSetUseCase (pending
+ * some direto, synced vira tombstone até o backend confirmar a remoção). O
+ * estado do dia é hidratado do banco, então fechar e reabrir não perde nada.
+ *
+ * Polimento da etapa 8: haptics no check/steppers, scale-bounce no círculo
+ * (DESIGN.md, Set Row) e timer de descanso que dispara ao completar a série.
  */
 export default function ExercicioScreen() {
   const { exercicioId } = useLocalSearchParams<{ exercicioId: string }>();
@@ -54,6 +60,28 @@ export default function ExercicioScreen() {
 
   // Séries com escrita em andamento — ignora toques repetidos no check.
   const busySets = useRef(new Set<number>());
+
+  // Timer de descanso: dispara ao completar uma série, toque no chip pula.
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!restEndsAt) return;
+    const id = setInterval(() => setNowMs(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [restEndsAt]);
+
+  const restLeft =
+    restEndsAt !== null
+      ? Math.max(0, Math.ceil((restEndsAt - nowMs) / 1000))
+      : null;
+
+  useEffect(() => {
+    if (restEndsAt !== null && restLeft === 0) {
+      setRestEndsAt(null);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [restEndsAt, restLeft]);
 
   useEffect(() => {
     if (!exercicioId) return;
@@ -103,8 +131,13 @@ export default function ExercicioScreen() {
     busySets.current.add(set.setNumber);
     try {
       if (set.completed) {
-        if (set.logId) await setLogRepository.remove([set.logId]);
+        if (set.logId) {
+          // pending some direto; synced vira tombstone e o sync apaga no Supabase
+          await unregisterSetUseCase.execute({ logId: set.logId });
+          if (session) void trySyncSetLogs(session.user.id);
+        }
         update(set.setNumber, { completed: false, logId: null });
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } else {
         const { setLog } = await registerSetUseCase.execute({
           exerciseId: exercise!.id,
@@ -118,6 +151,12 @@ export default function ExercicioScreen() {
           logId: setLog.id,
           previousLoadKg: setLog.previousLoad.kg,
         });
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+        const now = Date.now();
+        setNowMs(now);
+        setRestEndsAt(now + exercise!.restSeconds * 1000);
         if (session) void trySyncSetLogs(session.user.id);
       }
     } finally {
@@ -144,14 +183,36 @@ export default function ExercicioScreen() {
         </View>
       </View>
 
-      <View className="mb-4 flex-row items-center gap-1.5">
-        <Timer size={13} color={colors.fogMuted} />
-        <Text className="font-sans text-xs text-fog">Descanso:</Text>
-        <Text className="font-mono text-xs text-paper">
-          {exercise.restSeconds}
-        </Text>
-        <Text className="font-sans text-xs text-fog">s</Text>
-      </View>
+      {restLeft !== null ? (
+        <Pressable
+          onPress={() => {
+            setRestEndsAt(null);
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          className="mb-4 flex-row items-center justify-between rounded-full border border-volt bg-glass-fill px-4 py-2.5"
+        >
+          <View className="flex-row items-center gap-2">
+            <Timer size={14} color={colors.voltLime} />
+            <Text className="font-sans text-xs text-fog">Descanso</Text>
+            <Text className="font-mono text-sm text-volt">
+              {formatRest(restLeft)}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <Text className="font-sans text-[11px] text-fog">pular</Text>
+            <X size={12} color={colors.fogMuted} />
+          </View>
+        </Pressable>
+      ) : (
+        <View className="mb-4 flex-row items-center gap-1.5">
+          <Timer size={13} color={colors.fogMuted} />
+          <Text className="font-sans text-xs text-fog">Descanso:</Text>
+          <Text className="font-mono text-xs text-paper">
+            {exercise.restSeconds}
+          </Text>
+          <Text className="font-sans text-xs text-fog">s</Text>
+        </View>
+      )}
 
       <View className="gap-3">
         {sets.map((set) => {
@@ -161,23 +222,11 @@ export default function ExercicioScreen() {
           return (
             <GlassCard key={set.setNumber} className="p-4">
               <View className="flex-row items-center gap-4">
-                {/* check circular */}
-                <Pressable
+                <SetCheck
+                  completed={set.completed}
+                  setNumber={set.setNumber}
                   onPress={() => void toggleSet(set)}
-                  className={`h-11 w-11 items-center justify-center rounded-full border ${
-                    set.completed
-                      ? "border-volt bg-volt"
-                      : "border-hairline bg-glass-fill"
-                  }`}
-                >
-                  {set.completed ? (
-                    <Check size={18} color={colors.inkSurface} strokeWidth={3} />
-                  ) : (
-                    <Text className="font-mono text-xs text-fog">
-                      {set.setNumber}
-                    </Text>
-                  )}
-                </Pressable>
+                />
 
                 {/* meta da série */}
                 <View className="flex-1">
@@ -209,11 +258,12 @@ export default function ExercicioScreen() {
                 >
                   <Pressable
                     disabled={set.completed}
-                    onPress={() =>
+                    onPress={() => {
+                      void Haptics.selectionAsync();
                       update(set.setNumber, {
                         loadKg: Load.fromKg(set.loadKg).decrement().kg,
-                      })
-                    }
+                      });
+                    }}
                     className="h-9 w-9 items-center justify-center rounded-full border border-hairline bg-glass-fill active:scale-[0.95]"
                   >
                     <Minus size={14} color={colors.paperForeground} />
@@ -226,11 +276,12 @@ export default function ExercicioScreen() {
                   </View>
                   <Pressable
                     disabled={set.completed}
-                    onPress={() =>
+                    onPress={() => {
+                      void Haptics.selectionAsync();
                       update(set.setNumber, {
                         loadKg: Load.fromKg(set.loadKg).increment().kg,
-                      })
-                    }
+                      });
+                    }}
                     className="h-9 w-9 items-center justify-center rounded-full border border-hairline bg-glass-fill active:scale-[0.95]"
                   >
                     <Plus size={14} color={colors.paperForeground} />
@@ -242,5 +293,61 @@ export default function ExercicioScreen() {
         })}
       </View>
     </Screen>
+  );
+}
+
+/** mm:ss do descanso restante. */
+function formatRest(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = String(totalSeconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+/**
+ * Check circular do Set Row com o scale-bounce do DESIGN.md: encolhe e volta
+ * em spring quando a série é completada. O transform fica num Animated.View
+ * externo pra não misturar estilo animado com as classes do NativeWind.
+ */
+function SetCheck({
+  completed,
+  setNumber,
+  onPress,
+}: {
+  completed: boolean;
+  setNumber: number;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const wasCompleted = useRef(completed);
+
+  useEffect(() => {
+    if (completed && !wasCompleted.current) {
+      scale.setValue(0.6);
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 4,
+        tension: 140,
+        useNativeDriver: true,
+      }).start();
+    }
+    wasCompleted.current = completed;
+  }, [completed, scale]);
+
+  return (
+    <Pressable onPress={onPress} hitSlop={6}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <View
+          className={`h-11 w-11 items-center justify-center rounded-full border ${
+            completed ? "border-volt bg-volt" : "border-hairline bg-glass-fill"
+          }`}
+        >
+          {completed ? (
+            <Check size={18} color={colors.inkSurface} strokeWidth={3} />
+          ) : (
+            <Text className="font-mono text-xs text-fog">{setNumber}</Text>
+          )}
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 }

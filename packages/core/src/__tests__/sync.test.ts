@@ -1,4 +1,5 @@
 import { RegisterSetUseCase } from "../use-cases/register-set";
+import { UnregisterSetUseCase } from "../use-cases/unregister-set";
 import { SyncPendingSetLogsUseCase } from "../use-cases/sync-pending-set-logs";
 import {
   SaveProgressPhotoUseCase,
@@ -63,7 +64,7 @@ describe("SyncPendingSetLogsUseCase", () => {
 
     const result = await sync.execute();
 
-    expect(result).toEqual({ status: "synced", synced: 3 });
+    expect(result).toEqual({ status: "synced", synced: 3, removed: 0 });
     expect(gateway.pushed[0]).toHaveLength(3);
     expect(await repo.pending()).toHaveLength(0);
   });
@@ -80,6 +81,90 @@ describe("SyncPendingSetLogsUseCase", () => {
 
     await expect(sync.execute()).rejects.toThrow("network down");
     expect(await repo.pending()).toHaveLength(2);
+  });
+});
+
+describe("UnregisterSetUseCase", () => {
+  it("série pending desmarcada some do banco local sem tocar o backend", async () => {
+    const repo = await repoWithLogs(2);
+    const unregister = new UnregisterSetUseCase(repo);
+
+    await unregister.execute({ logId: "id-1" });
+
+    expect(repo.logs).toHaveLength(1);
+    expect(await repo.deletedIds()).toHaveLength(0);
+  });
+
+  it("série synced desmarcada vira tombstone e sai das leituras", async () => {
+    const repo = await repoWithLogs(2);
+    await repo.markSynced(["id-1", "id-2"]);
+    const unregister = new UnregisterSetUseCase(repo);
+
+    await unregister.execute({ logId: "id-1" });
+
+    expect(await repo.deletedIds()).toEqual(["id-1"]);
+    expect(await repo.bySessionDate("2026-08-06")).toHaveLength(1);
+    expect(repo.logs).toHaveLength(2); // tombstone ainda existe localmente
+  });
+
+  it("id desconhecido é no-op", async () => {
+    const repo = await repoWithLogs(1);
+    await new UnregisterSetUseCase(repo).execute({ logId: "nope" });
+    expect(repo.logs).toHaveLength(1);
+  });
+});
+
+describe("sync de tombstones", () => {
+  async function repoWithTombstone() {
+    const repo = await repoWithLogs(2);
+    await repo.markSynced(["id-1", "id-2"]);
+    await new UnregisterSetUseCase(repo).execute({ logId: "id-2" });
+    return repo;
+  }
+
+  it("online: remove do backend e só então apaga o tombstone local", async () => {
+    const repo = await repoWithTombstone();
+    const gateway = new FakeSyncGateway();
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(true),
+    );
+
+    const result = await sync.execute();
+
+    expect(result).toEqual({ status: "synced", synced: 0, removed: 1 });
+    expect(gateway.deleted[0]).toEqual(["id-2"]);
+    expect(repo.logs).toHaveLength(1);
+  });
+
+  it("offline: tombstone fica aguardando a próxima janela", async () => {
+    const repo = await repoWithTombstone();
+    const gateway = new FakeSyncGateway();
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(false),
+    );
+
+    await sync.execute();
+
+    expect(gateway.deleted).toHaveLength(0);
+    expect(await repo.deletedIds()).toEqual(["id-2"]);
+  });
+
+  it("falha no delete remoto preserva o tombstone", async () => {
+    const repo = await repoWithTombstone();
+    const gateway = new FakeSyncGateway();
+    gateway.failNext = true;
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(true),
+    );
+
+    await expect(sync.execute()).rejects.toThrow("network down");
+    expect(await repo.deletedIds()).toEqual(["id-2"]);
   });
 });
 

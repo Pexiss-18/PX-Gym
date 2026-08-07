@@ -41,6 +41,9 @@ export class InMemorySetLogs implements SetLogRepository {
   async save(log: SetLog) {
     this.logs.push(log);
   }
+  async byId(id: string) {
+    return this.logs.find((l) => l.id === id) ?? null;
+  }
   async pending() {
     return this.logs.filter((l) => l.syncStatus === "pending");
   }
@@ -49,21 +52,36 @@ export class InMemorySetLogs implements SetLogRepository {
       ids.includes(l.id) ? l.markSynced() : l,
     );
   }
+  async markDeleted(ids: string[]) {
+    this.logs = this.logs.map((l) =>
+      ids.includes(l.id) ? l.markDeleted() : l,
+    );
+  }
+  async deletedIds() {
+    return this.logs
+      .filter((l) => l.syncStatus === "deleted")
+      .map((l) => l.id);
+  }
   async remove(ids: string[]) {
     this.logs = this.logs.filter((l) => !ids.includes(l.id));
   }
   async lastLoadKgForExercise(exerciseId: string) {
-    const forExercise = this.logs.filter((l) => l.exerciseId === exerciseId);
+    const forExercise = this.logs.filter(
+      (l) => l.exerciseId === exerciseId && l.syncStatus !== "deleted",
+    );
     const last = forExercise[forExercise.length - 1];
     return last ? last.load.kg : null;
   }
   async bySessionDate(sessionDate: string) {
-    return this.logs.filter((l) => l.sessionDate === sessionDate);
+    return this.logs.filter(
+      (l) => l.sessionDate === sessionDate && l.syncStatus !== "deleted",
+    );
   }
 }
 
 export class FakeSyncGateway implements WorkoutSyncGateway {
   pushed: SetLog[][] = [];
+  deleted: string[][] = [];
   failNext = false;
 
   async pushSetLogs(logs: SetLog[]) {
@@ -72,6 +90,14 @@ export class FakeSyncGateway implements WorkoutSyncGateway {
       throw new Error("network down");
     }
     this.pushed.push(logs);
+  }
+
+  async deleteSetLogs(ids: string[]) {
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error("network down");
+    }
+    this.deleted.push(ids);
   }
 }
 

@@ -23,8 +23,9 @@ export const setLogs = sqliteTable(
     previousLoadKg: real("previous_load_kg").notNull(),
     loadKg: real("load_kg").notNull(),
     completedAt: integer("completed_at", { mode: "timestamp_ms" }).notNull(),
+    // "deleted" = tombstone aguardando remoção no Supabase (só coluna text, sem migration)
     syncStatus: text("sync_status")
-      .$type<"pending" | "synced">()
+      .$type<"pending" | "synced" | "deleted">()
       .notNull()
       .default("pending"),
   },

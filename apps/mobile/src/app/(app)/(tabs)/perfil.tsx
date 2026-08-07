@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import {
@@ -84,7 +84,20 @@ export default function PerfilScreen() {
         </GlassCard>
 
         <Pressable
-          onPress={signOut}
+          onPress={() =>
+            Alert.alert(
+              "Sair da conta?",
+              "Seus registros locais continuam salvos no aparelho.",
+              [
+                { text: "Cancelar", style: "cancel" },
+                {
+                  text: "Sair",
+                  style: "destructive",
+                  onPress: () => void signOut(),
+                },
+              ],
+            )
+          }
           className="flex-row items-center justify-center gap-2 rounded-full border border-hairline bg-glass-fill py-3.5 active:scale-[0.98]"
         >
           <LogOut size={16} color={colors.alertRed} />

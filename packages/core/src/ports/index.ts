@@ -28,13 +28,22 @@ export interface ConnectivityStatus {
   isOnline(): Promise<boolean>;
 }
 
-/** Persistência local (offline-first) dos registros de série. */
+/**
+ * Persistência local (offline-first) dos registros de série.
+ * Tombstones (syncStatus "deleted") nunca aparecem nas consultas de leitura
+ * (bySessionDate, lastLoadKgForExercise) — só em deletedIds(), pro sync.
+ */
 export interface SetLogRepository {
   save(log: SetLog): Promise<void>;
+  byId(id: string): Promise<SetLog | null>;
   /** Registros ainda não enviados ao backend. */
   pending(): Promise<SetLog[]>;
   markSynced(ids: string[]): Promise<void>;
-  /** Apaga registros locais (série desmarcada pelo usuário). */
+  /** Vira tombstone: série desmarcada que ainda precisa ser removida do backend. */
+  markDeleted(ids: string[]): Promise<void>;
+  /** Ids dos tombstones aguardando remoção remota. */
+  deletedIds(): Promise<string[]>;
+  /** Apaga registros locais de vez (série pending desmarcada ou tombstone já resolvido). */
   remove(ids: string[]): Promise<void>;
   /** Última carga registrada por exercício, pra calcular progressão. */
   lastLoadKgForExercise(exerciseId: string): Promise<number | null>;
@@ -44,6 +53,7 @@ export interface SetLogRepository {
 /** Envio dos registros locais pro backend quando a conexão volta. */
 export interface WorkoutSyncGateway {
   pushSetLogs(logs: SetLog[]): Promise<void>;
+  deleteSetLogs(ids: string[]): Promise<void>;
 }
 
 export interface WorkoutRepository {

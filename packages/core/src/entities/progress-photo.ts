@@ -1,4 +1,4 @@
-import type { SyncStatus } from "./set-log";
+import type { UploadSyncStatus } from "./set-log";
 
 export type ProgressPhotoProps = {
   id: string;
@@ -9,7 +9,7 @@ export type ProgressPhotoProps = {
   remotePath: string | null;
   takenAt: Date;
   note: string | null;
-  syncStatus: SyncStatus;
+  syncStatus: UploadSyncStatus;
 };
 
 /**

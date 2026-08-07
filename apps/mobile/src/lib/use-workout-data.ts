@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { computeStreakDays } from "@px/core";
 import { db } from "@/db";
@@ -15,7 +15,15 @@ import { todayIsoDate } from "./workout";
 /** Registros de série de hoje, direto do SQLite. */
 export function useTodaySetLogs() {
   const { data } = useLiveQuery(
-    db.select().from(setLogs).where(eq(setLogs.sessionDate, todayIsoDate())),
+    db
+      .select()
+      .from(setLogs)
+      .where(
+        and(
+          eq(setLogs.sessionDate, todayIsoDate()),
+          ne(setLogs.syncStatus, "deleted"),
+        ),
+      ),
   );
   return data ?? [];
 }
@@ -35,7 +43,10 @@ export function useTodayDoneByExercise(): Map<string, number> {
 /** Streak real: dias consecutivos com pelo menos uma série registrada. */
 export function useStreakDays(): number {
   const { data } = useLiveQuery(
-    db.selectDistinct({ sessionDate: setLogs.sessionDate }).from(setLogs),
+    db
+      .selectDistinct({ sessionDate: setLogs.sessionDate })
+      .from(setLogs)
+      .where(ne(setLogs.syncStatus, "deleted")),
   );
   return useMemo(
     () =>

@@ -1,7 +1,14 @@
 import { Load } from "../value-objects/load";
 
-/** Estado de sincronização de um registro criado offline-first. */
-export type SyncStatus = "pending" | "synced";
+/** Estado de sincronização de um registro criado offline-first (só upload). */
+export type UploadSyncStatus = "pending" | "synced";
+
+/**
+ * Estado de sincronização de um SetLog. "deleted" é um tombstone: a série foi
+ * desmarcada depois de sincronizada e aguarda a remoção no backend antes de
+ * sumir do banco local.
+ */
+export type SyncStatus = UploadSyncStatus | "deleted";
 
 export type SetLogProps = {
   id: string;
@@ -58,5 +65,9 @@ export class SetLog {
 
   markSynced(): SetLog {
     return new SetLog({ ...this.props, syncStatus: "synced" });
+  }
+
+  markDeleted(): SetLog {
+    return new SetLog({ ...this.props, syncStatus: "deleted" });
   }
 }
