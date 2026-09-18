@@ -2,15 +2,24 @@ import type { SetLog } from "../entities/set-log";
 import type { ProgressPhoto } from "../entities/progress-photo";
 import type { BodyAssessment } from "../entities/body-assessment";
 import type { NutritionPlan } from "../entities/nutrition-plan";
+import type { Gym } from "../entities/gym";
+import type { GeoPoint } from "../value-objects/geo";
+import { LocationUnavailableError } from "../errors";
 import type {
   AssessmentRepository,
+  AuthGateway,
   Clock,
   ConnectivityStatus,
   IdGenerator,
+  LocationGateway,
+  LocationPermission,
+  NearbyGymsFinder,
   NutritionPlanRepository,
   ProgressPhotoRepository,
   ProgressPhotoUploader,
   SetLogRepository,
+  SignInOutcome,
+  SignUpOutcome,
   WorkoutSyncGateway,
 } from "../ports";
 
@@ -155,6 +164,69 @@ export class InMemoryAssessments implements AssessmentRepository {
         .sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime())[0] ??
       null
     );
+  }
+}
+
+/**
+ * GPS falso: `position` null simula aparelho sem fix; `onRequest` é a
+ * resposta do "diálogo" de permissão.
+ */
+export class FakeLocation implements LocationGateway {
+  requests = 0;
+
+  constructor(
+    public current: LocationPermission,
+    public position: GeoPoint | null,
+    public onRequest: LocationPermission = current,
+  ) {}
+
+  async permission() {
+    return this.current;
+  }
+  async requestPermission() {
+    this.requests++;
+    this.current = this.onRequest;
+    return this.current;
+  }
+  async currentPosition() {
+    if (!this.position) throw new LocationUnavailableError("sem fix de GPS");
+    return this.position;
+  }
+}
+
+export class FakeGymFinder implements NearbyGymsFinder {
+  searches: { center: GeoPoint; radiusMeters: number }[] = [];
+  failNext = false;
+
+  constructor(private readonly gyms: Gym[]) {}
+
+  async search(center: GeoPoint, radiusMeters: number) {
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error("overpass fora do ar");
+    }
+    this.searches.push({ center, radiusMeters });
+    return this.gyms;
+  }
+}
+
+/** Provedor de identidade falso: responde o que o cenário configurar. */
+export class FakeAuthGateway implements AuthGateway {
+  calls: { op: "signIn" | "signUp"; email: string }[] = [];
+  signInOutcome: SignInOutcome = { ok: true };
+  signUpOutcome: SignUpOutcome = { ok: true, needsConfirmation: false };
+  signedOut = false;
+
+  async signIn(email: string) {
+    this.calls.push({ op: "signIn", email });
+    return this.signInOutcome;
+  }
+  async signUp(email: string) {
+    this.calls.push({ op: "signUp", email });
+    return this.signUpOutcome;
+  }
+  async signOut() {
+    this.signedOut = true;
   }
 }
 

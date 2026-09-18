@@ -6,6 +6,7 @@ import {
   Distance,
   Duration,
   avgPaceMinPerKm,
+  geoPoint,
   haversineMeters,
 } from "../value-objects/geo";
 import { InvalidValueError } from "../errors";
@@ -99,5 +100,25 @@ describe("geo", () => {
     expect(
       avgPaceMinPerKm(Distance.fromMeters(10), Duration.fromSeconds(60)),
     ).toBeNull();
+  });
+
+  it("geoPoint aceita coordenada válida e guarda o timestamp do fix", () => {
+    expect(geoPoint(-19.92, -43.94, 1_000)).toEqual({
+      latitude: -19.92,
+      longitude: -43.94,
+      timestamp: 1_000,
+    });
+    expect(geoPoint(90, 180)).toEqual({ latitude: 90, longitude: 180 });
+  });
+
+  it.each([
+    [91, 0],
+    [-90.5, 0],
+    [0, 180.1],
+    [0, -181],
+    [Number.NaN, 0],
+    [0, Number.POSITIVE_INFINITY],
+  ])("geoPoint rejeita (%p, %p)", (lat, lng) => {
+    expect(() => geoPoint(lat, lng)).toThrow(InvalidValueError);
   });
 });

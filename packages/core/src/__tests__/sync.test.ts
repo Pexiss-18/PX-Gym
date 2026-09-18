@@ -69,7 +69,7 @@ describe("SyncPendingSetLogsUseCase", () => {
     expect(await repo.pending()).toHaveLength(0);
   });
 
-  it("falha no push mantém tudo pending (nada se perde)", async () => {
+  it("falha no push devolve error (≠ offline) e mantém tudo pending", async () => {
     const repo = await repoWithLogs(2);
     const gateway = new FakeSyncGateway();
     gateway.failNext = true;
@@ -79,8 +79,45 @@ describe("SyncPendingSetLogsUseCase", () => {
       new FakeConnectivity(true),
     );
 
-    await expect(sync.execute()).rejects.toThrow("network down");
+    expect(await sync.execute()).toEqual({
+      status: "error",
+      synced: 0,
+      removed: 0,
+    });
     expect(await repo.pending()).toHaveLength(2);
+  });
+
+  it("depois de uma falha, a próxima janela envia o que ficou", async () => {
+    const repo = await repoWithLogs(2);
+    const gateway = new FakeSyncGateway();
+    gateway.failNext = true;
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(true),
+    );
+
+    await sync.execute();
+    const retry = await sync.execute();
+
+    expect(retry).toEqual({ status: "synced", synced: 2, removed: 0 });
+    expect(await repo.pending()).toHaveLength(0);
+  });
+
+  it("reenviar o mesmo lote não duplica: ids do cliente são estáveis", async () => {
+    const repo = await repoWithLogs(2);
+    const gateway = new FakeSyncGateway();
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(true),
+    );
+
+    await sync.execute();
+    await sync.execute();
+
+    expect(gateway.pushed).toHaveLength(1);
+    expect(gateway.pushed[0]!.map((l) => l.id)).toEqual(["id-1", "id-2"]);
   });
 });
 
@@ -163,7 +200,39 @@ describe("sync de tombstones", () => {
       new FakeConnectivity(true),
     );
 
-    await expect(sync.execute()).rejects.toThrow("network down");
+    expect((await sync.execute()).status).toBe("error");
+    expect(await repo.deletedIds()).toEqual(["id-2"]);
+  });
+
+  it("push ok + delete falhando: conta o que subiu e segura o tombstone", async () => {
+    const repo = await repoWithTombstone();
+    await new RegisterSetUseCase(
+      repo,
+      new FixedClock(NOW),
+      { next: () => "id-3" },
+    ).execute({
+      exerciseId: "agachamento",
+      exerciseName: "Agachamento livre",
+      setNumber: 3,
+      targetReps: 6,
+      loadKg: 82.5,
+    });
+    const gateway = new FakeSyncGateway();
+    gateway.deleteSetLogs = async () => {
+      throw new Error("network down");
+    };
+    const sync = new SyncPendingSetLogsUseCase(
+      repo,
+      gateway,
+      new FakeConnectivity(true),
+    );
+
+    expect(await sync.execute()).toEqual({
+      status: "error",
+      synced: 1,
+      removed: 0,
+    });
+    expect(await repo.pending()).toHaveLength(0);
     expect(await repo.deletedIds()).toEqual(["id-2"]);
   });
 });
@@ -233,7 +302,29 @@ describe("SaveProgressPhotoUseCase", () => {
       new FakeConnectivity(true),
     );
 
-    expect(await sync.execute()).toBe(1);
+    expect(await sync.execute()).toEqual({
+      status: "done",
+      uploaded: 1,
+      failed: 1,
+    });
     expect(await photos.pendingUpload()).toHaveLength(1);
+  });
+
+  it("sync de fotos offline não tenta upload", async () => {
+    const { photos, uploader, useCase } = deps(false);
+    await useCase.execute({ userId: "u", localUri: "file:///a.jpg" });
+
+    const sync = new SyncPendingPhotosUseCase(
+      photos,
+      uploader,
+      new FakeConnectivity(false),
+    );
+
+    expect(await sync.execute()).toEqual({
+      status: "offline",
+      uploaded: 0,
+      failed: 0,
+    });
+    expect(uploader.uploads).toBe(0);
   });
 });

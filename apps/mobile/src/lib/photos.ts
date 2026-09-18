@@ -3,6 +3,7 @@ import * as Crypto from "expo-crypto";
 import {
   SaveProgressPhotoUseCase,
   SyncPendingPhotosUseCase,
+  type PhotoSyncResult,
   type ProgressPhoto,
   type ProgressPhotoUploader,
 } from "@px/core";
@@ -62,12 +63,15 @@ const syncPendingPhotosUseCase = new SyncPendingPhotosUseCase(
   netInfoConnectivity,
 );
 
-/** Reenvia fotos pendentes sem propagar falha (mesmo contrato do sync de séries). */
-export async function trySyncPhotos(): Promise<number> {
+/**
+ * Reenvia fotos pendentes sem propagar falha (mesmo contrato do sync de
+ * séries). null = a rodada nem começou (erro inesperado, ex.: SQLite).
+ */
+export async function trySyncPhotos(): Promise<PhotoSyncResult | null> {
   try {
     return await syncPendingPhotosUseCase.execute();
   } catch {
-    return 0;
+    return null;
   }
 }
 

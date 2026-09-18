@@ -3,17 +3,14 @@ import { Alert, Pressable, Text, View } from "react-native";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import Constants from "expo-constants";
-import { and, eq, ne } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { LogOut, Menu, RefreshCw } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { db } from "@/db";
-import { progressPhotos, setLogs } from "@/db/schema";
 import { useAuth } from "@/lib/auth-context";
 import { trySyncPhotos } from "@/lib/photos";
+import { usePendingSync } from "@/lib/use-local-data";
 import { trySyncSetLogs } from "@/lib/workout";
 
 /**
@@ -24,25 +21,7 @@ export default function ConfiguracoesScreen() {
   const navigation = useNavigation();
   const { session, signOut } = useAuth();
 
-  const { data: unsyncedSets } = useLiveQuery(
-    db
-      .select({ status: setLogs.syncStatus })
-      .from(setLogs)
-      .where(ne(setLogs.syncStatus, "synced")),
-  );
-  const { data: pendingPhotos } = useLiveQuery(
-    db
-      .select({ id: progressPhotos.id })
-      .from(progressPhotos)
-      .where(eq(progressPhotos.syncStatus, "pending")),
-  );
-
-  const pendingSets =
-    unsyncedSets?.filter((r) => r.status === "pending").length ?? 0;
-  const pendingRemovals =
-    unsyncedSets?.filter((r) => r.status === "deleted").length ?? 0;
-  const pendingUploads = pendingPhotos?.length ?? 0;
-  const allSynced = pendingSets + pendingRemovals + pendingUploads === 0;
+  const pending = usePendingSync();
 
   const [syncing, setSyncing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -53,9 +32,9 @@ export default function ConfiguracoesScreen() {
     setFeedback(null);
     try {
       const result = await trySyncSetLogs(session.user.id);
-      const photosSent = await trySyncPhotos();
+      const photos = await trySyncPhotos();
 
-      if (result.status === "offline" && photosSent === 0) {
+      if (result.status === "offline" && photos?.status === "offline") {
         setFeedback(
           "Sem conexão agora — tudo fica guardado no aparelho e sobe sozinho quando a rede voltar.",
         );
@@ -65,7 +44,19 @@ export default function ConfiguracoesScreen() {
       if (result.synced > 0) parts.push(`${result.synced} série(s) enviada(s)`);
       if (result.removed > 0)
         parts.push(`${result.removed} remoção(ões) aplicada(s)`);
-      if (photosSent > 0) parts.push(`${photosSent} foto(s) enviada(s)`);
+      if (photos && photos.uploaded > 0)
+        parts.push(`${photos.uploaded} foto(s) enviada(s)`);
+
+      // Havia rede, mas o servidor recusou ou não respondeu: não é "sem conexão".
+      const failed =
+        result.status === "error" || photos === null || photos.failed > 0;
+      if (failed) {
+        parts.push(
+          parts.length === 0
+            ? "O servidor não respondeu agora — o que falta continua guardado no aparelho e tenta de novo sozinho"
+            : "o resto fica pra próxima tentativa",
+        );
+      }
       setFeedback(parts.length > 0 ? parts.join(" · ") : "Tudo em dia.");
     } finally {
       setSyncing(false);
@@ -124,7 +115,7 @@ export default function ConfiguracoesScreen() {
             Sincronização
           </Text>
           <GlassCard>
-            {allSynced ? (
+            {pending.allSynced ? (
               <View className="flex-row items-center gap-2">
                 <View className="h-2 w-2 rounded-full bg-volt" />
                 <Text className="font-sans text-sm text-paper">
@@ -133,14 +124,14 @@ export default function ConfiguracoesScreen() {
               </View>
             ) : (
               <View className="gap-2">
-                <SyncRow label="Séries aguardando envio" count={pendingSets} />
+                <SyncRow label="Séries aguardando envio" count={pending.sets} />
                 <SyncRow
                   label="Remoções aguardando envio"
-                  count={pendingRemovals}
+                  count={pending.removals}
                 />
                 <SyncRow
                   label="Fotos aguardando upload"
-                  count={pendingUploads}
+                  count={pending.photos}
                 />
               </View>
             )}

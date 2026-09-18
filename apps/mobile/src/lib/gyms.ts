@@ -4,6 +4,7 @@ import {
   type GeoPoint,
   type NearbyGymsFinder,
 } from "@px/core";
+import { ExpoLocationGateway } from "./location";
 
 /*
  * Busca de academias. Fonte ativa: OpenStreetMap via Overpass API — grátis,
@@ -142,4 +143,5 @@ export class GooglePlacesGymFinder implements NearbyGymsFinder {
 
 export const findNearbyGymsUseCase = new FindNearbyGymsUseCase(
   new OverpassGymFinder(),
+  new ExpoLocationGateway(),
 );

@@ -7,6 +7,26 @@ export type GeoPoint = {
   timestamp?: number;
 };
 
+/**
+ * GeoPoint validado — é por aqui que coordenada vinda de sensor ou de API
+ * entra no domínio. Latitude em [-90, 90], longitude em [-180, 180].
+ */
+export function geoPoint(
+  latitude: number,
+  longitude: number,
+  timestamp?: number,
+): GeoPoint {
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    throw new InvalidValueError(`Latitude inválida: ${latitude}`);
+  }
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new InvalidValueError(`Longitude inválida: ${longitude}`);
+  }
+  return timestamp === undefined
+    ? { latitude, longitude }
+    : { latitude, longitude, timestamp };
+}
+
 const EARTH_RADIUS_M = 6371008.8;
 
 /** Distância haversine entre dois pontos, em metros. */

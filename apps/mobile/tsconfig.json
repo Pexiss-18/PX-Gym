@@ -17,5 +17,17 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
+  ],
+  // Mesma lista do expo/tsconfig.base (um "exclude" aqui substitui o de lá)
+  // + os testes, que têm tsconfig próprio com os tipos de Jest e Node.
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js",
+    "android",
+    "ios",
+    "dist",
+    "**/__tests__/**"
   ]
 }

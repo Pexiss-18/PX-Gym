@@ -52,6 +52,11 @@ export class SaveProgressPhotoUseCase {
   }
 }
 
+export type PhotoSyncResult =
+  | { status: "offline"; uploaded: 0; failed: 0 }
+  /** failed > 0: essas fotos continuam pending pra próxima rodada. */
+  | { status: "done"; uploaded: number; failed: number };
+
 /** Reenvia fotos pendentes quando a conexão volta. */
 export class SyncPendingPhotosUseCase {
   constructor(
@@ -60,20 +65,22 @@ export class SyncPendingPhotosUseCase {
     private readonly connectivity: ConnectivityStatus,
   ) {}
 
-  async execute(): Promise<number> {
-    if (!(await this.connectivity.isOnline())) return 0;
+  async execute(): Promise<PhotoSyncResult> {
+    if (!(await this.connectivity.isOnline())) {
+      return { status: "offline", uploaded: 0, failed: 0 };
+    }
 
     const pending = await this.photos.pendingUpload();
-    let synced = 0;
+    let uploaded = 0;
     for (const photo of pending) {
       try {
         const remotePath = await this.uploader.upload(photo);
         await this.photos.markUploaded(photo.id, remotePath);
-        synced++;
+        uploaded++;
       } catch {
         // tenta as demais; esta fica pra próxima rodada
       }
     }
-    return synced;
+    return { status: "done", uploaded, failed: pending.length - uploaded };
   }
 }

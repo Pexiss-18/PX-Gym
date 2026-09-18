@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  AppState,
+  Linking,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
-import * as Location from "expo-location";
 import { CloudOff, MapPin, Menu, Navigation } from "lucide-react-native";
 import { colors } from "@px/tokens";
-import type { GeoPoint, NearbyGym } from "@px/core";
+import type { FindNearbyGymsResult } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { GymMap } from "@/components/gym-map";
@@ -19,72 +25,48 @@ function formatDistance(meters: number): string {
   return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
 }
 
-type SearchState =
-  | { status: "locating" }
-  | { status: "error"; reason: "location" | "search" }
-  | { status: "ready"; center: GeoPoint; gyms: NearbyGym[] };
-
-function toPoint(position: Location.LocationObject): GeoPoint {
-  return {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-  };
-}
+type ScreenState = { status: "searching" } | FindNearbyGymsResult;
 
 /**
- * Posição do usuário com plano B: um fix novo pode simplesmente não sair
- * (GPS frio, ambiente fechado, emulador) e aí `getCurrentPositionAsync`
- * estoura. Pra um raio de 4 km a última posição conhecida serve igual, então
- * ela vale mais que uma tela de erro — sem limite de idade de propósito.
- */
-async function resolveCenter(): Promise<GeoPoint> {
-  try {
-    return toPoint(
-      await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      }),
-    );
-  } catch (error) {
-    const lastKnown = await Location.getLastKnownPositionAsync();
-    if (!lastKnown) throw error;
-    return toPoint(lastKnown);
-  }
-}
-
-/**
- * Academias perto do usuário: busca via Overpass/OSM; mapa Apple Maps no iOS
- * e MapLibre+OSM no Android (GymMap resolve por extensão de plataforma).
+ * Academias perto do usuário. A tela só desenha estados: permissão, GPS (com
+ * fallback pra última posição conhecida) e busca no Overpass/OSM ficam no
+ * FindNearbyGymsUseCase + ExpoLocationGateway. Mapa Apple Maps no iOS e
+ * MapLibre+OSM no Android (GymMap resolve por extensão de plataforma).
  */
 export default function AcademiasScreen() {
   const navigation = useNavigation();
-  const [permission, requestPermission] = Location.useForegroundPermissions();
-  const [state, setState] = useState<SearchState>({ status: "locating" });
+  const [state, setState] = useState<ScreenState>({ status: "searching" });
 
-  const search = useCallback(async () => {
-    setState({ status: "locating" });
-
-    let center: GeoPoint;
+  const search = useCallback(async (askPermission: boolean) => {
+    setState({ status: "searching" });
     try {
-      center = await resolveCenter();
+      setState(
+        await findNearbyGymsUseCase.execute({
+          radiusMeters: RADIUS_METERS,
+          askPermission,
+        }),
+      );
     } catch {
-      setState({ status: "error", reason: "location" });
-      return;
-    }
-
-    try {
-      const gyms = await findNearbyGymsUseCase.execute({
-        center,
-        radiusMeters: RADIUS_METERS,
-      });
-      setState({ status: "ready", center, gyms });
-    } catch {
-      setState({ status: "error", reason: "search" });
+      // O caso de uso já devolve falha como resultado; isto é a última rede de
+      // proteção pra tela nunca ficar presa no "buscando".
+      setState({ status: "search-failed" });
     }
   }, []);
 
+  // Abrir a tela só consulta a permissão; o diálogo do sistema espera o toque.
   useEffect(() => {
-    if (permission?.granted) void search();
-  }, [permission?.granted, search]);
+    void search(false);
+  }, [search]);
+
+  // Quem liberou a localização nas configurações do sistema volta pra tela já
+  // com a busca rodando.
+  useEffect(() => {
+    if (state.status !== "needs-permission") return;
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next === "active") void search(false);
+    });
+    return () => sub.remove();
+  }, [state.status, search]);
 
   return (
     <Screen bottomInset={24}>
@@ -103,7 +85,7 @@ export default function AcademiasScreen() {
         </Pressable>
       </View>
 
-      {!permission ? null : !permission.granted ? (
+      {state.status === "needs-permission" ? (
         <GlassCard className="items-center py-10">
           <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
             <Navigation size={24} color={colors.fogMuted} />
@@ -112,43 +94,53 @@ export default function AcademiasScreen() {
             Acesso à localização
           </Text>
           <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-            Sua posição é usada só pra encontrar academias num raio de{" "}
-            {RADIUS_METERS / 1000} km — nada é gravado nem compartilhado.
+            {state.blocked
+              ? "A localização está bloqueada pro Px GYM. Libere nas configurações do aparelho e volte aqui."
+              : `Sua posição é usada só pra encontrar academias num raio de ${
+                  RADIUS_METERS / 1000
+                } km — nada é gravado nem compartilhado.`}
           </Text>
           <View className="mt-5 w-full px-6">
-            <PillButton onPress={requestPermission}>
-              Permitir localização
-            </PillButton>
+            {state.blocked ? (
+              <PillButton onPress={() => void Linking.openSettings()}>
+                Abrir configurações
+              </PillButton>
+            ) : (
+              <PillButton onPress={() => void search(true)}>
+                Permitir localização
+              </PillButton>
+            )}
           </View>
         </GlassCard>
-      ) : state.status === "locating" ? (
+      ) : state.status === "searching" ? (
         <View className="items-center py-16">
           <ActivityIndicator color={colors.voltLime} />
           <Text className="mt-3 font-sans text-sm text-fog">
             Procurando academias por perto…
           </Text>
         </View>
-      ) : state.status === "error" ? (
+      ) : state.status === "location-unavailable" ||
+        state.status === "search-failed" ? (
         <GlassCard className="items-center py-10">
           <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
-            {state.reason === "location" ? (
+            {state.status === "location-unavailable" ? (
               <Navigation size={24} color={colors.fogMuted} />
             ) : (
               <CloudOff size={24} color={colors.fogMuted} />
             )}
           </View>
           <Text className="mt-4 font-sans-semibold text-base text-paper">
-            {state.reason === "location"
+            {state.status === "location-unavailable"
               ? "Não achamos sua localização"
               : "Não deu pra buscar agora"}
           </Text>
           <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-            {state.reason === "location"
+            {state.status === "location-unavailable"
               ? "Ligue o GPS e vá pra um lugar mais aberto."
               : "Confira sua internet e tente de novo."}
           </Text>
           <View className="mt-5 w-full px-6">
-            <PillButton onPress={() => void search()}>
+            <PillButton onPress={() => void search(false)}>
               Tentar de novo
             </PillButton>
           </View>

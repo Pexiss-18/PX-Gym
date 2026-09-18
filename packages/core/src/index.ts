@@ -5,6 +5,7 @@ export * from "./value-objects/load";
 export * from "./value-objects/macro";
 export * from "./value-objects/body-fat";
 export * from "./value-objects/geo";
+export * from "./value-objects/email";
 
 export * from "./entities/set-log";
 export * from "./entities/workout";
@@ -29,3 +30,4 @@ export * from "./use-cases/save-progress-photo";
 export * from "./use-cases/generate-nutrition-plan";
 export * from "./use-cases/record-cardio-session";
 export * from "./use-cases/find-nearby-gyms";
+export * from "./use-cases/auth";

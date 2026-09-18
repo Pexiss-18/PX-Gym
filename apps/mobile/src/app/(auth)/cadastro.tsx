@@ -14,23 +14,22 @@ export default function CadastroScreen() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   async function handleSubmit() {
-    if (password.length < 6) {
-      setError("A senha precisa ter pelo menos 6 caracteres.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("As senhas não conferem.");
-      return;
-    }
     setLoading(true);
     setError(null);
-    const { error: err } = await signUp(email.trim(), password);
-    if (err) {
-      setError(err);
+    // Regras de senha/e-mail moram no SignUpUseCase (@px/core).
+    const result = await signUp(email, password, confirm);
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+    } else if (result.confirmationSent) {
+      // Sem sessão ainda: o Supabase espera o clique no link do e-mail.
+      setConfirmationSent(true);
       setLoading(false);
     }
+    // conta já com sessão: o Stack.Protected do root troca de área sozinho
   }
 
   return (
@@ -76,6 +75,13 @@ export default function CadastroScreen() {
 
             {error ? (
               <Text className="font-sans text-sm text-protein">{error}</Text>
+            ) : null}
+
+            {confirmationSent ? (
+              <Text className="font-sans text-sm text-volt">
+                Conta criada! Enviamos um link de confirmação pro seu e-mail —
+                depois de confirmar, é só entrar com sua senha.
+              </Text>
             ) : null}
 
             <View className="mt-2">

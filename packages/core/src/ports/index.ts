@@ -97,6 +97,50 @@ export interface NearbyGymsFinder {
   search(center: GeoPoint, radiusMeters: number): Promise<Gym[]>;
 }
 
+/**
+ * Estado da permissão de localização em primeiro plano. "blocked" = negada
+ * sem poder perguntar de novo; só as configurações do sistema resolvem.
+ */
+export type LocationPermission =
+  | "granted"
+  | "undetermined"
+  | "denied"
+  | "blocked";
+
+/** Gateway do GPS do aparelho (expo-location no mobile, fake nos testes). */
+export interface LocationGateway {
+  /** Consulta a permissão sem abrir diálogo nenhum. */
+  permission(): Promise<LocationPermission>;
+  /** Abre o diálogo do sistema — só chamar a partir de um gesto do usuário. */
+  requestPermission(): Promise<LocationPermission>;
+  /** Posição do usuário; lança LocationUnavailableError se não houver fix. */
+  currentPosition(): Promise<GeoPoint>;
+}
+
+/** Por que o provedor de autenticação recusou a operação. */
+export type AuthFailure =
+  | "invalid-credentials"
+  | "email-not-confirmed"
+  | "email-taken"
+  | "weak-password"
+  | "rate-limited"
+  | "network"
+  | "unknown";
+
+export type SignInOutcome = { ok: true } | { ok: false; reason: AuthFailure };
+
+export type SignUpOutcome =
+  | { ok: true; needsConfirmation: boolean }
+  | { ok: false; reason: AuthFailure };
+
+/** Gateway do provedor de identidade (Supabase Auth no packages/db). */
+export interface AuthGateway {
+  signIn(email: string, password: string): Promise<SignInOutcome>;
+  signUp(email: string, password: string): Promise<SignUpOutcome>;
+  /** Encerra a sessão local — mesmo sem rede pra revogar no provedor. */
+  signOut(): Promise<void>;
+}
+
 export interface CardioSessionRepository {
   save(session: CardioSession): Promise<void>;
   listByUser(userId: string): Promise<CardioSession[]>;

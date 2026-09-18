@@ -34,14 +34,16 @@ export function syncUseCaseFor(userId: string): SyncPendingSetLogsUseCase {
 }
 
 /**
- * Dispara um sync sem propagar falha — offline ou erro de rede deixam os
- * registros pending pra próxima tentativa (foreground/reconexão).
+ * Dispara um sync sem propagar falha — offline ou erro do backend deixam os
+ * registros pending pra próxima tentativa (foreground/reconexão). O use case
+ * já devolve "error" pra falha do backend; o catch cobre o inesperado (ex.:
+ * leitura do SQLite).
  */
 export async function trySyncSetLogs(userId: string): Promise<SyncResult> {
   try {
     return await syncUseCaseFor(userId).execute();
   } catch {
-    return { status: "offline", synced: 0, removed: 0 };
+    return { status: "error", synced: 0, removed: 0 };
   }
 }
 

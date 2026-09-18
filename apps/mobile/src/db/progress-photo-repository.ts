@@ -3,7 +3,8 @@ import { ProgressPhoto, type ProgressPhotoRepository } from "@px/core";
 import type { Db } from "./index";
 import { progressPhotos, type ProgressPhotoLocalRow } from "./schema";
 
-function toEntity(row: ProgressPhotoLocalRow): ProgressPhoto {
+/** Linha do SQLite → entidade do domínio. Exportado pros hooks de useLiveQuery. */
+export function rowToProgressPhoto(row: ProgressPhotoLocalRow): ProgressPhoto {
   return ProgressPhoto.restore({
     id: row.id,
     userId: row.userId,
@@ -37,7 +38,7 @@ export class DrizzleProgressPhotoRepository implements ProgressPhotoRepository {
       .from(progressPhotos)
       .where(eq(progressPhotos.syncStatus, "pending"))
       .orderBy(progressPhotos.takenAt);
-    return rows.map(toEntity);
+    return rows.map(rowToProgressPhoto);
   }
 
   async markUploaded(id: string, remotePath: string): Promise<void> {
@@ -53,6 +54,6 @@ export class DrizzleProgressPhotoRepository implements ProgressPhotoRepository {
       .from(progressPhotos)
       .where(eq(progressPhotos.userId, userId))
       .orderBy(desc(progressPhotos.takenAt));
-    return rows.map(toEntity);
+    return rows.map(rowToProgressPhoto);
   }
 }

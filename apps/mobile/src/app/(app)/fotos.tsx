@@ -2,16 +2,13 @@ import { Pressable, Text, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import { Image } from "expo-image";
-import { desc, eq } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Camera, ImageIcon, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/lib/auth-context";
-import { db } from "@/db";
-import { progressPhotos } from "@/db/schema";
+import { useProgressPhotos } from "@/lib/use-local-data";
 
 function formatDay(ms: Date): string {
   return ms.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -21,17 +18,7 @@ function formatDay(ms: Date): string {
 export default function FotosScreen() {
   const navigation = useNavigation();
   const { session } = useAuth();
-  const userId = session?.user.id ?? "";
-
-  const { data } = useLiveQuery(
-    db
-      .select()
-      .from(progressPhotos)
-      .where(eq(progressPhotos.userId, userId))
-      .orderBy(desc(progressPhotos.takenAt)),
-    [userId],
-  );
-  const photos = data ?? [];
+  const photos = useProgressPhotos(session?.user.id ?? "");
 
   return (
     <Screen bottomInset={24}>

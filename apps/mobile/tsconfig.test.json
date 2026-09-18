@@ -1,0 +1,15 @@
+{
+  // Typecheck dos testes de adapters (o jest só transpila). Separado do
+  // tsconfig do app pra que os globais de Jest/Node não vazem pras telas.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "src/**/__tests__/**/*.ts",
+    "src/types/**/*.d.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}
