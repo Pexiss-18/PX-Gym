@@ -1,0 +1,284 @@
+<!-- ============ 26 · DDD ============ -->
+<section class="slide" data-sec="DDD">
+  <div class="head tight">
+    <h1>DDD — aggregates e value objects</h1>
+    <p class="sub">A ordem de construção de qualquer funcionalidade nova: domínio → caso de uso → adapter → tela. Nunca começando pelo schema nem pela tela.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:17%"><col style="width:26%"><col style="width:22%"><col></colgroup>
+      <thead><tr><th>Aggregate root</th><th>Value objects</th><th>Repository</th><th>Gateways envolvidos</th></tr></thead>
+      <tbody>
+        <tr><td><b>SetLog</b></td><td class="m">Load (×2), SyncStatus</td><td class="m">SetLogRepository</td><td class="m">WorkoutSyncGateway, ConnectivityStatus, Clock, IdGenerator</td></tr>
+        <tr><td><b>ProgressPhoto</b></td><td class="m">UploadSyncStatus</td><td class="m">ProgressPhotoRepository</td><td class="m">ProgressPhotoUploader, ConnectivityStatus</td></tr>
+        <tr><td><b>Workout</b> <span class="mono">+ Exercise</span></td><td class="m">PlannedSet, WorkoutProgress</td><td class="m">WorkoutRepository</td><td class="m">—</td></tr>
+        <tr><td><b>BodyAssessment</b></td><td class="m">ExtractedAssessment, AssessmentMeasurement, Weight, BodyFatPct</td><td class="m">AssessmentRepository</td><td class="m">—</td></tr>
+        <tr><td><b>NutritionPlan</b></td><td class="m">MacroTarget, MicroTarget, Macro</td><td class="m">NutritionPlanRepository</td><td class="m">NutritionPlanGenerator</td></tr>
+        <tr><td><b>Gym</b> <span class="mono">read model</span></td><td class="m">GeoPoint, Distance</td><td class="m">consulta descartável</td><td class="m">NearbyGymsFinder, LocationGateway</td></tr>
+      </tbody>
+    </table>
+    <div class="legend" style="margin-top:10px;padding-top:10px">
+      <ul class="marks dense" style="gap:8px">
+        <li><b>Por que <code class="mono">SetLog</code> é raiz sozinho</b> <span>e não parte de um agregado “Treino”: cada série é registrada, sincronizada e apagada individualmente, offline, com id próprio. Um agregado maior obrigaria a regravar o treino inteiro a cada toque.</span></li>
+        <li><b>Valor inválido não entra no domínio.</b> <span><code class="mono">Load.fromKg</code> aceita 0–1000 kg em passos de 2,5; <code class="mono">geoPoint</code> valida a faixa da coordenada vinda do sensor; <code class="mono">Email.parse</code> normaliza. Fora disso, lança <code class="mono">InvalidValueError</code>.</span></li>
+        <li><b>Linguagem ubíqua.</b> <span>Série, carga, progressão, descanso, sequência, avaliação, plano. Nenhum <code class="mono">Manager</code>, nenhum <code class="mono">Helper</code>.</span></li>
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 27 · clean architecture ============ -->
+<section class="slide" data-sec="Clean Architecture">
+  <div class="head tight">
+    <h1>Clean Architecture — estrutura de camadas</h1>
+    <p class="sub">O padrão propõe <code class="mono">src/{domain, application, adapters, infra}</code> dentro de um app. Aqui as camadas viram pacotes.</p>
+  </div>
+  <div class="body"><div class="cols g55">
+    <div class="panel">
+      <p class="code"><i>packages/core/src/</i>
+  <b>entities/</b>          SetLog, ProgressPhoto, Workout…
+  <b>value-objects/</b>     Load, GeoPoint, Email, Macro
+  <b>services/</b>          cálculos puros de progressão
+  <b>ports/index.ts</b>     <u>todas</u> as interfaces
+  <b>use-cases/</b>         RegisterSet, SyncPending…
+  <b>testing/fakes.ts</b>   ports em memória
+
+<i>packages/db/src/</i>
+  <b>client.ts</b>          Supabase + LargeSecureStore
+  <b>auth-gateway.ts</b>    <u>implementa</u> AuthGateway
+  <b>repositories/</b>      avaliações, plano nutricional
+
+<i>apps/mobile/src/</i>
+  <b>app/</b>               telas Expo Router
+  <b>db/</b>                schema Drizzle + repositórios
+  <b>lib/</b>               gateways nativos, hooks,
+                    <u>composition roots</u></p>
+    </div>
+    <div class="panel">
+      <ul class="marks dense" style="gap:13px">
+        <li><b>O domínio roda em Node puro.</b> <span>Nenhum import de <code class="mono">expo-*</code>, <code class="mono">drizzle-orm</code> ou <code class="mono">@supabase/supabase-js</code> atravessa a fronteira de <code class="mono">packages/core</code> — e isso é conferido por um <code class="mono">grep</code>, não por disciplina.</span></li>
+        <li><b>Um único lugar onde SQLite e Supabase se encontram.</b> <span>Os <i>composition roots</i>. A tela não sabe qual adapter está por trás do caso de uso, e o caso de uso não sabe que existe SQLite.</span></li>
+        <li><b>Telas não fazem SQL.</b> <span>Leitura reativa vive em <code class="mono">lib/use-*.ts</code>; leitura remota, em <code class="mono">lib/remote.ts</code>. A única exceção é o layout raiz, que aplica as migrations no boot.</span></li>
+        <li><b>O que a estrutura dispensa.</b> <span>Não há <code class="mono">infra/sync/background-task.ts</code>: nenhum requisito exige sincronizar com o app fechado, então a camada não existe. Estrutura vazia também é dívida.</span></li>
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 28 · TDD ============ -->
+<section class="slide" data-sec="TDD">
+  <div class="head tight">
+    <h1>TDD — pirâmide de testes</h1>
+    <p class="sub">Ciclo <i>red → green → refactor</i>, de dentro para fora. Nenhum nível precisa de emulador, aparelho, rede ou projeto Supabase no ar.</p>
+  </div>
+  <div class="body"><div class="cols g55">
+    <div class="panel flush">
+      <table class="t compact">
+        <colgroup><col style="width:7%"><col style="width:33%"><col></colgroup>
+        <thead><tr><th>#</th><th>Nível</th><th>Técnica</th></tr></thead>
+        <tbody>
+          <tr><td class="id">1</td><td>Domínio</td><td class="m">Objeto puro, zero mock: <code>Load</code>, <code>Email</code>, progressão, sequência</td></tr>
+          <tr><td class="id">2</td><td>Caso de uso</td><td class="m"><b>Fakes em memória</b> dos ports: repositório, sync, localização, rede</td></tr>
+          <tr><td class="id">3</td><td>Gateway / adapter</td><td class="m"><code>jest.mock</code> em expo-location e NetInfo; client Supabase falso com os erros reais do SDK</td></tr>
+          <tr><td class="id">4</td><td>Repositório</td><td class="m">SQLite real em memória com <b>as mesmas migrations</b> do app</td></tr>
+          <tr><td class="id">5</td><td>Motor de sincronização</td><td class="m">Offline, erro, reenvio, idempotência, tombstones e sucesso parcial</td></tr>
+          <tr><td class="id">6</td><td class="m">Componente / tela</td><td class="m">Testing Library, depois de resolvido o conflito de dependências do SDK 57</td></tr>
+          <tr><td class="id">7</td><td class="m">Ponta a ponta</td><td class="m">Maestro no emulador: login, série offline, reconectar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <ul class="marks dense" style="gap:9px">
+        <li><b>O teste mais importante do projeto</b> <span>é o do estado misto: o tombstone some das leituras, mas continua visível para o sync, e a carga anterior ignora a série apagada. É o diagrama de objetos virando massa de teste.</span></li>
+        <li><b>Offline tem teste dedicado.</b> <span>Conectividade falsa nos casos de uso e NetInfo mockado no adapter, inclusive no caso ambíguo em que o sistema não sabe dizer se há internet.</span></li>
+        <li><b>Câmera e GPS reais ficam de fora.</b> <span>O GPS entra pelo gateway com <code class="mono">expo-location</code> mockado; a câmera depende do preview, que é interface, e é validada à mão. Isso fica registrado como desvio, não escondido.</span></li>
+        <li><b>Rodar tudo é um comando por pacote,</b> <span>e <code class="mono">npm run typecheck</code> cobre o app e os testes juntos.</span></li>
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 29 · rastreabilidade ============ -->
+<section class="slide" data-sec="Rastreabilidade">
+  <div class="head tight">
+    <h1>Rastreabilidade — requisito, caso de uso, teste</h1>
+    <p class="sub">Cada requisito de prioridade alta precisa terminar em um teste que falharia se a regra sumisse. Amostra da matriz completa.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:7%"><col style="width:9%"><col style="width:28%"><col></colgroup>
+      <thead><tr><th>RF</th><th>UC</th><th>Control / adapter</th><th>Teste de aceitação</th></tr></thead>
+      <tbody>
+        <tr><td class="id">RF01</td><td class="idq">UC01</td><td class="m">SignInUseCase, SupabaseAuthGateway</td><td class="m">Sem rede, o login <b>não</b> diz que a senha está errada — diz que o servidor não respondeu</td></tr>
+        <tr><td class="id">RF02</td><td class="idq">UC02</td><td class="m">SignUpUseCase</td><td class="m">Senha curta, e-mail em uso e o caso <i>confirmation-sent</i>, que não pode deixar o botão carregando</td></tr>
+        <tr><td class="id">RF07</td><td class="idq">UC07</td><td class="m">RegisterSetUseCase, DrizzleSetLogRepository</td><td class="m">Grava e recupera a série; id do cliente preservado</td></tr>
+        <tr><td class="id">RF08</td><td class="idq">UC08</td><td class="m">lastLoadKgForExercise</td><td class="m">A carga anterior ignora tombstones</td></tr>
+        <tr><td class="id">RF10</td><td class="idq">UC10/21</td><td class="m">UnregisterSetUseCase, deleteSetLogs</td><td class="m">O delete remoto filtra pelos ids <b>e</b> pelo dono</td></tr>
+        <tr><td class="id">RF11</td><td class="idq">UC08</td><td class="m">computeLoadProgression</td><td class="m">Agrupamento por dia, carga máxima, volume e recorde</td></tr>
+        <tr><td class="id">RF18</td><td class="idq">UC17/18</td><td class="m">FindNearbyGymsUseCase, ExpoLocationGateway</td><td class="m">Ranking por distância, permissão bloqueada, fallback de GPS e coordenada inválida</td></tr>
+        <tr><td class="id">RF19</td><td class="idq">UC20–22</td><td class="m">SyncPendingSetLogsUseCase</td><td class="m">Ordem pendentes → exclusões; falha no delete segura o tombstone</td></tr>
+        <tr><td class="id">RF20</td><td class="idq">UC19</td><td class="m">SyncResult</td><td class="m">Falha no envio devolve <code>error</code>, que é diferente de <code>offline</code></td></tr>
+        <tr><td class="id">RNF01</td><td class="idq">—</td><td class="m">Conectividade falsa e NetInfo mockado</td><td class="m">Nenhuma requisição é feita offline; nada se perde</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 30 · cronograma ============ -->
+<section class="slide" data-sec="Cronograma">
+  <div class="head tight">
+    <h1>Cronograma — 60 horas-aula</h1>
+    <p class="sub">Cada etapa entrega uma fatia vertical utilizável, do domínio até a tela. Nenhuma etapa entrega só camada.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:5%"><col style="width:22%"><col><col style="width:8%"></colgroup>
+      <thead><tr><th>#</th><th>Etapa</th><th>O que entrega</th><th>Horas</th></tr></thead>
+      <tbody>
+        <tr><td class="idq">0</td><td>Setup</td><td class="m">Monorepo com workspaces, app Expo, SQLite + Drizzle, projeto Supabase e schema inicial</td><td class="id">6h</td></tr>
+        <tr><td class="idq">1</td><td>Domínio compartilhado</td><td class="m">Entidades, value objects, ports e fakes de teste em <code>packages/core</code>; adapters remotos em <code>packages/db</code></td><td class="id">5h</td></tr>
+        <tr><td class="idq">2</td><td>Autenticação</td><td class="m">Entrar, criar conta, sair; sessão cifrada e rota protegida que abre offline</td><td class="id">5h</td></tr>
+        <tr><td class="idq">3</td><td>Treino offline-first</td><td class="m">Registrar e desmarcar série, carga anterior, delta de progressão, cronômetro de descanso</td><td class="id">10h</td></tr>
+        <tr><td class="idq">4</td><td>Sincronização</td><td class="m">Envio de pendentes, propagação de exclusões, gatilhos de rede e de primeiro plano, contagem de pendências</td><td class="id">7h</td></tr>
+        <tr><td class="idq">5</td><td>Telas com dados reais</td><td class="m">Painel do dia, sequência de treinos, curva de progressão, avaliações e metas de macros</td><td class="id">7h</td></tr>
+        <tr><td class="idq">6</td><td>Fotos de progresso</td><td class="m">Câmera, armazenamento permanente, upload ao bucket e galeria com estado de sync</td><td class="id">6h</td></tr>
+        <tr><td class="idq">7</td><td>QR do aparelho</td><td class="m">Leitor de QR e resolução do exercício, com aviso quando o código não pertence ao treino do dia</td><td class="id">3h</td></tr>
+        <tr><td class="idq">8</td><td>Academias por perto</td><td class="m">Permissão e leitura de GPS, consulta ao Overpass, mapa no iOS e no Android, lista por distância</td><td class="id">6h</td></tr>
+        <tr><td class="idq">9</td><td>Testes, build e documentação</td><td class="m">Pirâmide de testes fechada, APK de preview via EAS, documentação UML e de arquitetura</td><td class="id">5h</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Risco principal e plano B:</b> se o mapa do Android consumir mais do que as 6 horas previstas, a etapa 8 entrega primeiro a lista ordenada por distância — que já resolve o requisito — e o mapa entra depois. Nenhuma outra etapa depende dela.</p>
+  </div></div>
+</section>
+
+<!-- ============ 31 · fechamento ============ -->
+<section class="slide" data-sec="Fechamento">
+  <div class="head tight">
+    <h1>O que este documento cobre</h1>
+    <p class="sub">Quinze itens de especificação, todos ancorados no mesmo modelo — e cada diagrama citando as classes, arquivos e testes correspondentes.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <ul class="checks">
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Requisitos funcionais e não funcionais, com as categorias obrigatórias de mobile</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Diagrama de objetos validando o estado parcialmente sincronizado</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Casos de uso com atores, herança, <code class="mono">include</code> e <code class="mono">extend</code></li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Diagramas de estado do ciclo de sync e do ciclo de negócio</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Descrição textual com fluxo sem rede e de permissão negada</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Fronteira, controle e entidade por caso de uso, com dois tipos de fronteira</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Classes com composição, agregação, herança e atributos de sincronização</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Sequência dos casos de uso principais, incluindo o fluxo assíncrono</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Persistência local e remota decidida entidade por entidade</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Atividades cobrindo decisão de permissão e de conectividade</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Modelo entidade-relacionamento local e remoto, com RLS documentada</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Componentes com camadas e gateways de câmera, GPS, auth e sync</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Mapeamento DDD de aggregates, value objects, repositories e gateways</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Camadas da Clean Architecture sem SDK ou ORM vazando para o domínio</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Plano de testes TDD por caso de uso e matriz de rastreabilidade</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Cronograma de 60 horas-aula com risco e plano B declarados</li>
+    </ul>
+    <p class="note" style="margin-top:18px"><b>A ideia que sustenta todas as decisões:</b> o dado nasce no pior lugar possível para um app — em pé, entre séries, sem rede. Se o aparelho for a fonte da verdade durante o treino, o resto da arquitetura é consequência: id gerado no cliente, envio idempotente, tombstone em vez de delete, e um domínio que roda em Node puro para poder ser testado sem nada ligado.</p>
+  </div></div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /stage -->
+<div class="track"><div class="fill" id="fill"></div></div>
+<div class="hint" id="hint">
+  <span><kbd>→</kbd>avançar</span><span><kbd>O</kbd>visão geral</span><span><kbd>F</kbd>tela cheia</span>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var wrap = document.getElementById('slides');
+  var fill = document.getElementById('fill');
+  var hint = document.getElementById('hint');
+  var total = slides.length;
+  var i = 0;
+  var over = false;
+
+  // bottom rail, built from data-sec so the markup stays clean
+  slides.forEach(function(s, n){
+    var r = document.createElement('div');
+    r.className = 'rail';
+    r.innerHTML = '<span class="doc">Px GYM &nbsp;·&nbsp; Proposta de especificação e arquitetura mobile</span>'
+      + '<span class="sep"></span>'
+      + '<span class="sec">' + (s.dataset.sec || '') + '</span>'
+      + '<span class="pg"><b>' + String(n + 1).padStart(2, '0') + '</b> / ' + String(total).padStart(2, '0') + '</span>';
+    s.appendChild(r);
+  });
+
+  function fit(){
+    if (over) { wrap.style.transform = ''; return; }
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    wrap.style.transform = 'scale(' + k + ')';
+  }
+
+  function show(n, push){
+    i = Math.max(0, Math.min(total - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle('is-active', k === i); });
+    fill.style.transform = 'scaleX(' + ((i) / (total - 1)) + ')';
+    if (push !== false) history.replaceState(null, '', '#' + (i + 1));
+    if (over) slides[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function setOverview(on){
+    over = on;
+    stage.classList.toggle('overview', on);
+    fit();
+    if (on) slides[i].scrollIntoView({ block: 'center' });
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter'){
+      e.preventDefault(); if (over) setOverview(false); else show(i + 1);
+    } else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace'){
+      e.preventDefault(); show(i - 1);
+    } else if (k === 'Home'){ e.preventDefault(); show(0); }
+    else if (k === 'End'){ e.preventDefault(); show(total - 1); }
+    else if (k === 'o' || k === 'O'){ e.preventDefault(); setOverview(!over); }
+    else if (k === 'Escape'){ if (over) setOverview(false); }
+    else if (k === 'f' || k === 'F'){
+      e.preventDefault();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    }
+    hide();
+  });
+
+  slides.forEach(function(s, n){
+    s.addEventListener('click', function(e){
+      if (over){ show(n); setOverview(false); return; }
+      if (e.target.closest('a[data-go]')) return;
+      show(e.clientX > window.innerWidth * 0.36 ? i + 1 : i - 1);
+      hide();
+    });
+  });
+
+  document.querySelectorAll('a[data-go]').forEach(function(a){
+    a.setAttribute('tabindex', '0');
+    a.addEventListener('click', function(e){ e.stopPropagation(); show(parseInt(a.dataset.go, 10) - 1); });
+    a.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); show(parseInt(a.dataset.go, 10) - 1); }
+    });
+  });
+
+  var t = setTimeout(hide, 5200);
+  function hide(){ clearTimeout(t); hint.classList.add('gone'); }
+
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function(){
+    var n = parseInt(location.hash.slice(1), 10);
+    if (n) show(n - 1, false);
+  });
+
+  fit();
+  var start = parseInt(location.hash.slice(1), 10);
+  show(start ? start - 1 : 0, false);
+})();
+</script>
+</body>
+</html>

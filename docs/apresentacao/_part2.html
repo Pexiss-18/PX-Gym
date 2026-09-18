@@ -1,0 +1,248 @@
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.73 0.014 264 / 80%)"/></marker>
+  <marker id="arwv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.87 0.23 126 / 85%)"/></marker>
+  <marker id="tri" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0.8,1 L11,6 L0.8,11 z" fill="oklch(0.15 0.006 264)" stroke="oklch(0.73 0.014 264 / 70%)" stroke-width="1.1"/></marker>
+  <marker id="dia" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="11" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0.5,5 L6.5,1.2 L13,5 L6.5,8.8 z" fill="oklch(0.73 0.014 264 / 75%)"/></marker>
+  <marker id="diao" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="11" markerHeight="8" orient="auto-start-reverse">
+    <path d="M0.5,5 L6.5,1.2 L13,5 L6.5,8.8 z" fill="oklch(0.15 0.006 264)" stroke="oklch(0.73 0.014 264 / 70%)" stroke-width="1.1"/></marker>
+</defs></svg>
+
+<!-- ============ 01 · capa ============ -->
+<section class="slide cover" data-sec="Capa">
+  <div class="mark">
+    <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="oklch(0.2 0.008 264)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg></span>
+    <span class="wm">Px GYM</span>
+  </div>
+  <div class="head" style="margin:0">
+    <h1>Px&nbsp;GYM</h1>
+    <div class="rule"></div>
+    <p class="kicker">Proposta de especificação e arquitetura mobile — registro de treino <b style="color:oklch(0.97 0.004 264);font-weight:500">offline-first</b> com Expo/React&nbsp;Native, SQLite, Supabase e Clean Architecture.</p>
+  </div>
+  <div class="who">
+    <b>Paulo Rogério</b><em>·</em><span>Sistemas de Informação</span><em>·</em><span>CEFET-MG</span><em>·</em><span class="mono">2026</span>
+  </div>
+</section>
+
+<!-- ============ 02 · agenda ============ -->
+<section class="slide" data-sec="Agenda">
+  <div class="head tight">
+    <h1>Agenda</h1>
+    <p class="sub">Da razão de existir do app até o cronograma de construção, passando por toda a modelagem UML.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <nav class="agenda">
+      <a data-go="3"><span class="n">01</span><span class="l">Contexto e escopo</span></a>
+      <a data-go="19"><span class="n">07</span><span class="l">Objetos e diagramas de estado</span></a>
+      <a data-go="4"><span class="n">02</span><span class="l">Stack de referência</span></a>
+      <a data-go="22"><span class="n">08</span><span class="l">Fronteira, controle e entidade</span></a>
+      <a data-go="6"><span class="n">03</span><span class="l">Requisitos funcionais e não funcionais</span></a>
+      <a data-go="24"><span class="n">09</span><span class="l">Diagrama de sequência</span></a>
+      <a data-go="10"><span class="n">04</span><span class="l">Diagrama de casos de uso</span></a>
+      <a data-go="25"><span class="n">10</span><span class="l">Diagrama de atividades</span></a>
+      <a data-go="13"><span class="n">05</span><span class="l">Classes e persistência</span></a>
+      <a data-go="26"><span class="n">11</span><span class="l">Diagrama de componentes</span></a>
+      <a data-go="16"><span class="n">06</span><span class="l">Entidade-relacionamento e RLS</span></a>
+      <a data-go="27"><span class="n">12</span><span class="l">DDD, Clean Architecture, TDD e cronograma</span></a>
+    </nav>
+  </div></div>
+</section>
+
+<!-- ============ 03 · contexto ============ -->
+<section class="slide" data-sec="Contexto">
+  <div class="head">
+    <h1>Por que este aplicativo existe</h1>
+    <p class="sub">O problema não é falta de app de treino. É que o dado nasce no pior lugar possível para um app: em pé, entre séries, sem rede.</p>
+  </div>
+  <div class="body"><div class="cols g55">
+    <div class="panel">
+      <ul class="marks dense">
+        <li><b>Problema</b> — <span>o progresso de quem treina fica espalhado entre planilha, app de treino e app de dieta; a carga de cada série quase nunca é registrada no instante em que acontece.</span></li>
+        <li><b>Restrição</b> — <span>o uso real é em pé, uma mão, entre séries, com o Wi-Fi da academia caindo. Registrar não pode depender de rede.</span></li>
+        <li><b>Abordagem</b> — <span>Expo/React Native com SQLite no aparelho como fonte da verdade durante o treino e Supabase como destino eventual, nunca pré-requisito.</span></li>
+        <li><b>Método</b> — <span>UML + DDD + Clean Architecture + TDD, adaptados a um app offline-tolerante (skill <code class="mono">mobile-design-doc</code>).</span></li>
+      </ul>
+    </div>
+    <div class="panel flush">
+      <table class="t compact">
+        <colgroup><col style="width:33%"><col></colgroup>
+        <thead><tr><th>Decisão de partida</th><th>Resumo</th></tr></thead>
+        <tbody>
+          <tr><td>Fonte da verdade no treino</td><td class="m">SQLite do aparelho. O Supabase é destino eventual, nunca pré-requisito</td></tr>
+          <tr><td>Série imutável</td><td class="m">Corrigir carga é desmarcar e marcar de novo: sem <code>updated_at</code>, sem conflito de edição</td></tr>
+          <tr><td>Exclusão por tombstone</td><td class="m">A linha só some do aparelho depois de o servidor confirmar a remoção</td></tr>
+          <tr><td>Academias sem billing</td><td class="m">OpenStreetMap/Overpass no lugar do Google Places; MapLibre no Android</td></tr>
+          <tr><td>Um único papel</td><td class="m">Praticante individual: sem treinador, sem administrador, ninguém vê dado de outra pessoa</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 04 · stack ============ -->
+<section class="slide" data-sec="Stack">
+  <div class="head tight">
+    <h1>Stack tecnológico</h1>
+    <p class="sub">Tudo dentro do catálogo Expo, exceto o mapa do Android, e nenhum serviço que exija cartão de crédito.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:17%"><col style="width:40%"><col></colgroup>
+      <thead><tr><th>Camada</th><th>Escolha</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>Framework</td><td>Expo SDK 57 (managed) + React Native 0.86 + Expo Router 57</td><td class="m">Sem pastas <code>android/</code> e <code>ios/</code> versionadas</td></tr>
+        <tr><td>Estilo</td><td>NativeWind 4</td><td class="m">Mesmos tokens de design do app web</td></tr>
+        <tr><td>Persistência local</td><td>expo-sqlite + Drizzle ORM (<code>useLiveQuery</code>)</td><td class="m">Fonte da verdade do treino; a consulta reativa redesenha a tela</td></tr>
+        <tr><td>Backend / BaaS</td><td>Supabase — Postgres, Auth e Storage</td><td class="m">Destino da sincronização e dos dados produzidos no web</td></tr>
+        <tr><td>Câmera</td><td>expo-camera (<code>CameraView</code>)</td><td class="m">Foto de progresso e leitura do QR do aparelho da academia</td></tr>
+        <tr><td>Geolocalização</td><td>expo-location — primeiro plano, sob demanda</td><td class="m">Nunca em background; a posição nunca é persistida</td></tr>
+        <tr><td>Autenticação</td><td>Supabase Auth + expo-secure-store</td><td class="m">Sessão cifrada (<i>LargeSecureStore</i>): chave AES no Keychain/Keystore</td></tr>
+        <tr><td>Conectividade</td><td>NetInfo + AppState</td><td class="m">Gatilhos de sincronização — zero polling</td></tr>
+        <tr><td>Mapa</td><td>Apple Maps (iOS) · MapLibre + tiles OSM (Android)</td><td class="m">Sem billing no Google Cloud</td></tr>
+        <tr><td>Academias</td><td>OpenStreetMap via Overpass API</td><td class="m">Gratuito e sem chave de API</td></tr>
+        <tr><td>Testes</td><td>Jest (ts-jest) rodando em Node puro</td><td class="m">Domínio, casos de uso, adapters e SQLite real — sem emulador</td></tr>
+        <tr><td>Build</td><td>EAS Build (APK de preview) + Expo Go</td><td class="m">Distribuição para teste em aparelho físico</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 05 · escopo offline ============ -->
+<section class="slide" data-sec="Escopo">
+  <div class="head">
+    <h1>O que funciona sem rede</h1>
+    <p class="sub">O grau de offline não é uniforme: cada tela foi classificada por um critério único, e é esse critério que gera metade da arquitetura.</p>
+  </div>
+  <div class="body">
+    <div class="cols two">
+      <div class="panel">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--volt);flex:none"></span>
+          <span style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Offline — o que o usuário produz</span>
+        </div>
+        <ul class="marks dense" style="gap:9px">
+          <li>Executar o treino do dia e ver o progresso de séries</li>
+          <li>Registrar série com a carga usada e ver a carga anterior</li>
+          <li>Desmarcar série e ver a curva de progressão de carga</li>
+          <li>Cronômetro de descanso</li>
+          <li>Tirar foto de progresso e navegar pela galeria</li>
+          <li>Abrir o app já logado, direto na área autenticada</li>
+        </ul>
+        <p class="note"><b>Critério:</b> perder esse dado é perder o treino. Ele nasce no aparelho, então o aparelho manda.</p>
+      </div>
+      <div class="panel">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="width:10px;height:10px;border-radius:50%;background:oklch(0.73 0.014 264);flex:none"></span>
+          <span style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Online por decisão — o que ele consulta</span>
+        </div>
+        <ul class="marks dense" style="gap:9px">
+          <li>Avaliações físicas e status de processamento</li>
+          <li>Composição corporal (peso, gordura, massa magra)</li>
+          <li>Metas de calorias e macronutrientes</li>
+          <li>Academias por perto (mapa e lista por distância)</li>
+        </ul>
+        <p class="note"><b>Critério:</b> o dado nasce em outro lugar (no app web, no OpenStreetMap) e muda lá. Cachear seria mostrar uma verdade velha.</p>
+        <p class="note" style="margin-top:9px">Nenhuma dessas telas pode ficar com <i>spinner</i> infinito: sem rede, todas mostram erro explicado com ação de repetir (RNF02).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 · RF 1/2 ============ -->
+<section class="slide" data-sec="Requisitos">
+  <div class="head tight">
+    <h1>Requisitos funcionais <span style="color:var(--fog-dim);font-weight:500">(1/2)</span></h1>
+    <p class="sub">Formato <code class="mono">RFxx — verbo + objeto + condição</code>. A coluna UC liga cada requisito ao caso de uso correspondente.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:6%"><col><col style="width:9%"><col style="width:13%"><col style="width:8%"></colgroup>
+      <thead><tr><th>ID</th><th>Descrição</th><th>Prior.</th><th>Ator / origem</th><th>UC</th></tr></thead>
+      <tbody>
+        <tr><td class="id">RF01</td><td>Autenticar por e-mail e senha, recusando e-mail malformado e senha vazia <b>sem ir à rede</b></td><td><span class="pill hi">Alta</span></td><td class="m">Visitante</td><td class="idq">UC01</td></tr>
+        <tr><td class="id">RF02</td><td>Criar conta validando e-mail, senha de 6+ caracteres e confirmação; avisar quando o provedor exigir confirmação por e-mail</td><td><span class="pill hi">Alta</span></td><td class="m">Visitante</td><td class="idq">UC02</td></tr>
+        <tr><td class="id">RF03</td><td>Encerrar a sessão com confirmação, inclusive sem rede</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC03</td></tr>
+        <tr><td class="id">RF04</td><td>Manter a sessão entre aberturas, abrindo direto na área logada, mesmo offline</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC01</td></tr>
+        <tr><td class="id">RF05</td><td>Exibir o painel do dia: sequência de dias treinados, faixa dos últimos 7 dias, treino do dia e resumo corporal</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC04</td></tr>
+        <tr><td class="id">RF06</td><td>Listar os exercícios do treino do dia com o progresso de séries de cada um</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC05</td></tr>
+        <tr><td class="id">RF07</td><td>Registrar série concluída com a carga usada, gravando no aparelho <b>sem depender de rede</b></td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC07</td></tr>
+        <tr><td class="id">RF08</td><td>Mostrar a carga anterior do exercício e o delta de progressão ao registrar a série</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC08</td></tr>
+        <tr><td class="id">RF09</td><td>Iniciar o cronômetro de descanso ao concluir a série e cancelá-lo se a série for desmarcada</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC09/10</td></tr>
+        <tr><td class="id">RF10</td><td>Permitir desmarcar série; se já estiver na nuvem, propagar a exclusão no próximo sync</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC10</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 07 · RF 2/2 ============ -->
+<section class="slide" data-sec="Requisitos">
+  <div class="head tight">
+    <h1>Requisitos funcionais <span style="color:var(--fog-dim);font-weight:500">(2/2)</span></h1>
+    <p class="sub">Vinte requisitos no total. Onze deles são de prioridade alta e sustentam o fluxo que precisa funcionar em modo avião.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:6%"><col><col style="width:9%"><col style="width:13%"><col style="width:8%"></colgroup>
+      <thead><tr><th>ID</th><th>Descrição</th><th>Prior.</th><th>Ator / origem</th><th>UC</th></tr></thead>
+      <tbody>
+        <tr><td class="id">RF11</td><td>Exibir a curva de progressão de carga do exercício, atualizada ao vivo a cada série</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC08</td></tr>
+        <tr><td class="id">RF12</td><td>Abrir a tela do exercício ao ler o QR do aparelho (<code>pxgym://treino/&lt;id&gt;</code>), avisando quando o código não pertence ao treino do dia</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC06</td></tr>
+        <tr><td class="id">RF13</td><td>Capturar foto de progresso e guardá-la no armazenamento permanente <b>antes</b> de qualquer envio</td><td><span class="pill hi">Alta</span></td><td class="m">Praticante</td><td class="idq">UC11/12</td></tr>
+        <tr><td class="id">RF14</td><td>Exibir a galeria a partir dos arquivos locais, indicando quais já estão na nuvem</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC13</td></tr>
+        <tr><td class="id">RF15</td><td>Exibir a evolução de peso, gordura e massa magra e a variação das medidas entre avaliações</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC14</td></tr>
+        <tr><td class="id">RF16</td><td>Listar as avaliações físicas com o status de processamento</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC15</td></tr>
+        <tr><td class="id">RF17</td><td>Exibir as metas de calorias e macronutrientes do plano nutricional vigente</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC16</td></tr>
+        <tr><td class="id">RF18</td><td>Encontrar academias num raio de 4 km da localização atual, em mapa e lista ordenada por distância</td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC17/18</td></tr>
+        <tr><td class="id">RF19</td><td>Sincronizar séries, exclusões e fotos pendentes ao abrir, ao reconectar e ao voltar ao primeiro plano</td><td><span class="pill hi">Alta</span></td><td class="m">Sist. de Sincronização</td><td class="idq">UC20–22</td></tr>
+        <tr><td class="id">RF20</td><td>Mostrar quantos registros estão pendentes e permitir sincronizar manualmente, distinguindo <b>“sem conexão”</b> de <b>“servidor não respondeu”</b></td><td><span class="pill mid">Média</span></td><td class="m">Praticante</td><td class="idq">UC19</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 08 · RNF 1/2 ============ -->
+<section class="slide" data-sec="Requisitos">
+  <div class="head tight">
+    <h1>Requisitos não funcionais <span style="color:var(--fog-dim);font-weight:500">(1/2)</span></h1>
+    <p class="sub">Todas as categorias obrigatórias de app mobile, cada uma com critério verificável.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:8%"><col style="width:19%"><col><col style="width:9%"></colgroup>
+      <thead><tr><th>ID</th><th>Categoria</th><th>Descrição e critério mensurável</th><th>Prior.</th></tr></thead>
+      <tbody>
+        <tr><td class="id">RNF01</td><td>Offline-first</td><td class="m">Em modo avião, 100% das ações do fluxo de treino funcionam e ficam gravadas; nada se perde ao fechar o app</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF02</td><td>Offline-first</td><td class="m">Telas que dependem de rede nunca ficam em <i>spinner</i> infinito: mostram erro explicado, com ação de repetir</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF03</td><td>Permissões</td><td class="m">Câmera e GPS pedidos só na tela que os usa e só após um toque, nunca no <i>cold start</i>. Toda tela de permissão tem saída e oferece “Abrir configurações” quando bloqueada</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF04</td><td>Privacidade</td><td class="m">Localização só em primeiro plano, leitura pontual, precisão <code>Balanced</code>. A posição não é gravada no SQLite nem enviada ao Supabase</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF05</td><td>Bateria e dados</td><td class="m">Sincronização só por gatilhos: abertura, reconexão, primeiro plano e botão manual. Zero polling. A galeria lê arquivo local, gastando 0 byte de rede para rolar</td><td><span class="pill mid">Média</span></td></tr>
+        <tr><td class="id">RNF06</td><td>Armazenamento local</td><td class="m">Fotos no diretório de documentos, nunca no cache, que o sistema pode limpar. Tombstones apagados após a confirmação remota</td><td><span class="pill low">Baixa</span></td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 09 · RNF 2/2 ============ -->
+<section class="slide" data-sec="Requisitos">
+  <div class="head tight">
+    <h1>Requisitos não funcionais <span style="color:var(--fog-dim);font-weight:500">(2/2)</span></h1>
+    <p class="sub">As categorias que ainda não se aplicam ao Px GYM também estão avaliadas, com a justificativa registrada.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:8%"><col style="width:19%"><col><col style="width:9%"></colgroup>
+      <thead><tr><th>ID</th><th>Categoria</th><th>Descrição e critério mensurável</th><th>Prior.</th></tr></thead>
+      <tbody>
+        <tr><td class="id">RNF07</td><td>Sincronização</td><td class="m">UUID gerado no cliente e <code>upsert onConflict: id</code>: reenviar N vezes equivale a enviar 1. Ordem fixa, pendentes antes de exclusões; falha mantém tudo pendente</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF08</td><td>Segurança</td><td class="m">Sessão cifrada em AES-256 com a chave no Keychain ou Keystore. RLS em toda tabela remota e no Storage. Nenhuma chave <code>service_role</code> no aplicativo</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF09</td><td>Compatibilidade</td><td class="m">Android e iOS nas versões mínimas do Expo SDK 57. A tela de Academias no Android exige o APK, porque o MapLibre não existe no Expo Go</td><td><span class="pill mid">Média</span></td></tr>
+        <tr><td class="id">RNF10</td><td>Usabilidade</td><td class="m">Estado de sincronização sempre visível. Falha nunca abre modal no meio do treino. Carga ajustada por stepper de 2,5 kg, sem teclado</td><td><span class="pill hi">Alta</span></td></tr>
+        <tr><td class="id">RNF11</td><td>Desempenho</td><td class="m">Marcar série não espera rede: grava no SQLite e a tela se redesenha pela consulta reativa. Meta de resposta ao toque abaixo de 100 ms</td><td><span class="pill mid">Média</span></td></tr>
+        <tr><td class="id">RNF12</td><td>Testabilidade</td><td class="m">O domínio não importa nenhum pacote externo, o que é verificável por <code>grep</code>, e roda em Node puro. Todo caso de uso tem teste com fakes em memória</td><td><span class="pill hi">Alta</span></td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>

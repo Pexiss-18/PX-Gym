@@ -1,0 +1,240 @@
+<!-- ============ 09 · atores ============ -->
+<section class="slide" data-sec="Casos de uso">
+  <div class="head">
+    <h1>Atores do sistema</h1>
+    <p class="sub">Uma pessoa só usa o app, mas quatro sistemas externos e um ator de tempo participam dos casos de uso.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:24%"><col style="width:24%"><col></colgroup>
+      <thead><tr><th>Ator</th><th>Tipo</th><th>Papel</th></tr></thead>
+      <tbody>
+        <tr><td><b>Visitante</b></td><td class="m">Pessoa</td><td class="m">Quem abre o app sem sessão. Só alcança Entrar e Criar conta.</td></tr>
+        <tr><td><b>Praticante</b></td><td class="m">Pessoa, <i>herda de Visitante</i></td><td class="m">Visitante com sessão válida. Herda os casos de uso de autenticação; na prática o roteador esconde login e cadastro enquanto a sessão existe.</td></tr>
+        <tr><td><b>Sistema de Sincronização</b></td><td class="m">Ator de tempo / background</td><td class="m">Disparado pela abertura da área logada, pela reconexão (NetInfo) e pelo retorno ao primeiro plano (AppState).</td></tr>
+        <tr><td><b>Supabase</b></td><td class="m">Sistema externo</td><td class="m">Auth, Postgres e Storage.</td></tr>
+        <tr><td><b>OpenStreetMap</b> <span class="mono">Overpass API</span></td><td class="m">Sistema externo</td><td class="m">Fonte das academias por perto. Consulta descartável: nada é persistido.</td></tr>
+        <tr><td><b>Aplicação Web Px GYM</b></td><td class="m">Sistema externo</td><td class="m">Onde o laudo em PDF é enviado e o plano nutricional é gerado. O mobile só lê o resultado.</td></tr>
+        <tr><td><b>Câmera do dispositivo</b></td><td class="m">Hardware</td><td class="m">Foto de progresso e leitura do QR do aparelho da academia.</td></tr>
+        <tr><td><b>GPS do dispositivo</b></td><td class="m">Hardware</td><td class="m">Posição atual para a busca de academias, só em primeiro plano.</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 10 · casos de uso A ============ -->
+<section class="slide" data-sec="Casos de uso">
+  <div class="head tight">
+    <h1>Casos de uso — conta e treino</h1>
+    <p class="sub">O treino inteiro fica do lado offline. A autenticação é o único ponto do fluxo diário que fala com o Supabase em tempo real.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 432" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de casos de uso de conta e treino">
+      <!-- actors -->
+      <g class="ln">
+        <circle cx="70" cy="70" r="7" fill="none"/><path d="M70,77 V94 M59,84 H81 M70,94 L62,108 M70,94 L78,108"/>
+      </g>
+      <text class="tl" x="70" y="126" text-anchor="middle">Visitante</text>
+      <g class="ln">
+        <circle cx="70" cy="282" r="7" fill="none"/><path d="M70,289 V306 M59,296 H81 M70,306 L62,320 M70,306 L78,320"/>
+      </g>
+      <text class="tl" x="70" y="338" text-anchor="middle">Praticante</text>
+      <path class="ln" d="M70,268 V142" marker-end="url(#tri)"/>
+      <text class="ts" x="80" y="208">herda de</text>
+
+      <!-- associations -->
+      <g class="ln">
+        <path d="M84,74 L150,61"/><path d="M84,80 L150,115"/><path d="M84,86 L150,169"/>
+        <path d="M84,290 L150,229"/><path d="M84,294 L150,283"/><path d="M84,300 L150,337"/><path d="M84,306 L150,391"/>
+      </g>
+
+      <!-- col 1 -->
+      <rect class="nd" x="150" y="40" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="58">UC01</text><text class="tl" x="204" y="58">Entrar</text>
+      <rect class="nd" x="150" y="94" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="112">UC02</text><text class="tl" x="204" y="112">Criar conta</text>
+      <rect class="nd" x="150" y="148" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="166">UC03</text><text class="tl" x="204" y="166">Sair da conta</text>
+
+      <rect class="nd-v" x="150" y="208" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="226">UC04</text><text class="tl" x="204" y="226">Ver painel do dia</text>
+      <text class="tk" x="164" y="240">LOCAL + REMOTO</text>
+      <rect class="nd-v" x="150" y="262" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="280">UC05</text><text class="tl" x="204" y="280">Executar treino do dia</text>
+      <circle cx="344" cy="283" r="4" class="fillv"/>
+      <rect class="nd-v" x="150" y="316" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="334">UC07</text><text class="tl" x="204" y="334">Registrar série</text>
+      <circle cx="344" cy="337" r="4" class="fillv"/>
+      <rect class="nd-v" x="150" y="370" width="210" height="42" rx="11"/>
+      <text class="tm" x="164" y="388">UC10</text><text class="tl" x="204" y="388">Desmarcar série</text>
+      <circle cx="344" cy="391" r="4" class="fillv"/>
+
+      <!-- col 2 -->
+      <rect class="nd" x="450" y="262" width="230" height="42" rx="11"/>
+      <text class="tm" x="464" y="280">UC06</text><text class="tl" x="504" y="280">Abrir exercício por QR</text>
+      <rect class="nd" x="450" y="316" width="230" height="42" rx="11"/>
+      <text class="tm" x="464" y="334">UC08</text><text class="tl" x="504" y="334">Calcular progressão</text>
+      <rect class="nd" x="450" y="370" width="230" height="42" rx="11"/>
+      <text class="tm" x="464" y="388">UC09</text><text class="tl" x="504" y="388">Iniciar descanso</text>
+
+      <path class="ln-d" d="M450,283 H366" marker-end="url(#arw)"/>
+      <text class="tk" x="408" y="274" text-anchor="middle">«EXTEND»</text>
+      <path class="ln-d" d="M366,337 H444" marker-end="url(#arw)"/>
+      <text class="tk" x="405" y="329" text-anchor="middle">«INCLUDE»</text>
+      <path class="ln-d" d="M362,352 L444,388" marker-end="url(#arw)"/>
+      <text class="tk" x="398" y="382" text-anchor="middle">«INCLUDE»</text>
+
+      <!-- externals -->
+      <rect class="nd-q" x="740" y="84" width="175" height="46" rx="12"/>
+      <text class="tk" x="756" y="102">SISTEMA EXTERNO</text>
+      <text class="tl" x="756" y="119">Supabase Auth</text>
+      <g class="ln"><path d="M360,61 L740,96"/><path d="M360,115 L740,106"/><path d="M360,169 L740,116"/></g>
+
+      <rect class="nd-q" x="740" y="262" width="175" height="46" rx="12"/>
+      <text class="tk" x="756" y="280">HARDWARE</text>
+      <text class="tl" x="756" y="297">Câmera</text>
+      <path class="ln" d="M680,283 H740"/>
+
+      <!-- notation key -->
+      <path class="ln-h" d="M960,44 H1136"/>
+      <text class="tk" x="960" y="66">NOTAÇÃO</text>
+      <path class="ln" d="M962,96 H1002"/>
+      <text class="tc" x="1014" y="100">associação ator–caso de uso</text>
+      <path class="ln-d" d="M962,132 H998" marker-end="url(#arw)"/>
+      <text class="tc" x="1014" y="136">«include» · «extend»</text>
+      <path class="ln" d="M962,168 H996" marker-end="url(#tri)"/>
+      <text class="tc" x="1014" y="172">herança entre atores</text>
+      <circle cx="972" cy="204" r="4.5" class="fillv"/>
+      <text class="tc" x="1014" y="208">funciona em modo avião</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 11 · casos de uso B ============ -->
+<section class="slide" data-sec="Casos de uso">
+  <div class="head tight">
+    <h1>Casos de uso — fotos, consultas e academias</h1>
+    <p class="sub">A foto é produzida no aparelho, então é offline. As quatro consultas nascem fora dele e permanecem online por decisão.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de casos de uso de fotos, consultas e academias">
+      <g class="ln">
+        <circle cx="70" cy="162" r="7" fill="none"/><path d="M70,169 V186 M59,176 H81 M70,186 L62,200 M70,186 L78,200"/>
+      </g>
+      <text class="tl" x="70" y="218" text-anchor="middle">Praticante</text>
+      <g class="ln">
+        <path d="M84,166 L150,45"/><path d="M84,168 L150,99"/><path d="M84,170 L150,153"/>
+        <path d="M84,176 L150,207"/><path d="M84,180 L150,261"/><path d="M84,186 L150,321"/>
+      </g>
+
+      <rect class="nd-v" x="150" y="24" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="42">UC11</text><text class="tl" x="204" y="42">Registrar foto de progresso</text>
+      <circle cx="354" cy="45" r="4" class="fillv"/>
+      <rect class="nd-v" x="150" y="78" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="96">UC13</text><text class="tl" x="204" y="96">Ver galeria de fotos</text>
+      <circle cx="354" cy="99" r="4" class="fillv"/>
+      <rect class="nd" x="150" y="132" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="150">UC14</text><text class="tl" x="204" y="150">Acompanhar corpo</text>
+      <rect class="nd" x="150" y="186" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="204">UC15</text><text class="tl" x="204" y="204">Consultar avaliações</text>
+      <rect class="nd" x="150" y="240" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="258">UC16</text><text class="tl" x="204" y="258">Consultar metas de macros</text>
+      <rect class="nd" x="150" y="300" width="220" height="42" rx="11"/>
+      <text class="tm" x="164" y="318">UC17</text><text class="tl" x="204" y="318">Encontrar academias</text>
+
+      <rect class="nd-v" x="470" y="24" width="210" height="42" rx="11"/>
+      <text class="tm" x="484" y="42">UC12</text><text class="tl" x="524" y="42">Capturar foto</text>
+      <path class="ln-d" d="M370,45 H464" marker-end="url(#arw)"/>
+      <text class="tk" x="417" y="36" text-anchor="middle">«INCLUDE»</text>
+
+      <rect class="nd-q" x="470" y="172" width="210" height="46" rx="12"/>
+      <text class="tk" x="486" y="190">SISTEMA EXTERNO</text>
+      <text class="tl" x="486" y="207">Aplicação Web Px GYM</text>
+      <text class="tk" x="575" y="164" text-anchor="middle">PRODUZ OS DADOS DE</text>
+      <g class="ln-d">
+        <path d="M470,182 L376,153" marker-end="url(#arw)"/>
+        <path d="M470,195 L376,207" marker-end="url(#arw)"/>
+        <path d="M470,208 L376,261" marker-end="url(#arw)"/>
+      </g>
+
+      <rect class="nd" x="470" y="300" width="210" height="42" rx="11"/>
+      <text class="tm" x="484" y="318">UC18</text><text class="tl" x="524" y="318">Capturar localização</text>
+      <path class="ln-d" d="M370,321 H464" marker-end="url(#arw)"/>
+      <text class="tk" x="417" y="312" text-anchor="middle">«INCLUDE»</text>
+
+      <rect class="nd-q" x="760" y="22" width="175" height="46" rx="12"/>
+      <text class="tk" x="776" y="40">HARDWARE</text>
+      <text class="tl" x="776" y="57">Câmera</text>
+      <path class="ln" d="M680,45 H760"/>
+
+      <rect class="nd-q" x="760" y="298" width="175" height="46" rx="12"/>
+      <text class="tk" x="776" y="316">HARDWARE</text>
+      <text class="tl" x="776" y="333">GPS</text>
+      <path class="ln" d="M680,321 H760"/>
+
+      <rect class="nd-q" x="760" y="360" width="175" height="46" rx="12"/>
+      <text class="tk" x="776" y="378">SISTEMA EXTERNO</text>
+      <text class="tl" x="776" y="395">OpenStreetMap</text>
+      <path class="ln" d="M330,342 V383 H760"/>
+
+      <path class="ln-h" d="M985,120 H1136"/>
+      <text class="tk" x="985" y="142">POR QUE NÃO CACHEAR</text>
+      <text class="tc" x="985" y="166">Laudo, plano e mapa mudam</text>
+      <text class="tc" x="985" y="184">fora do aparelho. Guardar</text>
+      <text class="tc" x="985" y="202">uma cópia seria mostrar</text>
+      <text class="tc" x="985" y="220">uma verdade velha — pior</text>
+      <text class="tc" x="985" y="238">do que mostrar um erro.</text>
+      <circle cx="997" cy="272" r="4.5" class="fillv"/>
+      <text class="tc" x="1018" y="276">funciona em modo avião</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 12 · sincronização + descrições ============ -->
+<section class="slide" data-sec="Casos de uso">
+  <div class="head tight">
+    <h1>Sincronização e casos de uso principais</h1>
+    <p class="sub">O ator de tempo que sobe as pendências, e o que cada caso de uso crítico promete quando tudo dá errado.</p>
+  </div>
+  <div class="body"><div class="cols g38">
+    <div class="panel flush">
+      <svg class="dg" viewBox="0 0 400 420" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de casos de uso de sincronização">
+        <g class="ln">
+          <circle cx="46" cy="46" r="7" fill="none"/><path d="M46,53 V70 M35,60 H57 M46,70 L38,84 M46,70 L54,84"/>
+        </g>
+        <text class="tl" x="46" y="102" text-anchor="middle">Praticante</text>
+        <rect class="nd" x="130" y="26" width="240" height="42" rx="11"/>
+        <text class="tm" x="144" y="44">UC19</text><text class="tl" x="184" y="44">Sincronizar agora</text>
+        <path class="ln" d="M60,50 H130"/>
+
+        <g class="ln">
+          <circle cx="46" cy="206" r="7" fill="none"/><path d="M46,213 V230 M35,220 H57 M46,230 L38,244 M46,230 L54,244"/>
+        </g>
+        <text class="tk" x="46" y="264" text-anchor="middle">ATOR DE TEMPO</text>
+        <text class="tl" x="46" y="282" text-anchor="middle">Sincronização</text>
+        <rect class="nd-v" x="130" y="186" width="240" height="42" rx="11"/>
+        <text class="tm" x="144" y="204">UC20</text><text class="tl" x="184" y="204">Sincronizar pendências</text>
+        <path class="ln" d="M60,210 H130"/>
+        <path class="ln-d" d="M250,68 V180" marker-end="url(#arw)"/>
+        <text class="tk" x="260" y="128">«INCLUDE»</text>
+
+        <rect class="nd" x="130" y="286" width="240" height="42" rx="11"/>
+        <text class="tm" x="144" y="304">UC21</text><text class="tl" x="184" y="304">Propagar exclusões</text>
+        <rect class="nd" x="130" y="346" width="240" height="42" rx="11"/>
+        <text class="tm" x="144" y="364">UC22</text><text class="tl" x="184" y="364">Enviar fotos pendentes</text>
+        <path class="ln-d" d="M180,228 V280" marker-end="url(#arw)"/>
+        <path class="ln-d" d="M180,228 V340" marker-end="url(#arw)"/>
+        <text class="tk" x="190" y="256">«INCLUDE»</text>
+      </svg>
+    </div>
+    <div class="panel">
+      <ul class="marks dense" style="gap:13px">
+        <li><b class="mono" style="color:var(--volt);font-size:13px">UC07</b> <b>Registrar série</b> — <span>grava no SQLite com id gerado no cliente, lê a carga anterior e dispara o descanso. Sem rede, o fluxo é <i>idêntico</i>: o registro fica pendente e sobe no próximo gatilho.</span></li>
+        <li><b class="mono" style="color:var(--volt);font-size:13px">UC10</b> <b>Desmarcar série</b> — <span>se nunca subiu, apaga a linha local; se já está na nuvem, vira tombstone. Em nenhum dos dois a série “ressuscita” na próxima leitura.</span></li>
+        <li><b class="mono" style="color:var(--volt);font-size:13px">UC11</b> <b>Registrar foto</b> — <span>o arquivo sai do cache da câmera para o diretório de documentos <i>antes</i> de qualquer upload; o cache o sistema pode limpar a qualquer momento.</span></li>
+        <li><b class="mono" style="color:var(--volt);font-size:13px">UC17</b> <b>Encontrar academias</b> — <span>consulta a permissão sem abrir diálogo; quatro fluxos alternativos previstos: permissão pendente, permissão bloqueada, sem fix de GPS e Overpass fora do ar.</span></li>
+        <li><b class="mono" style="color:var(--volt);font-size:13px">UC20</b> <b>Sincronizar pendências</b> — <span>pendentes primeiro, exclusões depois; uma trava impede duas rodadas simultâneas. Falha mantém tudo pendente e <b>nunca</b> abre modal no meio do treino.</span></li>
+      </ul>
+    </div>
+  </div></div>
+</section>

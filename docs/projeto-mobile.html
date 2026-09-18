@@ -1,0 +1,1076 @@
+<title>Px GYM — Documento de Projeto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper: oklch(0.988 0.002 264);
+  --paper-sunk: oklch(0.962 0.003 264);
+  --ink: oklch(0.23 0.012 264);
+  --ink-soft: oklch(0.45 0.012 264);
+  --ink-faint: oklch(0.60 0.010 264);
+  --rule: oklch(0.885 0.005 264);
+  --rule-strong: oklch(0.78 0.008 264);
+  --volt: oklch(0.87 0.23 126);
+  --volt-ink: oklch(0.46 0.135 132);
+  --volt-wash: oklch(0.87 0.23 126 / 18%);
+  --coral: oklch(0.62 0.17 32);
+
+  --sans: "Geist", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --page-w: 210mm;
+  --pad-x: 22mm;
+}
+
+*{ box-sizing: border-box; }
+
+html{ background: var(--paper-sunk); }
+
+body{
+  margin:0;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 10.5pt;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- page shell ---------- */
+
+.sheet{
+  width: min(var(--page-w), 100%);
+  margin: 0 auto;
+  background: var(--paper);
+  padding: 20mm var(--pad-x) 22mm;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+}
+.sheet + .sheet{ border-top: 1px solid var(--rule); }
+
+/* ---------- typography ---------- */
+
+h1,h2,h3,h4{ font-weight: 600; letter-spacing: -0.018em; line-height: 1.16; margin: 0; text-wrap: balance; }
+
+h2{
+  font-size: 21pt;
+  padding-bottom: 4mm;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 7mm;
+  display: flex;
+  align-items: baseline;
+  gap: 5mm;
+}
+h2 .n{
+  font-family: var(--mono);
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--volt-ink);
+  letter-spacing: 0;
+  flex: none;
+}
+
+h3{
+  font-size: 13pt;
+  margin: 9mm 0 3mm;
+  padding-left: 4mm;
+  border-left: 3px solid var(--volt);
+}
+h3:first-of-type{ margin-top: 0; }
+
+h4{
+  font-size: 10.5pt;
+  font-weight: 600;
+  margin: 6mm 0 2mm;
+  color: var(--ink);
+}
+
+p{ margin: 0 0 3.2mm; max-width: 72ch; }
+p.lead{ font-size: 11.5pt; line-height: 1.55; color: var(--ink-soft); }
+
+strong{ font-weight: 600; }
+em{ font-style: normal; color: var(--volt-ink); font-weight: 500; }
+
+code, .mono{ font-family: var(--mono); font-size: 0.895em; }
+code{
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.4mm 1.1mm;
+  white-space: nowrap;
+}
+
+ul{ margin: 0 0 3.5mm; padding-left: 0; list-style: none; max-width: 72ch; }
+li{ position: relative; padding-left: 6mm; margin-bottom: 1.6mm; }
+li::before{
+  content:"";
+  position:absolute;
+  left: 0.6mm; top: 2.05mm;
+  width: 2.4mm; height: 2.4mm;
+  background: var(--volt);
+  border: 0.6px solid var(--volt-ink);
+}
+ul.plain li::before{ background: var(--rule-strong); border-color: var(--rule-strong); }
+
+/* ---------- cover ---------- */
+
+.cover{ padding-top: 30mm; }
+
+.wordmark{
+  font-size: 46pt;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  margin: 0;
+}
+.wordmark .gym{
+  background: var(--volt-wash);
+  box-shadow: 0 0 0 2mm var(--volt-wash);
+  border-radius: 1mm;
+}
+
+.cover .tagline{
+  font-size: 15pt;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  font-weight: 400;
+  margin: 12mm 0 0;
+  max-width: 32ch;
+  letter-spacing: -0.01em;
+}
+
+.meta{
+  margin-top: 16mm;
+  border-top: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+.meta div{
+  border-bottom: 1px solid var(--rule);
+  padding: 3.2mm 0;
+}
+.meta div:nth-child(odd){ padding-right: 6mm; }
+.meta dt{
+  font-size: 8pt;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1mm;
+}
+.meta dd{ margin: 0; font-size: 10pt; }
+.meta dd.mono{ font-size: 9pt; line-height: 1.5; }
+
+.toc{ margin-top: 14mm; }
+.toc ol{ margin: 4mm 0 0; padding: 0; list-style: none; counter-reset: toc; }
+.toc li{
+  padding: 0 0 0 11mm;
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
+  line-height: 9mm;
+  position: relative;
+  font-size: 10.5pt;
+  font-weight: 500;
+}
+.toc li::before{
+  counter-increment: toc;
+  content: counter(toc);
+  font-family: var(--mono);
+  font-size: 9pt;
+  color: var(--volt-ink);
+  background: none;
+  border: none;
+  width: auto; height: auto;
+  left: 0; top: 0;
+}
+.toc li span{ color: var(--ink-faint); font-weight: 400; }
+
+.abstract{
+  margin-top: 14mm;
+  padding: 6mm 7mm;
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--volt);
+}
+.abstract p{ margin: 0; font-size: 10pt; color: var(--ink-soft); max-width: none; }
+
+/* ---------- tables ---------- */
+
+.table-wrap{ overflow-x: auto; margin: 4mm 0 6mm; }
+
+table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+  line-height: 1.45;
+}
+thead th{
+  text-align: left;
+  font-weight: 500;
+  font-size: 7.6pt;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 3mm 2mm 0;
+  border-bottom: 1.5px solid var(--ink);
+  vertical-align: bottom;
+}
+tbody td{
+  padding: 2.4mm 3mm 2.4mm 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+tbody tr:last-child td{ border-bottom: 1.5px solid var(--rule-strong); }
+td.mono, th.mono{ font-family: var(--mono); font-size: 8.2pt; }
+td.n{ text-align: right; padding-right: 0; }
+.col-narrow{ width: 22%; }
+.col-mid{ width: 30%; }
+
+.yes, .no, .part{
+  display: inline-block;
+  font-size: 7.6pt;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding: 0.6mm 2mm;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.yes{ background: var(--volt-wash); color: var(--volt-ink); border: 0.6px solid var(--volt-ink); }
+.no{ background: transparent; color: var(--ink-faint); border: 0.6px solid var(--rule-strong); }
+.part{ background: transparent; color: var(--coral); border: 0.6px solid var(--coral); }
+
+/* ---------- figures ---------- */
+
+figure{
+  margin: 5mm 0 7mm;
+  break-inside: avoid;
+}
+figcaption{
+  font-size: 8pt;
+  color: var(--ink-faint);
+  margin-top: 2.5mm;
+  padding-top: 2mm;
+  border-top: 1px solid var(--rule);
+  max-width: 78ch;
+}
+figcaption b{ color: var(--ink-soft); font-weight: 600; }
+
+figure svg{ display: block; width: 100%; height: auto; }
+
+.tree{
+  font-family: var(--mono);
+  font-size: 8.3pt;
+  line-height: 1.85;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  padding: 5mm 6mm;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.tree .c{ color: var(--ink-faint); }
+.tree .k{ color: var(--volt-ink); font-weight: 600; }
+
+pre.code{
+  font-family: var(--mono);
+  font-size: 8.3pt;
+  line-height: 1.7;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-strong);
+  padding: 4mm 5mm;
+  margin: 4mm 0 6mm;
+  overflow-x: auto;
+  white-space: pre;
+}
+pre.code .c{ color: var(--ink-faint); }
+pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
+
+.note{
+  margin: 5mm 0 6mm;
+  padding: 4mm 5mm;
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--ink);
+  font-size: 9.4pt;
+  color: var(--ink-soft);
+}
+.note p{ margin: 0; max-width: none; }
+.note p + p{ margin-top: 2.5mm; }
+.note b{ color: var(--ink); }
+
+.steps{ counter-reset: step; margin: 4mm 0 6mm; }
+.steps li{
+  padding-left: 9mm;
+  margin-bottom: 2.6mm;
+  font-size: 9.6pt;
+}
+.steps li::before{
+  counter-increment: step;
+  content: counter(step);
+  font-family: var(--mono);
+  font-size: 8pt;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--volt-wash);
+  border: none;
+  border-radius: 999px;
+  width: 5.2mm; height: 5.2mm;
+  line-height: 5.2mm;
+  text-align: center;
+  top: 0.8mm;
+  left: 0;
+}
+
+/* ---------- print ---------- */
+
+@page{
+  size: A4;
+  margin: 16mm 0;
+}
+
+@media print{
+  html, body{ background: #fff; }
+  .sheet{
+    width: 100%;
+    border: none;
+    padding: 0 var(--pad-x);
+    break-after: page;
+  }
+  .sheet:last-child{ break-after: auto; }
+  .cover{ padding-top: 18mm; }
+  h2, h3, h4{ break-after: avoid; }
+  figure, table, .note, .tree, pre.code{ break-inside: avoid; }
+  tr{ break-inside: avoid; }
+  *{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media (max-width: 680px){
+  :root{ --pad-x: 6mm; }
+  body{ font-size: 11pt; }
+  .wordmark{ font-size: 34pt; }
+  .cover .tagline{ font-size: 13pt; }
+  .meta{ grid-template-columns: 1fr; }
+  .meta div:nth-child(odd){ padding-right: 0; }
+}
+</style>
+
+<!-- ============================ COVER ============================ -->
+<section class="sheet cover">
+  <h1 class="wordmark">Px <span class="gym">GYM</span></h1>
+
+  <p class="tagline">Aplicativo mobile offline-first para registro de treino, composição corporal e nutrição.</p>
+
+  <dl class="meta">
+    <div>
+      <dt>Documento</dt>
+      <dd>Descrição de projeto — desenvolvimento mobile</dd>
+    </div>
+    <div>
+      <dt>Autores</dt>
+      <dd>Paulo Rogério<br>Assis Damasceno</dd>
+    </div>
+    <div>
+      <dt>Plataforma</dt>
+      <dd>Android e iOS (React Native / Expo)</dd>
+    </div>
+    <div>
+      <dt>Data</dt>
+      <dd>Agosto de 2026</dd>
+    </div>
+    <div>
+      <dt>Stack do app</dt>
+      <dd class="mono">Expo SDK 57 · React Native 0.86 · Expo Router 57<br>expo-sqlite + Drizzle ORM · NativeWind</dd>
+    </div>
+    <div>
+      <dt>Backend</dt>
+      <dd class="mono">Supabase (Postgres + Auth + Storage)<br>OpenStreetMap / Overpass API</dd>
+    </div>
+  </dl>
+
+  <div class="abstract">
+    <p>O Px GYM é usado no pior lugar possível para depender de rede: dentro da academia, entre uma série e outra, com uma mão só. Por isso o aplicativo foi construído com o banco local como fonte da verdade durante o treino — cada série marcada é gravada no SQLite do aparelho e só depois empurrada para o Supabase, quando houver conexão. Este documento descreve o escopo, a navegação, a estratégia offline-first, o backend, o uso de câmera e GPS e a arquitetura de código do projeto.</p>
+  </div>
+
+  <nav class="toc">
+    <ol>
+      <li>Visão geral e escopo</li>
+      <li>Interface e navegação <span>· Expo Router</span></li>
+      <li>Estratégia offline-first <span>· SQLite</span></li>
+      <li>Backend e sincronização <span>· Supabase</span></li>
+      <li>Integração com hardware e sensores</li>
+      <li>Arquitetura e padrões de código</li>
+    </ol>
+  </nav>
+</section>
+
+<!-- ============================ 1 ============================ -->
+<section class="sheet">
+  <h2><span class="n">01</span> Visão geral e escopo</h2>
+
+  <h3>Tema e objetivo</h3>
+  <p>O Px GYM reúne em um único aplicativo três informações que hoje vivem separadas na rotina de quem treina: <strong>o registro do treino</strong> (qual carga foi usada em cada série), <strong>a evolução da composição corporal</strong> (peso, percentual de gordura, massa magra, medidas) e <strong>as metas nutricionais</strong> (calorias e macronutrientes). O objetivo é que o usuário consiga responder “estou evoluindo?” em poucos toques e registrar a série do dia sem fricção.</p>
+
+  <p>O problema central não é apenas de organização, é de <em>contexto de uso</em>. O momento em que o dado precisa ser registrado — logo depois de terminar a série — é exatamente o momento em que o usuário está em pé, suado, com o celular em uma mão e, com frequência, sem sinal: sala de peso livre no subsolo, Wi-Fi da academia sobrecarregado, plano de dados no fim do mês. Um app que exija rede para salvar uma série simplesmente não é usável nesse cenário. Daí a decisão que organiza todo o resto do projeto: <strong>o registro do treino funciona 100% offline</strong>, e a nuvem é um destino eventual, nunca um pré-requisito.</p>
+
+  <p>Um segundo problema que o app resolve é a <strong>progressão de carga</strong>. Planilhas e apps genéricos guardam o histórico, mas obrigam o usuário a garimpar “quanto eu levantei da última vez?”. No Px GYM, a carga anterior de cada exercício é lida do banco local e mostrada junto ao campo de registro, e a curva de progressão daquele exercício é desenhada na mesma tela.</p>
+
+  <h3>Público-alvo</h3>
+  <p>O usuário final é o <strong>praticante individual de musculação</strong> que acompanha o próprio progresso: treina com regularidade, faz avaliação física periódica (a cada algumas semanas) e segue uma meta de macros. Ele é o único operador do sistema — não existe, nesta fase, papel de treinador, de nutricionista ou de administrador, e nenhum usuário enxerga dados de outro. Essa decisão de escopo aparece diretamente na segurança do backend: todas as tabelas têm Row Level Security ligada com política de dono (<code>auth.uid() = user_id</code>), conforme a seção 4.</p>
+
+  <p>O mesmo usuário, com a mesma conta, também acessa uma aplicação web complementar (Next.js) usada nos momentos de planejamento — é por lá que ele envia o PDF da avaliação física, revisa os dados extraídos e gera o plano nutricional. O aplicativo mobile <strong>consome</strong> esse resultado; ele não é o lugar de fazer upload de PDF nem de revisar laudo.</p>
+
+  <h3>Casos de uso principais</h3>
+  <p>A coluna “offline” indica o comportamento sem conexão — a justificativa de cada caso está na seção 3.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-mid">Caso de uso</th>
+          <th>O que o usuário faz</th>
+          <th style="width:16%">Offline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Entrar ou criar conta</td>
+          <td>Autentica com e-mail e senha; a sessão fica guardada cifrada no aparelho.</td>
+          <td><span class="part">só reabrir</span></td>
+        </tr>
+        <tr>
+          <td>Ver o dia</td>
+          <td>Abre o app e vê sequência de dias treinados, faixa da semana, treino do dia e resumo corporal.</td>
+          <td><span class="part">parcial</span></td>
+        </tr>
+        <tr>
+          <td>Executar o treino do dia</td>
+          <td>Percorre a lista de exercícios e acompanha quantas séries já fechou.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Registrar uma série</td>
+          <td>Ajusta a carga, marca a série concluída e dispara o cronômetro de descanso.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Desmarcar uma série</td>
+          <td>Corrige um toque errado; o descanso é cancelado e o registro é removido.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Ver progressão de carga</td>
+          <td>Consulta a curva de carga do exercício e a comparação com a sessão anterior.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Abrir exercício pelo QR</td>
+          <td>Aponta a câmera para o QR code do aparelho e cai direto na tela daquele exercício.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Registrar foto de progresso</td>
+          <td>Tira a foto pela câmera do app; ela é salva no aparelho na hora.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Ver a galeria de fotos</td>
+          <td>Revisa as fotos por data e vê quais já subiram para a nuvem.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+        <tr>
+          <td>Acompanhar composição corporal</td>
+          <td>Vê gráficos de peso, gordura e massa magra e a tabela de medidas por avaliação.</td>
+          <td><span class="no">não</span></td>
+        </tr>
+        <tr>
+          <td>Consultar metas de macros</td>
+          <td>Vê calorias-alvo e proteína/carboidrato/gordura do plano vigente.</td>
+          <td><span class="no">não</span></td>
+        </tr>
+        <tr>
+          <td>Encontrar academias por perto</td>
+          <td>Usa o GPS para listar e mapear academias num raio de 4 km.</td>
+          <td><span class="no">não</span></td>
+        </tr>
+        <tr>
+          <td>Conferir a sincronização</td>
+          <td>Vê quantos registros ainda estão pendentes e força um envio manual.</td>
+          <td><span class="yes">sim</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p><b>Fora de escopo nesta fase.</b> Rede social ou compartilhamento, biblioteca aberta de exercícios, montagem de treino dentro do app (a rotina do dia ainda é fixa, definida em código), registro de refeições consumidas (o app mostra a meta, não o consumido) e qualquer papel além do próprio usuário.</p>
+  </div>
+</section>
+
+<!-- ============================ 2 ============================ -->
+<section class="sheet">
+  <h2><span class="n">02</span> Interface e navegação</h2>
+
+  <p class="lead">A navegação é organizada em três camadas do Expo Router: um <strong>Stack raiz</strong> que decide entre área pública e área logada, um <strong>Drawer</strong> que guarda os destinos secundários e as telas de tela cheia, e um <strong>Tabs</strong> com os quatro destinos do dia a dia.</p>
+
+  <h3>Mapeamento de telas</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-narrow">Tela</th>
+          <th class="mono col-mid">Rota / arquivo</th>
+          <th>Papel</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Login</td><td class="mono">(auth)/login</td><td>E-mail e senha; entrada padrão de quem não tem sessão.</td></tr>
+        <tr><td>Cadastro</td><td class="mono">(auth)/cadastro</td><td>Criação de conta no Supabase Auth.</td></tr>
+        <tr><td>Início</td><td class="mono">(app)/(tabs)/index</td><td>Sequência de dias, faixa da semana, treino do dia, resumo corporal e macros.</td></tr>
+        <tr><td>Treino do dia</td><td class="mono">(app)/(tabs)/treino/index</td><td>Lista de exercícios com progresso de séries e atalho para o leitor de QR.</td></tr>
+        <tr><td>Exercício</td><td class="mono">(app)/(tabs)/treino/[exercicioId]</td><td>Série a série: carga, marcação, descanso e curva de progressão.</td></tr>
+        <tr><td>Nutrição</td><td class="mono">(app)/(tabs)/nutricao</td><td>Calorias-alvo e macros do plano vigente.</td></tr>
+        <tr><td>Perfil</td><td class="mono">(app)/(tabs)/perfil</td><td>Identidade da conta e atalhos para as telas do menu.</td></tr>
+        <tr><td>Progresso</td><td class="mono">(app)/progresso</td><td>Gráficos de peso, gordura e massa magra; tabela de medidas.</td></tr>
+        <tr><td>Avaliações</td><td class="mono">(app)/avaliacoes/index</td><td>Histórico de avaliações com status de processamento.</td></tr>
+        <tr><td>Fotos de progresso</td><td class="mono">(app)/fotos</td><td>Galeria local por data, com indicador de sincronização.</td></tr>
+        <tr><td>Câmera</td><td class="mono">(app)/camera</td><td>Captura da foto de progresso (tela cheia).</td></tr>
+        <tr><td>Leitor de QR</td><td class="mono">(app)/scanner</td><td>Leitura do QR do aparelho (tela cheia).</td></tr>
+        <tr><td>Academias por perto</td><td class="mono">(app)/academias</td><td>Mapa e lista de academias próximas pelo GPS.</td></tr>
+        <tr><td>Configurações</td><td class="mono">(app)/configuracoes</td><td>Conta, estado da sincronização, envio manual e versão.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Estrutura de roteamento</h3>
+  <p>O Expo Router deriva as rotas da árvore de arquivos. Grupos entre parênteses — <code>(auth)</code>, <code>(app)</code>, <code>(tabs)</code> — organizam a hierarquia de layouts <em>sem</em> aparecer na URL, o que permite separar público de privado sem poluir os caminhos.</p>
+
+  <figure>
+<div class="tree"><span class="k">src/app/_layout.tsx</span>            <span class="c">Stack raiz · AuthProvider · migrations do SQLite</span>
+│                              <span class="c">e as rotas protegidas</span>
+├── <span class="k">(auth)/_layout.tsx</span>         <span class="c">Stack público — só monta sem sessão</span>
+│   ├── login.tsx
+│   └── cadastro.tsx
+│
+└── <span class="k">(app)/_layout.tsx</span>          <span class="c">Drawer — só monta com sessão</span>
+    │                          <span class="c">chama useWorkoutSync() uma vez</span>
+    ├── <span class="k">(tabs)/_layout.tsx</span>     <span class="c">Tabs (barra flutuante própria)</span>
+    │   ├── index.tsx          <span class="c">Início</span>
+    │   ├── <span class="k">treino/_layout.tsx</span> <span class="c">Stack aninhada (fluxo sequencial)</span>
+    │   │   ├── index.tsx      <span class="c">lista de exercícios</span>
+    │   │   └── [exercicioId].tsx  <span class="c">rota dinâmica</span>
+    │   ├── nutricao.tsx
+    │   └── perfil.tsx
+    ├── progresso.tsx
+    ├── <span class="k">avaliacoes/_layout.tsx</span> <span class="c">Stack (abre espaço para o detalhe)</span>
+    │   └── index.tsx
+    ├── fotos.tsx
+    ├── academias.tsx
+    ├── configuracoes.tsx
+    ├── camera.tsx            <span class="c">tela cheia · swipeEnabled: false</span>
+    └── scanner.tsx           <span class="c">tela cheia · swipeEnabled: false</span></div>
+    <figcaption><b>Figura 1.</b> Árvore de rotas. Cada <code>_layout.tsx</code> instala um navegador; os arquivos irmãos viram telas dele.</figcaption>
+  </figure>
+
+  <h4>Por que cada padrão foi escolhido</h4>
+  <ul>
+    <li><strong>Tabs para os quatro destinos do dia a dia</strong> (Início, Treino, Nutrição, Perfil): são as telas alcançadas dezenas de vezes por semana e precisam estar a um toque, com o polegar, sem abrir menu.</li>
+    <li><strong>Stack aninhada dentro da aba Treino:</strong> lista → exercício é um fluxo sequencial com volta natural. Aninhar a Stack dentro da aba preserva a barra de abas e mantém o histórico do fluxo isolado das outras abas.</li>
+    <li><strong>Drawer para os destinos secundários</strong> (Progresso, Avaliações, Fotos, Academias, Configurações): telas de consulta, visitadas com frequência baixa. Colocá-las em abas competiria com o fluxo de treino.</li>
+    <li><strong>Telas de tela cheia no Drawer com gesto desativado:</strong> câmera e leitor de QR ocupam a tela inteira e usam gestos próprios — o swipe lateral do Drawer é desligado nelas (<code>swipeEnabled: false</code>) para não roubar o toque.</li>
+  </ul>
+
+  <h4>Rotas protegidas</h4>
+  <p>A proteção é declarativa, no layout raiz: <code>Stack.Protected</code> monta o grupo <code>(app)</code> apenas quando existe sessão e o grupo <code>(auth)</code> apenas quando não existe. Não há redirecionamento manual espalhado pelas telas — quem sai da conta simplesmente vê o grupo protegido desmontar, e qualquer tela interna deixa de estar no ar.</p>
+
+  <pre class="code"><span class="c">// src/app/_layout.tsx — a sessão vem do AuthProvider (Supabase Auth)</span>
+&lt;Stack screenOptions={{ headerShown: false }}&gt;
+  &lt;<span class="kw">Stack.Protected</span> guard={!!session}&gt;
+    &lt;Stack.Screen name="(app)" /&gt;
+  &lt;/Stack.Protected&gt;
+  &lt;<span class="kw">Stack.Protected</span> guard={!session}&gt;
+    &lt;Stack.Screen name="(auth)" /&gt;
+  &lt;/Stack.Protected&gt;
+&lt;/Stack&gt;</pre>
+
+  <p>O mesmo layout raiz também segura a splash nativa até três coisas estarem prontas: fontes carregadas, sessão lida do armazenamento seguro e <strong>migrations do SQLite aplicadas</strong>. Nenhuma tela toca o banco antes disso.</p>
+
+  <h4>Links profundos</h4>
+  <p>O app registra o esquema <code>pxgym://</code> e usa rotas tipadas (<code>typedRoutes</code>), o que faz o TypeScript validar cada caminho de navegação em tempo de compilação. O esquema é o que permite o QR code do aparelho apontar para <code>pxgym://treino/&lt;exercicioId&gt;</code> e abrir a tela do exercício direto — detalhado na seção 5.</p>
+</section>
+
+<!-- ============================ 3 ============================ -->
+<section class="sheet">
+  <h2><span class="n">03</span> Estratégia offline-first</h2>
+
+  <p class="lead">Durante o treino, o SQLite do aparelho <strong>é</strong> a fonte da verdade. O app nunca espera resposta de rede para confirmar uma ação do usuário: grava local, redesenha a tela e trata o envio para a nuvem como tarefa de segundo plano.</p>
+
+  <h3>Funcionamento offline</h3>
+  <p>Sem conexão, o usuário abre o app já autenticado (a sessão fica cifrada no aparelho) e faz o treino inteiro:</p>
+  <ul>
+    <li>Percorre o treino do dia, marca e desmarca séries, ajusta a carga e usa o cronômetro de descanso.</li>
+    <li>Vê a <strong>carga anterior</strong> de cada exercício e a curva de progressão — ambas calculadas a partir do próprio banco local, não de um endpoint.</li>
+    <li>Vê a sequência de dias treinados e a faixa dos últimos sete dias, recalculadas a cada série marcada.</li>
+    <li>Tira fotos de progresso e navega pela galeria: os arquivos moram no aparelho, então a galeria abre igual com ou sem rede.</li>
+    <li>Confere em Configurações quantos registros e fotos ainda estão pendentes de envio, e pode tentar sincronizar manualmente.</li>
+  </ul>
+
+  <p>Três telas <strong>dependem de rede</strong> por natureza, e isso é uma decisão explícita, não um esquecimento: <strong>Avaliações</strong> e <strong>Nutrição</strong> leem dados que nascem no aplicativo web (o laudo é enviado e processado lá), e <strong>Academias por perto</strong> consulta a base do OpenStreetMap em tempo real. Nesses casos o app não mostra tela vazia nem spinner infinito: cada uma tem estado de erro próprio, com ícone de “sem nuvem” e texto explicando que os dados voltam quando a conexão voltar.</p>
+
+  <div class="note">
+    <p><b>Critério usado para decidir o que é offline.</b> É offline aquilo que o usuário <b>produz</b> no aparelho durante o treino — porque perder esse dado significa perder o treino. É online aquilo que ele apenas <b>consulta</b> e que muda em outro lugar (laudo, plano nutricional, mapa de academias) — cachear isso traria complexidade de invalidação sem resolver o problema real.</p>
+  </div>
+
+  <h3>Modelagem de dados local</h3>
+  <p>O banco local é um <code>expo-sqlite</code> chamado <code>pxgym.db</code>, acessado pelo <strong>Drizzle ORM</strong> com esquema tipado e migrations versionadas (aplicadas no boot). Duas tabelas sustentam o modo offline:</p>
+
+  <h4>set_logs — registros de série</h4>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th class="mono col-narrow">Coluna</th><th style="width:16%">Tipo</th><th>Por que precisa estar no aparelho</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">id</td><td>text (PK)</td><td>UUID gerado no cliente — é o mesmo id usado no Postgres, o que torna o envio idempotente.</td></tr>
+        <tr><td class="mono">session_date</td><td>text</td><td>Dia da sessão no fuso do aparelho; base da sequência de dias e da faixa semanal.</td></tr>
+        <tr><td class="mono">exercise_id<br>exercise_name</td><td>text</td><td>O nome é copiado junto para que o histórico continue legível offline, sem depender de catálogo remoto.</td></tr>
+        <tr><td class="mono">set_number<br>target_reps</td><td>integer</td><td>Posição da série no exercício e repetições-alvo daquela série.</td></tr>
+        <tr><td class="mono">previous_load_kg</td><td>real</td><td>Fotografia da carga anterior no momento do registro — permite mostrar “+2,5 kg” sem recalcular histórico.</td></tr>
+        <tr><td class="mono">load_kg</td><td>real</td><td>A carga efetivamente usada. É o dado que o app existe para guardar.</td></tr>
+        <tr><td class="mono">completed_at</td><td>integer (ms)</td><td>Momento da conclusão; ordena a curva de progressão.</td></tr>
+        <tr><td class="mono">sync_status</td><td>text</td><td><code>pending</code> · <code>synced</code> · <code>deleted</code> — é a fila de sincronização (adiante).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Três índices acompanham as consultas reais da interface: por <code>session_date</code> (treino do dia), por <code>exercise_id + completed_at</code> (curva de progressão) e por <code>sync_status</code> (varredura da fila).</p>
+
+  <h4>progress_photos — fotos de progresso</h4>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th class="mono col-narrow">Coluna</th><th style="width:16%">Tipo</th><th>Por que precisa estar no aparelho</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">id</td><td>text (PK)</td><td>UUID do cliente, reaproveitado como nome do arquivo no bucket.</td></tr>
+        <tr><td class="mono">user_id</td><td>text</td><td>Dono da foto; vira a pasta do arquivo no Storage.</td></tr>
+        <tr><td class="mono">local_uri</td><td>text</td><td>Caminho do arquivo no diretório de documentos do app — é o que a galeria exibe, sempre.</td></tr>
+        <tr><td class="mono">remote_path</td><td>text · nulo</td><td>Preenchido só depois do upload; nulo significa “ainda só existe aqui”.</td></tr>
+        <tr><td class="mono">taken_at</td><td>integer (ms)</td><td>Data de captura, usada para agrupar e ordenar a galeria.</td></tr>
+        <tr><td class="mono">note</td><td>text · nulo</td><td>Observação opcional do usuário.</td></tr>
+        <tr><td class="mono">sync_status</td><td>text</td><td><code>pending</code> · <code>synced</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>A reatividade das telas vem do próprio banco: o SQLite é aberto com <code>enableChangeListener</code> e as telas consultam por <code>useLiveQuery</code>. Marcar uma série reexecuta as consultas afetadas e atualiza, no mesmo instante, o progresso do exercício, a sequência de dias, a faixa semanal e a curva — sem estado global duplicado e sem “puxar para atualizar”.</p>
+
+  <h3>Fila de ações</h3>
+  <p>Não existe uma tabela separada de “operações pendentes”. <strong>A fila é uma coluna da própria linha</strong> (<code>sync_status</code>): o registro que o usuário acabou de criar já é, ao mesmo tempo, o dado que a tela mostra e o item que falta enviar. Isso evita manter duas verdades sobre o mesmo fato e elimina a chance de a fila e o dado divergirem.</p>
+
+  <p>O caso delicado é a <strong>exclusão</strong>. Se o usuário desmarca uma série que já foi para a nuvem e o app apagasse a linha local, não sobraria nada para dizer ao servidor que aquele registro morreu — e a próxima leitura o traria de volta. Por isso a exclusão de um registro já sincronizado não apaga: marca a linha como <code>deleted</code> (um <em>tombstone</em>), que fica invisível para toda a interface e só é removida de vez depois que o servidor confirmar a exclusão.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 260" role="img" aria-label="Ciclo de vida de um registro de série entre os estados pending, synced e deleted">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.45 0.012 264)"/>
+        </marker>
+        <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.46 0.135 132)"/>
+        </marker>
+      </defs>
+      <g font-family="Geist, sans-serif" font-size="12">
+
+        <!-- pending -->
+        <rect x="40" y="86" width="146" height="52" rx="10" fill="oklch(0.87 0.23 126 / 16%)" stroke="oklch(0.46 0.135 132)" stroke-width="1.5"/>
+        <text x="113" y="107" text-anchor="middle" font-family="Geist Mono, monospace" font-size="13" font-weight="600" fill="oklch(0.23 0.012 264)">pending</text>
+        <text x="113" y="125" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">existe só no aparelho</text>
+
+        <!-- synced -->
+        <rect x="290" y="86" width="146" height="52" rx="10" fill="oklch(0.962 0.003 264)" stroke="oklch(0.45 0.012 264)" stroke-width="1.5"/>
+        <text x="363" y="107" text-anchor="middle" font-family="Geist Mono, monospace" font-size="13" font-weight="600" fill="oklch(0.23 0.012 264)">synced</text>
+        <text x="363" y="125" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">local + Supabase</text>
+
+        <!-- deleted -->
+        <rect x="540" y="86" width="146" height="52" rx="10" fill="none" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="613" y="107" text-anchor="middle" font-family="Geist Mono, monospace" font-size="13" font-weight="600" fill="oklch(0.23 0.012 264)">deleted</text>
+        <text x="613" y="125" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">tombstone</text>
+
+        <!-- entrada -->
+        <path d="M 113 34 L 113 80" stroke="oklch(0.46 0.135 132)" stroke-width="1.5" marker-end="url(#ahv)"/>
+        <text x="122" y="28" font-size="11" font-weight="500" fill="oklch(0.46 0.135 132)">marcar série  →  INSERT no SQLite</text>
+
+        <!-- pending -> synced -->
+        <path d="M 190 100 L 284 100" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="237" y="92" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">upsert aceito</text>
+
+        <!-- synced -> deleted -->
+        <path d="M 440 100 L 534 100" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="487" y="92" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">desmarcar</text>
+
+        <!-- pending -> apagado -->
+        <path d="M 113 144 L 113 196" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="104" y="216" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">desmarcar antes do envio:</text>
+        <text x="104" y="231" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">DELETE local, nada a avisar</text>
+
+        <!-- deleted -> apagado -->
+        <path d="M 613 144 L 613 196" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah)"/>
+        <text x="613" y="216" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">DELETE remoto confirmado</text>
+        <text x="613" y="231" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">e só então DELETE local</text>
+
+        <!-- falha volta -->
+        <path d="M 284 122 C 240 150, 190 150, 190 128" stroke="oklch(0.45 0.012 264)" stroke-width="1.2" fill="none" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+        <text x="237" y="160" text-anchor="middle" font-size="10" fill="oklch(0.60 0.010 264)">falha de rede: continua pending</text>
+      </g>
+    </svg>
+    <figcaption><b>Figura 2.</b> Ciclo de vida de um registro de série. Linhas cheias são transições confirmadas; a tracejada é o caminho de falha — nenhuma delas bloqueia a interface.</figcaption>
+  </figure>
+
+  <p>As fotos seguem a mesma lógica com um passo a mais: a captura sai do cache da câmera (que o sistema operacional pode limpar a qualquer momento) e é <strong>movida para o diretório de documentos do app</strong> antes de a linha ser gravada. Só depois disso o registro entra na fila como <code>pending</code>.</p>
+</section>
+
+<!-- ============================ 4 ============================ -->
+<section class="sheet">
+  <h2><span class="n">04</span> Backend e sincronização</h2>
+
+  <p class="lead">O backend é o Supabase — Postgres, Auth e Storage no mesmo projeto. O aplicativo mobile fala com ele por duas vias distintas: <strong>envia</strong> o que produziu offline e <strong>lê</strong> o que foi produzido no aplicativo web.</p>
+
+  <h3>Modelagem de dados remota</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th class="mono col-narrow">Tabela</th><th class="col-mid">Colunas principais</th><th>Origem e papel</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">auth.users</td>
+          <td class="mono">id, email</td>
+          <td>Gerenciada pelo Supabase Auth. Todas as tabelas do app referenciam esse <code>id</code> com <code>on delete cascade</code>.</td>
+        </tr>
+        <tr>
+          <td class="mono">set_logs</td>
+          <td class="mono">id (uuid do cliente), user_id, session_date, exercise_id, exercise_name, set_number, target_reps, previous_load_kg, load_kg, completed_at</td>
+          <td>Espelho remoto da tabela local. Escrita exclusivamente pelo mobile.</td>
+        </tr>
+        <tr>
+          <td class="mono">progress_photos</td>
+          <td class="mono">id, user_id, storage_path, taken_at, note</td>
+          <td>Metadados da foto; o binário vive no bucket. Escrita pelo mobile.</td>
+        </tr>
+        <tr>
+          <td class="mono">body_assessments</td>
+          <td class="mono">id, user_id, pdf_path, status, extracted_data (jsonb), error_message</td>
+          <td>Avaliação física enviada em PDF pelo web. O <code>status</code> percorre <code>processing → pending_review → reviewed</code> (ou <code>error</code>). Lida pelo mobile.</td>
+        </tr>
+        <tr>
+          <td class="mono">nutrition_plans</td>
+          <td class="mono">id, assessment_id, user_id, calories_target, macros (jsonb), micros (jsonb), diet_guidance, model</td>
+          <td>Plano gerado por IA a partir da avaliação revisada, no backend do web. Lido pelo mobile.</td>
+        </tr>
+        <tr>
+          <td class="mono">storage: assessments</td>
+          <td class="mono">&lt;user_id&gt;/&lt;arquivo&gt;.pdf</td>
+          <td>Bucket privado dos laudos em PDF.</td>
+        </tr>
+        <tr>
+          <td class="mono">storage: progress-photos</td>
+          <td class="mono">&lt;user_id&gt;/&lt;photo_id&gt;.jpg</td>
+          <td>Bucket privado das fotos de progresso enviadas pelo mobile.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>O esquema é versionado em arquivos de migration SQL no repositório (<code>supabase/migrations/</code>), o que mantém o banco reproduzível e revisável junto com o código.</p>
+
+  <h3>Estratégia de sincronização</h3>
+  <p>A sincronização é <strong>por gatilhos, não por intervalo</strong> — nada de polling consumindo bateria. O envio é tentado em quatro momentos:</p>
+
+  <ul>
+    <li><strong>Ao montar a área logada</strong>, isto é, sempre que o app abre com sessão válida.</li>
+    <li><strong>Quando o NetInfo anuncia que a conexão voltou</strong> (assinatura de eventos de rede).</li>
+    <li><strong>Quando o app volta do segundo plano</strong> para o primeiro (evento do <code>AppState</code>).</li>
+    <li><strong>Quando o usuário aperta “sincronizar agora”</strong> em Configurações — a válvula manual para quem quer ver o número de pendências zerar.</li>
+  </ul>
+
+  <p>Os três primeiros gatilhos ficam concentrados em um único hook (<code>useWorkoutSync</code>) montado no layout da área logada, com trava de reentrada para que dois gatilhos simultâneos não disparem duas rodadas ao mesmo tempo.</p>
+
+  <figure>
+    <svg viewBox="0 0 700 300" role="img" aria-label="Fluxo de gravação local e sincronização posterior com o Supabase">
+      <g font-family="Geist, sans-serif" font-size="12">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.45 0.012 264)"/>
+          </marker>
+        </defs>
+
+        <!-- faixa 1: imediato -->
+        <text x="0" y="16" font-size="10" font-weight="500" letter-spacing="0.08em" fill="oklch(0.46 0.135 132)">IMEDIATO — SEM REDE</text>
+        <line x1="0" y1="24" x2="700" y2="24" stroke="oklch(0.87 0.23 126)" stroke-width="2"/>
+
+        <rect x="0" y="42" width="150" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="75" y="63" text-anchor="middle" font-size="11.5" font-weight="600">toque na série</text>
+        <text x="75" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">tela do exercício</text>
+
+        <rect x="186" y="42" width="150" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="261" y="63" text-anchor="middle" font-size="11.5" font-weight="600">RegisterSetUseCase</text>
+        <text x="261" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">regra de domínio</text>
+
+        <rect x="372" y="42" width="150" height="46" rx="8" fill="oklch(0.87 0.23 126 / 16%)" stroke="oklch(0.46 0.135 132)" stroke-width="1.5"/>
+        <text x="447" y="63" text-anchor="middle" font-size="11.5" font-weight="600">SQLite: pending</text>
+        <text x="447" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">fonte da verdade</text>
+
+        <rect x="558" y="42" width="142" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="629" y="63" text-anchor="middle" font-size="11.5" font-weight="600">useLiveQuery</text>
+        <text x="629" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">telas redesenham</text>
+
+        <path d="M 152 65 L 180 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 338 65 L 366 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 524 65 L 552 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- faixa 2: depois -->
+        <text x="0" y="146" font-size="10" font-weight="500" letter-spacing="0.08em" fill="oklch(0.45 0.012 264)">DEPOIS — QUANDO HOUVER CONEXÃO</text>
+        <line x1="0" y1="154" x2="700" y2="154" stroke="oklch(0.45 0.012 264)" stroke-width="1.5"/>
+
+        <rect x="0" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="75" y="192" text-anchor="middle" font-size="11.5" font-weight="600">gatilho</text>
+        <text x="75" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">abertura · NetInfo</text>
+        <text x="75" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">foreground · manual</text>
+
+        <rect x="186" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="261" y="192" text-anchor="middle" font-size="11.5" font-weight="600">SyncPendingSetLogs</text>
+        <text x="261" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">lê pending + tombstones</text>
+        <text x="261" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">checa conectividade</text>
+
+        <rect x="372" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="447" y="192" text-anchor="middle" font-size="11.5" font-weight="600">Gateway Supabase</text>
+        <text x="447" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">upsert onConflict: id</text>
+        <text x="447" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">delete por lote</text>
+
+        <rect x="558" y="172" width="142" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.45 0.012 264)" stroke-width="1.5"/>
+        <text x="629" y="192" text-anchor="middle" font-size="11.5" font-weight="600">Postgres</text>
+        <text x="629" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">set_logs</text>
+        <text x="629" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">RLS por dono</text>
+
+        <path d="M 152 200 L 180 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 338 200 L 366 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 524 200 L 552 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <path d="M 447 232 L 447 258 L 261 258 L 261 234" stroke="oklch(0.46 0.135 132)" stroke-width="1.4" fill="none" marker-end="url(#ah2)"/>
+        <text x="354" y="274" text-anchor="middle" font-size="10" fill="oklch(0.46 0.135 132)">sucesso → marca synced / apaga o tombstone local</text>
+      </g>
+    </svg>
+    <figcaption><b>Figura 3.</b> Caminho de escrita. A faixa de cima acontece em milissegundos e sem rede; a de baixo acontece quando dá, e falhar nela não custa nada ao usuário.</figcaption>
+  </figure>
+
+  <p>No sentido inverso — <strong>nuvem → aparelho</strong> — os dados de avaliação e do plano nutricional são buscados sob demanda, com refetch a cada vez que a tela ganha foco. Quem enviou o laudo no computador vê a avaliação aparecer no celular ao voltar para a tela, sem gesto de atualizar. Cada tela expressa três estados explícitos: carregando, erro e pronto.</p>
+
+  <h4>Tratamento de conflitos</h4>
+  <p>A política adotada é <strong>“o registro pertence a quem o criou, e o último envio vence”</strong> (<em>last-write-wins</em> por linha), sustentada por quatro decisões:</p>
+  <ul>
+    <li><strong>Identidade gerada no cliente.</strong> O UUID nasce no aparelho, então o mesmo registro tem o mesmo <code>id</code> nos dois bancos. O envio é um <code>upsert onConflict: id</code>: reenviar dez vezes produz exatamente o mesmo resultado de enviar uma.</li>
+    <li><strong>Escrita de mão única.</strong> Séries e fotos só são escritas pelo aplicativo mobile; nenhum processo do servidor edita esses registros. Logo, o servidor nunca tem uma versão mais nova para disputar com o aparelho.</li>
+    <li><strong>Exclusão com tombstone.</strong> Uma série apagada offline não “ressuscita” na próxima sincronização, porque a exclusão viaja como intenção registrada e só some do aparelho depois de confirmada.</li>
+    <li><strong>Ordem e falha segura.</strong> Primeiro os pendentes, depois as exclusões; e a rodada inteira falha em silêncio — o que não subiu continua <code>pending</code> para a próxima janela. Nenhum erro de rede interrompe o usuário no meio do treino.</li>
+  </ul>
+  <p>O limite conhecido dessa escolha é o cenário de <strong>dois aparelhos com a mesma conta editando a mesma série</strong>: o último a sincronizar sobrescreve o outro. Como o produto é de uso individual e a sessão de treino acontece em um aparelho por vez, o custo de um relógio vetorial ou de uma coluna <code>updated_at</code> com resolução por versão não se justifica hoje — e a porta fica aberta, já que a resolução é feita em um único ponto do código (o gateway de sincronização).</p>
+
+  <h3>Autenticação e permissões</h3>
+  <p>Sim, o app tem login: <strong>e-mail e senha via Supabase Auth</strong>. A sessão é o que alimenta o guarda de rotas da seção 2 — não há “modo visitante”.</p>
+
+  <p>A persistência da sessão precisou de um cuidado específico. O armazenamento seguro do sistema (Keychain no iOS, Keystore no Android) tem limite prático de cerca de 2 KB por valor, insuficiente para a sessão do Supabase. A solução implementada é o padrão <strong>LargeSecureStore</strong>: gera-se uma chave AES-256, ela é guardada no armazenamento seguro do sistema e a sessão é gravada <em>cifrada</em> (AES-CTR) no armazenamento comum. A credencial nunca toca o disco em texto puro. O <em>refresh</em> automático do token só roda com o app em primeiro plano.</p>
+
+  <p>No banco, <strong>todas as tabelas têm Row Level Security habilitada</strong>, com políticas de dono para as quatro operações. O mesmo vale para os arquivos: as políticas de Storage comparam a <strong>primeira pasta do caminho</strong> com o identificador do usuário autenticado, de modo que ninguém lê o PDF nem a foto de outra pessoa mesmo conhecendo o caminho.</p>
+
+  <pre class="code"><span class="c">-- padrão aplicado a set_logs, progress_photos, body_assessments e nutrition_plans</span>
+<span class="kw">alter table</span> set_logs <span class="kw">enable row level security</span>;
+
+<span class="kw">create policy</span> "set_logs_select_own" <span class="kw">on</span> set_logs
+  <span class="kw">for select using</span> (auth.uid() = user_id);
+<span class="kw">create policy</span> "set_logs_insert_own" <span class="kw">on</span> set_logs
+  <span class="kw">for insert with check</span> (auth.uid() = user_id);
+
+<span class="c">-- arquivos: a pasta raiz do objeto precisa ser o id do usuário</span>
+<span class="kw">create policy</span> "progress_photos_storage_select_own" <span class="kw">on</span> storage.objects
+  <span class="kw">for select using</span> (
+    bucket_id = 'progress-photos'
+      <span class="kw">and</span> (storage.foldername(name))[1] = auth.uid()::text
+  );</pre>
+
+  <p>Os buckets são privados; o aplicativo usa a chave anônima pública do projeto, e é a RLS — não o cliente — que define o que cada sessão enxerga. Não existe chave de serviço embarcada no app.</p>
+</section>
+
+<!-- ============================ 5 ============================ -->
+<section class="sheet">
+  <h2><span class="n">05</span> Hardware e sensores</h2>
+
+  <h3>Uso da câmera</h3>
+  <p>A câmera aparece em <strong>dois fluxos distintos</strong>, cada um com sua tela dedicada de tela cheia.</p>
+
+  <h4>Fluxo 1 — Foto de progresso</h4>
+  <p>A foto de progresso é a evidência visual que acompanha os números da avaliação: o mesmo enquadramento, a cada poucas semanas. O usuário chega pela galeria (<code>/fotos</code>) ou pelo Perfil, e a captura é gravada <strong>antes de qualquer chamada de rede</strong>:</p>
+
+  <ol class="steps">
+    <li>A tela pede a permissão de câmera com uma explicação em português — e um caminho de saída (“Agora não”) para quem não quiser conceder.</li>
+    <li>A captura sai da câmera com qualidade 0,85 e cai no diretório de cache do sistema.</li>
+    <li>O arquivo é <strong>movido do cache para o diretório de documentos do app</strong>, em <code>progress-photos/&lt;uuid&gt;.jpg</code>. O cache pode ser esvaziado pelo sistema operacional a qualquer momento; o diretório de documentos, não.</li>
+    <li>Uma linha é gravada no SQLite com <code>local_uri</code>, data e <code>sync_status = pending</code>. A galeria já mostra a foto neste ponto, com ou sem internet.</li>
+    <li>Havendo conexão, o mesmo caso de uso já tenta o upload; não havendo, a foto entra na fila e sobe no próximo gatilho de sincronização.</li>
+    <li>O upload envia os bytes para <code>progress-photos/&lt;user_id&gt;/&lt;photo_id&gt;.jpg</code> e faz o <code>upsert</code> da linha remota. Só então <code>remote_path</code> é preenchido e o status vira <code>synced</code>.</li>
+  </ol>
+
+  <p>Repare que a galeria <strong>sempre lê o arquivo local</strong>, mesmo depois de sincronizada: a nuvem é backup, não a origem da exibição. Por isso rolar as fotos é instantâneo e não consome dados. O indicador de sincronização em cada foto existe justamente para tornar visível a diferença entre “está no meu celular” e “está salva na nuvem”.</p>
+
+  <h4>Fluxo 2 — Leitura de QR code do aparelho</h4>
+  <p>Achar o exercício certo numa lista, com o celular na mão e o aparelho ocupado, é fricção pura. O leitor resolve isso: cada aparelho da academia recebe um QR code contendo <code>pxgym://treino/&lt;exercicioId&gt;</code> (ou o identificador puro), e apontar a câmera abre a tela daquele exercício diretamente, pronta para registrar a carga. O leitor trava após a primeira leitura válida para não navegar duas vezes, e um código desconhecido produz uma mensagem clara em vez de uma tela em branco. Esse fluxo é <strong>totalmente offline</strong> — a leitura e a navegação não dependem de rede.</p>
+
+  <div class="note">
+    <p><b>Permissões.</b> Os textos de permissão são declarados no <code>app.json</code> em português e explicam a finalidade concreta: <i>“O Px GYM usa a câmera pra registrar fotos de progresso e ler QR codes dos aparelhos.”</i> No Android, <code>CAMERA</code>, <code>ACCESS_COARSE_LOCATION</code> e <code>ACCESS_FINE_LOCATION</code> são declaradas explicitamente. Nenhuma permissão é pedida na abertura do app: cada uma é solicitada na tela em que faz sentido, com a explicação à vista.</p>
+  </div>
+
+  <h3>Uso da geolocalização</h3>
+  <p>A localização serve a um caso de uso único e concreto: <strong>encontrar academias perto de onde o usuário está agora</strong>. É o cenário de quem viaja, mudou de bairro ou quer treinar perto do trabalho — sem localização, a única alternativa seria digitar um endereço, que é justamente o tipo de fricção que o app evita.</p>
+
+  <p>A captura é <strong>pontual e apenas em primeiro plano</strong>. Não há rastreamento em segundo plano: nenhuma permissão do tipo “sempre”, nenhum serviço de localização contínua e, portanto, nenhum consumo de bateria fora do momento em que a tela de academias está aberta. A posição é lida quando a tela abre (ou quando o usuário toca em “tentar de novo”) e descartada em seguida — ela não é gravada no SQLite nem enviada ao Supabase.</p>
+
+  <ul>
+    <li><strong>Precisão “balanceada”</strong>, e não a máxima: para um raio de busca de 4 km, a precisão de alguns metros do GPS fino seria desperdício de tempo e bateria.</li>
+    <li><strong>Plano B para o fix que não sai.</strong> GPS frio, ambiente fechado ou emulador podem fazer a leitura de posição atual falhar. Nesse caso o app cai na última posição conhecida do sistema, sem limite de idade — para um raio de 4 km ela serve tão bem quanto uma leitura nova, e é melhor que uma tela de erro.</li>
+    <li><strong>Fonte de dados sem chave e sem custo:</strong> as academias vêm do OpenStreetMap pela Overpass API, consultando <code>leisure=fitness_centre</code> e <code>amenity=gym</code> ao redor do ponto. Um adaptador alternativo para a Google Places API está implementado e desativado, pronto para ser ligado se um dia houver faturamento — a tela não muda, só o adaptador.</li>
+    <li><strong>Mapa nativo por plataforma:</strong> Apple Maps no iOS e MapLibre com tiles do OpenStreetMap no Android, resolvidos por extensão de arquivo de plataforma, sem <code>if</code> espalhado pela tela.</li>
+  </ul>
+
+  <p>Como toda a tela depende de rede (Overpass) e de sensor (GPS), ela trata os dois fracassos separadamente: “não consegui sua localização” e “não consegui buscar academias” são mensagens diferentes, com ação de repetir.</p>
+</section>
+
+<!-- ============================ 6 ============================ -->
+<section class="sheet">
+  <h2><span class="n">06</span> Arquitetura e padrões de código</h2>
+
+  <p class="lead">O projeto é um monorepo com dois aplicativos e três pacotes compartilhados. A regra que organiza tudo: <strong>o domínio não conhece nem o React, nem o Expo, nem o Supabase</strong>.</p>
+
+  <h3>Organização do projeto</h3>
+
+  <figure>
+<div class="tree">px-gym/
+├── apps/
+│   ├── <span class="k">mobile/</span>                  <span class="c">Expo · React Native</span>
+│   │   ├── src/app/               <span class="c">rotas (Expo Router) — só composição de tela</span>
+│   │   ├── src/components/        <span class="c">UI reutilizável (cartões, gráficos, barras)</span>
+│   │   ├── src/db/                <span class="c">SQLite: schema, cliente e repositórios Drizzle</span>
+│   │   ├── src/lib/               <span class="c">integrações e composition roots</span>
+│   │   └── drizzle/               <span class="c">migrations do banco local</span>
+│   └── <span class="k">web/</span>                     <span class="c">Next.js — envio e revisão do laudo, plano por IA</span>
+├── packages/
+│   ├── <span class="k">core/</span>                    <span class="c">domínio puro — sem React, Expo ou Supabase</span>
+│   │   ├── entities/              <span class="c">SetLog, ProgressPhoto, BodyAssessment…</span>
+│   │   ├── value-objects/         <span class="c">Load, Weight, BodyFat, Macro, GeoPoint</span>
+│   │   ├── use-cases/             <span class="c">RegisterSet, SyncPendingSetLogs, SaveProgressPhoto…</span>
+│   │   ├── services/              <span class="c">progressão de carga, sequência de dias, medidas</span>
+│   │   ├── ports/                 <span class="c">interfaces que a infraestrutura implementa</span>
+│   │   └── testing/               <span class="c">fakes em memória usados pelos testes</span>
+│   ├── <span class="k">db/</span>                      <span class="c">adaptadores Supabase (repositórios e gateway)</span>
+│   └── <span class="k">tokens/</span>                  <span class="c">tokens de design compartilhados entre web e mobile</span>
+└── supabase/migrations/           <span class="c">esquema remoto versionado em SQL</span></div>
+    <figcaption><b>Figura 4.</b> Estrutura de diretórios. As duas aplicações consomem os mesmos pacotes de domínio e de design.</figcaption>
+  </figure>
+
+  <h4>Separação de responsabilidades</h4>
+  <p>A separação segue <strong>ports &amp; adapters</strong> (arquitetura limpa). O domínio declara as interfaces de que precisa; cada tecnologia entra como implementação intercambiável:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th class="col-narrow">Camada</th><th class="col-mid">O que contém</th><th>Do que ela não pode depender</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Domínio</strong><br><span class="mono">packages/core</span></td>
+          <td>Entidades, objetos de valor, casos de uso, serviços de cálculo e os <em>ports</em>: <code>SetLogRepository</code>, <code>WorkoutSyncGateway</code>, <code>ProgressPhotoUploader</code>, <code>NearbyGymsFinder</code>, <code>ConnectivityStatus</code>, <code>Clock</code>, <code>IdGenerator</code>.</td>
+          <td>De nada. Não importa React, React Native, Expo, Drizzle nem Supabase — por isso roda em Node puro nos testes.</td>
+        </tr>
+        <tr>
+          <td><strong>Banco local</strong><br><span class="mono">mobile/src/db</span></td>
+          <td>Esquema Drizzle, migrations e os repositórios que implementam os ports contra o SQLite, além da conversão linha ↔ entidade.</td>
+          <td>De componentes ou telas. Nenhuma consulta SQL vive dentro de uma tela.</td>
+        </tr>
+        <tr>
+          <td><strong>Backend</strong><br><span class="mono">packages/db</span></td>
+          <td>Cliente Supabase, repositórios de avaliação e plano, gateway de sincronização e mapeadores.</td>
+          <td>De React e do domínio de UI; é compartilhado com o app web.</td>
+        </tr>
+        <tr>
+          <td><strong>Composição</strong><br><span class="mono">mobile/src/lib</span></td>
+          <td>Os <em>composition roots</em> que instanciam cada caso de uso com seus adaptadores concretos, mais os <em>hooks</em> que ligam isso às telas.</td>
+          <td>É o único lugar onde “SQLite” e “Supabase” se encontram na mesma linha.</td>
+        </tr>
+        <tr>
+          <td><strong>Apresentação</strong><br><span class="mono">mobile/src/app</span> · <span class="mono">components</span></td>
+          <td>Telas e componentes visuais: leem por <em>hooks</em>, escrevem chamando casos de uso.</td>
+          <td>Não faz consulta SQL, não chama a API do Supabase, não formula regra de progressão.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 700 210" role="img" aria-label="Direção das dependências: interface e infraestrutura apontam para o domínio">
+      <g font-family="Geist, sans-serif">
+        <defs>
+          <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.46 0.135 132)"/>
+          </marker>
+        </defs>
+
+        <rect x="0" y="30" width="176" height="120" rx="10" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="88" y="54" text-anchor="middle" font-size="12" font-weight="600">Apresentação</text>
+        <text x="88" y="76" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">telas Expo Router</text>
+        <text x="88" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">componentes</text>
+        <text x="88" y="108" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">hooks de leitura</text>
+
+        <rect x="262" y="30" width="176" height="120" rx="10" fill="oklch(0.87 0.23 126 / 16%)" stroke="oklch(0.46 0.135 132)" stroke-width="1.6"/>
+        <text x="350" y="54" text-anchor="middle" font-size="12" font-weight="600">Domínio · @px/core</text>
+        <text x="350" y="76" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">entidades e regras</text>
+        <text x="350" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">casos de uso</text>
+        <text x="350" y="108" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">ports (interfaces)</text>
+        <text x="350" y="132" text-anchor="middle" font-size="9.5" font-weight="500" fill="oklch(0.46 0.135 132)">77 testes unitários</text>
+
+        <rect x="524" y="30" width="176" height="120" rx="10" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="612" y="54" text-anchor="middle" font-size="12" font-weight="600">Infraestrutura</text>
+        <text x="612" y="76" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">Drizzle / SQLite</text>
+        <text x="612" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">Supabase</text>
+        <text x="612" y="108" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">NetInfo · câmera · GPS</text>
+
+        <path d="M 182 90 L 256 90" stroke="oklch(0.46 0.135 132)" stroke-width="1.6" marker-end="url(#ah3)"/>
+        <path d="M 518 90 L 444 90" stroke="oklch(0.46 0.135 132)" stroke-width="1.6" marker-end="url(#ah3)"/>
+
+        <text x="350" y="180" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">as setas são a direção das dependências: nada dentro do domínio aponta para fora</text>
+        <text x="350" y="197" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">trocar SQLite, Supabase ou a fonte de academias não toca em uma linha de regra</text>
+      </g>
+    </svg>
+    <figcaption><b>Figura 5.</b> Direção das dependências. Nos testes, os adaptadores reais são substituídos por implementações falsas em memória — é o que permite testar sincronização e progressão de carga sem banco, sem rede e sem emulador.</figcaption>
+  </figure>
+
+  <p>O ganho prático dessa separação é testabilidade: a suíte do domínio tem <strong>77 testes</strong> cobrindo progressão de carga, sequência de dias, atividade da semana, objetos de valor, registro de série e — o mais importante — o comportamento da sincronização (offline, nada a enviar, envio bem-sucedido, tombstones), tudo rodando em Node puro, em segundos.</p>
+
+  <h3>Gerenciamento de estado de conexão</h3>
+  <p>O estado de rede é tratado em <strong>dois níveis diferentes</strong>, de propósito.</p>
+
+  <p><strong>Como decisão de domínio.</strong> A conectividade entra no núcleo como um <em>port</em> (<code>ConnectivityStatus</code>), e o caso de uso de sincronização consulta esse port antes de tentar qualquer envio — se estiver offline, ele devolve o resultado <code>offline</code> sem gastar requisição. A implementação real usa o NetInfo, com um detalhe que importa: enquanto o sistema ainda está sondando a rede, o indicador de “internet alcançável” vem indefinido, e o app só bloqueia o envio quando ele afirma <em>explicitamente</em> que não há internet. Nos testes, esse mesmo port vira uma implementação falsa que devolve o que o cenário pedir.</p>
+
+  <p><strong>Como reação a eventos.</strong> Um único <em>hook</em> montado no layout da área logada assina o NetInfo e o <code>AppState</code>: conexão restabelecida ou app voltando ao primeiro plano disparam uma rodada de sincronização em segundo plano, com trava de reentrada.</p>
+
+  <p>Do lado da interface, a escolha é <strong>não interromper</strong>. Falha de sincronização não vira alerta nem modal — quem está no meio de uma série não precisa lidar com um erro de rede que o app já sabe contornar. Em vez disso, o estado fica disponível onde o usuário pode agir sobre ele:</p>
+  <ul>
+    <li><strong>Configurações</strong> mostra, ao vivo, quantos registros e fotos estão pendentes (consulta reativa ao SQLite) e oferece o botão de sincronizar agora.</li>
+    <li><strong>A galeria de fotos</strong> marca cada item com um indicador de já sincronizado ou ainda local.</li>
+    <li><strong>Telas que dependem de leitura remota</strong> (Avaliações, Nutrição, Academias) têm estado de erro próprio, com ícone de “sem nuvem”, explicação e ação de repetir.</li>
+  </ul>
+
+  <div class="note">
+    <p><b>Estado atual do projeto.</b> Estão implementados: autenticação com sessão cifrada e rotas protegidas, registro de série offline com progressão de carga, sincronização por gatilhos com tombstones, fotos de progresso com upload diferido, leitor de QR, busca de academias por GPS, painéis de progresso corporal e macros, e a suíte de 77 testes de domínio. A rotina de exercícios do dia ainda vem de um conjunto fixo em código — a montagem de treinos pelo usuário é o próximo passo natural, e por já existir o repositório de treino como <i>port</i>, ela entra sem alterar a estratégia offline descrita aqui.</p>
+  </div>
+</section>

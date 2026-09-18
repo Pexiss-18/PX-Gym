@@ -1,0 +1,518 @@
+<!-- ============ 18 · objetos ============ -->
+<section class="slide" data-sec="Objetos">
+  <div class="head tight">
+    <h1>Diagrama de objetos — sincronização mista</h1>
+    <p class="sub">Terça, supino, Wi-Fi da academia caindo. Três séries do mesmo dia em três estados diferentes: o cenário que o modelo precisa aguentar.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 372" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de objetos com registros em três estados de sincronização">
+      <rect class="nd-v" x="24" y="14" width="300" height="104" rx="12"/>
+      <text class="tl" x="42" y="38" text-decoration="underline">serie1 : SetLog</text>
+      <circle cx="306" cy="34" r="5" class="fillv"/>
+      <path class="ln-h" d="M24,50 H324"/>
+      <text class="tm" x="42" y="70">setNumber = 1 · load = 62,5 kg</text>
+      <text class="tm" x="42" y="88">previousLoad = 60 kg</text>
+      <text class="tm" x="42" y="106"><tspan class="fillv">syncStatus = "synced"</tspan>  19:00</text>
+
+      <rect class="nd" x="24" y="132" width="300" height="104" rx="12"/>
+      <text class="tl" x="42" y="156" text-decoration="underline">serie2_errada : SetLog</text>
+      <circle cx="306" cy="152" r="5" fill="oklch(0.62 0.012 264)"/>
+      <path class="ln-h" d="M24,168 H324"/>
+      <text class="tm" x="42" y="188">setNumber = 2 · load = 72,5 kg</text>
+      <text class="tm" x="42" y="206">marcada errada, desmarcada sem rede</text>
+      <text class="tm" x="42" y="224">syncStatus = "deleted"  19:04</text>
+
+      <rect class="nd-a" x="24" y="250" width="300" height="104" rx="12"/>
+      <text class="tl" x="42" y="274" text-decoration="underline">serie2 : SetLog</text>
+      <circle cx="306" cy="270" r="5" fill="oklch(0.82 0.15 78)"/>
+      <path class="ln-h" d="M24,286 H324"/>
+      <text class="tm" x="42" y="306">setNumber = 2 · load = 65 kg</text>
+      <text class="tm" x="42" y="324">previousLoad = 62,5 kg  <tspan fill="oklch(0.82 0.15 78)">(não 72,5)</tspan></text>
+      <text class="tm" x="42" y="342"><tspan fill="oklch(0.82 0.15 78)">syncStatus = "pending"</tspan>  19:05</text>
+
+      <rect class="nd-q" x="392" y="132" width="250" height="104" rx="12"/>
+      <text class="tl" x="410" y="156" text-decoration="underline">supino : Exercise</text>
+      <path class="ln-h" d="M392,168 H642"/>
+      <text class="tm" x="410" y="188">id = "supino-reto"</text>
+      <text class="tm" x="410" y="206">name = "Supino reto com barra"</text>
+      <text class="tm" x="410" y="224">restSeconds = 90</text>
+      <g class="ln-d">
+        <path d="M324,66 L386,160" marker-end="url(#arw)"/>
+        <path d="M324,184 L386,184" marker-end="url(#arw)"/>
+        <path d="M324,302 L386,208" marker-end="url(#arw)"/>
+      </g>
+      <text class="tk" x="352" y="118" text-anchor="middle">exerciseId</text>
+
+      <rect class="nd-v" x="710" y="14" width="300" height="86" rx="12"/>
+      <text class="tl" x="728" y="38" text-decoration="underline">fotoOntem : ProgressPhoto</text>
+      <circle cx="992" cy="34" r="5" class="fillv"/>
+      <path class="ln-h" d="M710,50 H1010"/>
+      <text class="tm" x="728" y="70">remotePath = "u-42/5c9e….jpg"</text>
+      <text class="tm" x="728" y="88"><tspan class="fillv">syncStatus = "synced"</tspan></text>
+
+      <rect class="nd-a" x="710" y="116" width="300" height="86" rx="12"/>
+      <text class="tl" x="728" y="140" text-decoration="underline">fotoHoje : ProgressPhoto</text>
+      <circle cx="992" cy="136" r="5" fill="oklch(0.82 0.15 78)"/>
+      <path class="ln-h" d="M710,152 H1010"/>
+      <text class="tm" x="728" y="172">remotePath = null</text>
+      <text class="tm" x="728" y="190"><tspan fill="oklch(0.82 0.15 78)">syncStatus = "pending"</tspan></text>
+
+      <path class="ln-h" d="M710,236 H1136"/>
+      <text class="tk" x="710" y="258">O QUE ESTE INSTANTÂNEO PRECISA GARANTIR</text>
+      <text class="tc" x="710" y="282">A tela do exercício mostra <tspan class="fillv">2 séries</tspan> — o tombstone é invisível para leituras.</text>
+      <text class="tc" x="710" y="302">A carga anterior da serie2 é <tspan class="fillv">62,5 kg</tspan>, e não os 72,5 kg da série apagada.</text>
+      <text class="tc" x="710" y="322">A galeria mostra as duas fotos offline: ambas têm arquivo local.</text>
+      <text class="tc" x="710" y="342">O próximo sync envia serie2, depois apaga serie2_errada, depois sobe a foto.</text>
+      <text class="tc" x="710" y="362">Estado misto é o funcionamento normal do sistema, nunca um erro.</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 19 · estados sync ============ -->
+<section class="slide" data-sec="Estados">
+  <div class="head tight">
+    <h1>Ciclo de sincronização da série</h1>
+    <p class="sub">Três estados persistidos na coluna <code class="mono">sync_status</code>; os demais existem apenas durante a execução do caso de uso.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 396" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de estados do ciclo de sincronização de uma série">
+      <circle cx="42" cy="66" r="8" class="fillv"/>
+      <path class="ln-v" d="M52,66 H94" marker-end="url(#arwv)"/>
+      <rect class="nd-v" x="100" y="36" width="190" height="60" rx="14"/>
+      <text class="tl" x="195" y="62" text-anchor="middle">Pendente</text>
+      <text class="tm" x="195" y="80" text-anchor="middle">pending</text>
+
+      <rect class="nd-q" x="360" y="36" width="190" height="60" rx="14"/>
+      <text class="tl" x="455" y="62" text-anchor="middle">Sincronizando</text>
+      <text class="tk" x="455" y="80" text-anchor="middle">TRANSITÓRIO</text>
+
+      <rect class="nd-v" x="620" y="36" width="190" height="60" rx="14"/>
+      <text class="tl" x="715" y="62" text-anchor="middle">Sincronizado</text>
+      <text class="tm" x="715" y="80" text-anchor="middle">synced</text>
+
+      <rect class="nd-r" x="360" y="176" width="190" height="60" rx="14"/>
+      <text class="tl" x="455" y="202" text-anchor="middle">Erro</text>
+      <text class="tk" x="455" y="220" text-anchor="middle">TRANSITÓRIO</text>
+
+      <rect class="nd" x="620" y="288" width="190" height="60" rx="14"/>
+      <text class="tl" x="715" y="314" text-anchor="middle">Excluído</text>
+      <text class="tm" x="715" y="332" text-anchor="middle">deleted · tombstone</text>
+
+      <rect class="nd-q" x="330" y="288" width="200" height="60" rx="14"/>
+      <text class="tl" x="430" y="314" text-anchor="middle">Propagando exclusão</text>
+      <text class="tk" x="430" y="332" text-anchor="middle">TRANSITÓRIO</text>
+
+      <path class="ln" d="M290,66 H354" marker-end="url(#arw)"/>
+      <text class="tk" x="322" y="56" text-anchor="middle">GATILHO · ONLINE</text>
+      <path class="ln-v" d="M550,66 H614" marker-end="url(#arwv)"/>
+      <text class="tk" x="582" y="56" text-anchor="middle">UPSERT OK</text>
+      <path class="ln" d="M455,96 V170" marker-end="url(#arw)"/>
+      <text class="tk" x="465" y="138">SERVIDOR RECUSA</text>
+      <path class="ln" d="M360,206 H230 V102" marker-end="url(#arw)"/>
+      <text class="tk" x="240" y="152">CONTINUA PENDING</text>
+      <path class="ln-d" d="M140,36 C140,6 212,6 212,36" marker-end="url(#arw)"/>
+      <text class="tk" x="228" y="24">GATILHO OFFLINE · NENHUMA REQUISIÇÃO</text>
+
+      <path class="ln" d="M715,96 V282" marker-end="url(#arw)"/>
+      <text class="tk" x="725" y="180">DESMARCAR →</text>
+      <text class="tk" x="725" y="194">TOMBSTONE</text>
+      <path class="ln" d="M620,318 H536" marker-end="url(#arw)"/>
+      <text class="tk" x="578" y="308" text-anchor="middle">GATILHO</text>
+      <path class="ln-d" d="M430,348 C430,390 715,390 715,354" marker-end="url(#arw)"/>
+      <text class="tk" x="452" y="366">FALHA · TOMBSTONE PRESERVADO</text>
+
+      <path class="ln" d="M330,318 H176" marker-end="url(#arw)"/>
+      <path class="ln" d="M120,96 V318" marker-end="url(#arw)"/>
+      <text class="tk" x="130" y="250">DESMARCAR ANTES</text>
+      <text class="tk" x="130" y="264">DO ENVIO</text>
+      <circle cx="160" cy="318" r="11" fill="none" stroke="oklch(0.73 0.014 264 / 70%)" stroke-width="1.3"/>
+      <circle cx="160" cy="318" r="6" fill="oklch(0.73 0.014 264 / 80%)"/>
+
+      <path class="ln-h" d="M880,40 H1136"/>
+      <text class="tk" x="880" y="62">O QUE O DIAGRAMA PROÍBE</text>
+      <text class="tc" x="880" y="86">Não existe transição de</text>
+      <text class="tc" x="880" y="104"><tspan class="fillv">Sincronizado → Pendente</tspan>.</text>
+      <text class="tc" x="880" y="128">A série é imutável: corrigir a</text>
+      <text class="tc" x="880" y="146">carga é desmarcar e marcar de</text>
+      <text class="tc" x="880" y="164">novo, gerando um id novo.</text>
+      <text class="tc" x="880" y="182">Isso elimina, por modelagem,</text>
+      <text class="tc" x="880" y="200">todo conflito de edição.</text>
+      <path class="ln-h" d="M880,228 H1136"/>
+      <text class="tk" x="880" y="250">POR QUE ERRO NÃO É PERSISTIDO</text>
+      <text class="tc" x="880" y="274">A sincronização só roda em</text>
+      <text class="tc" x="880" y="292">gatilhos, sem laço — então a</text>
+      <text class="tc" x="880" y="310">própria linha pendente já é o</text>
+      <text class="tc" x="880" y="328">retry, e não há risco de</text>
+      <text class="tc" x="880" y="346">martelar o servidor.</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 20 · estados academias ============ -->
+<section class="slide" data-sec="Estados">
+  <div class="head tight">
+    <h1>Estados da busca de academias</h1>
+    <p class="sub">A tela mais cheia de caminhos alternativos do app. Os estados são exatamente os resultados do caso de uso — a tela só os desenha.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 362" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de estados da busca de academias">
+      <circle cx="36" cy="176" r="8" class="fillv"/>
+      <path class="ln-v" d="M46,176 H88" marker-end="url(#arwv)"/>
+      <rect class="nd-v" x="94" y="146" width="180" height="60" rx="14"/>
+      <text class="tl" x="184" y="172" text-anchor="middle">Buscando</text>
+      <text class="tk" x="184" y="190" text-anchor="middle">SÓ CONSULTA A PERMISSÃO</text>
+
+      <g class="ln">
+        <path d="M274,162 L410,40" marker-end="url(#arw)"/>
+        <path d="M274,168 L410,112" marker-end="url(#arw)"/>
+        <path d="M274,176 L410,184" marker-end="url(#arw)"/>
+        <path d="M274,186 L410,256" marker-end="url(#arw)"/>
+      </g>
+      <path class="ln-v" d="M274,194 L410,328" marker-end="url(#arwv)"/>
+
+      <rect class="nd" x="416" y="14" width="260" height="54" rx="13"/>
+      <text class="tl" x="436" y="46">Precisa de permissão</text>
+      <rect class="nd" x="416" y="86" width="260" height="54" rx="13"/>
+      <text class="tl" x="436" y="118">Permissão bloqueada</text>
+      <rect class="nd" x="416" y="158" width="260" height="54" rx="13"/>
+      <text class="tl" x="436" y="190">Sem localização</text>
+      <rect class="nd" x="416" y="230" width="260" height="54" rx="13"/>
+      <text class="tl" x="436" y="262">Busca falhou</text>
+      <rect class="nd-v" x="416" y="302" width="260" height="54" rx="13"/>
+      <text class="tl" x="436" y="328">Encontradas</text>
+      <text class="tk" x="436" y="345">MAPA + LISTA POR DISTÂNCIA</text>
+
+      <path class="ln-h" d="M730,14 H1136"/>
+      <text class="tk" x="730" y="36">SAÍDA E RETORNO À BUSCA</text>
+      <text class="tc" x="730" y="60">Toque em <tspan fill="oklch(0.97 0.004 264)">“Permitir localização”</tspan> — só aí</text>
+      <text class="tc" x="730" y="78">o diálogo do sistema abre.</text>
+      <path class="ln-h" d="M730,96 H1136"/>
+      <text class="tc" x="730" y="132">Toque em <tspan fill="oklch(0.97 0.004 264)">“Abrir configurações”</tspan>; ao voltar</text>
+      <text class="tc" x="730" y="150">ao app, a busca recomeça sozinha.</text>
+      <path class="ln-h" d="M730,168 H1136"/>
+      <text class="tc" x="730" y="204">O gateway cai para a última posição</text>
+      <text class="tc" x="730" y="222">conhecida; sem nenhuma, “Tentar de novo”.</text>
+      <path class="ln-h" d="M730,240 H1136"/>
+      <text class="tc" x="730" y="276">Overpass fora do ar ou sem rede —</text>
+      <text class="tc" x="730" y="294">“Não deu pra buscar agora” + repetir.</text>
+      <path class="ln-h" d="M730,312 H1136"/>
+      <text class="tc" x="730" y="348">Raio de 4 km, distância por haversine.</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 21 · BCE robustez ============ -->
+<section class="slide" data-sec="Fronteira · controle · entidade">
+  <div class="head tight">
+    <h1>Diagrama de robustez — registrar série</h1>
+    <p class="sub">Em app mobile a fronteira tem dois lados: a interface e os recursos nativos. Ambos tocam algo fora do domínio.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de robustez do caso de uso registrar série">
+      <!-- ator -->
+      <g class="ln">
+        <circle cx="62" cy="60" r="7" fill="none"/><path d="M62,67 V84 M51,74 H73 M62,84 L54,98 M62,84 L70,98"/>
+      </g>
+      <text class="tl" x="62" y="132" text-anchor="middle">Praticante</text>
+
+      <!-- boundary-ui: tela -->
+      <path class="ln-v" d="M206,73 V107"/>
+      <circle cx="230" cy="90" r="17" class="nd-v"/>
+      <text class="tl" x="230" y="132" text-anchor="middle">ExercicioScreen</text>
+      <text class="tk" x="230" y="148" text-anchor="middle">«BOUNDARY-UI»</text>
+
+      <!-- control -->
+      <circle cx="460" cy="90" r="17" class="nd-v"/>
+      <path class="ln-v" d="M447,76 a16,16 0 0 1 26,0" marker-end="url(#arwv)"/>
+      <text class="tl" x="460" y="132" text-anchor="middle">RegisterSetUseCase</text>
+      <text class="tk" x="460" y="148" text-anchor="middle">«CONTROL»</text>
+
+      <!-- entities -->
+      <circle cx="690" cy="48" r="17" class="nd-v"/>
+      <path class="ln-v" d="M673,70 H707"/>
+      <text class="tl" x="690" y="90" text-anchor="middle">SetLog</text>
+      <text class="tk" x="690" y="106" text-anchor="middle">«ENTITY · ROOT»</text>
+
+      <circle cx="690" cy="150" r="17" class="nd"/>
+      <path class="ln" d="M673,172 H707"/>
+      <text class="tl" x="690" y="192" text-anchor="middle">Load</text>
+      <text class="tk" x="690" y="208" text-anchor="middle">«VALUE OBJECT»</text>
+
+      <!-- boundary de saída -->
+      <path class="ln-v" d="M916,73 V107"/>
+      <circle cx="940" cy="90" r="17" class="nd-v"/>
+      <text class="tl" x="940" y="132" text-anchor="middle">SetLogRepository</text>
+      <text class="tk" x="940" y="148" text-anchor="middle">«BOUNDARY-SAÍDA · SQLITE»</text>
+
+      <!-- linha de baixo: sincronização -->
+      <circle cx="460" cy="280" r="17" class="nd"/>
+      <path class="ln" d="M447,266 a16,16 0 0 1 26,0" marker-end="url(#arw)"/>
+      <text class="tl" x="460" y="322" text-anchor="middle">SyncPendingSetLogs</text>
+      <text class="tk" x="460" y="338" text-anchor="middle">«CONTROL»</text>
+
+      <path class="ln" d="M666,263 V297"/>
+      <circle cx="690" cy="280" r="17" class="nd"/>
+      <text class="tl" x="690" y="322" text-anchor="middle">ConnectivityStatus</text>
+      <text class="tk" x="690" y="338" text-anchor="middle">«BOUNDARY-NATIVO · NETINFO»</text>
+
+      <path class="ln" d="M916,263 V297"/>
+      <circle cx="940" cy="280" r="17" class="nd"/>
+      <text class="tl" x="940" y="322" text-anchor="middle">WorkoutSyncGateway</text>
+      <text class="tk" x="940" y="338" text-anchor="middle">«BOUNDARY-EXTERNO · SUPABASE»</text>
+
+      <!-- associações, todas de borda a borda -->
+      <g class="ln">
+        <path d="M82,86 H204"/>
+        <path d="M252,90 H438"/>
+        <path d="M477,80 L671,58"/>
+        <path d="M477,101 L671,142"/>
+        <path d="M460,112 V244 H940 V112"/>
+        <path d="M480,280 H668"/>
+        <path d="M460,302 V376 H940 V302"/>
+      </g>
+      <path class="ln-d" d="M238,110 C272,180 350,242 438,268" marker-end="url(#arw)"/>
+      <text class="tk" x="268" y="206">SYNC OPORTUNISTA</text>
+      <text class="tk" x="700" y="226">SAVE · LER CARGA ANTERIOR</text>
+      <text class="tk" x="700" y="358">UPSERT · DELETE DOS TOMBSTONES</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 22 · BCE mapeamento ============ -->
+<section class="slide" data-sec="Fronteira · controle · entidade">
+  <div class="head tight">
+    <h1>Mapeamento por caso de uso</h1>
+    <p class="sub">Regra: um boundary de interface por tela, um gateway por recurso externo, um control por caso de uso — e nenhum control importando SDK.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:18%"><col style="width:19%"><col style="width:20%"><col style="width:21%"><col></colgroup>
+      <thead><tr><th>Caso de uso</th><th>Boundary UI</th><th>Boundary nativo/externo</th><th>Control</th><th>Entities</th></tr></thead>
+      <tbody>
+        <tr><td><span class="idq">UC07</span> Registrar série</td><td class="m">ExercicioScreen</td><td class="m">ConnectivityStatus, Clock, IdGenerator</td><td class="m">RegisterSetUseCase</td><td class="m">SetLog, Load</td></tr>
+        <tr><td><span class="idq">UC10</span> Desmarcar série</td><td class="m">ExercicioScreen</td><td class="m">—</td><td class="m">UnregisterSetUseCase</td><td class="m">SetLog</td></tr>
+        <tr><td><span class="idq">UC11</span> Registrar foto</td><td class="m">CameraScreen, FotosScreen</td><td class="m">ProgressPhotoUploader</td><td class="m">SaveProgressPhotoUseCase</td><td class="m">ProgressPhoto</td></tr>
+        <tr><td><span class="idq">UC17</span> Encontrar academias</td><td class="m">AcademiasScreen</td><td class="m">LocationGateway, NearbyGymsFinder</td><td class="m">FindNearbyGymsUseCase</td><td class="m">GeoPoint, NearbyGym</td></tr>
+        <tr><td><span class="idq">UC20</span> Sincronizar pendências</td><td class="m">useWorkoutSync (background)</td><td class="m">WorkoutSyncGateway, ConnectivityStatus</td><td class="m">SyncPendingSetLogsUseCase</td><td class="m">SetLog + tombstones</td></tr>
+        <tr><td><span class="idq">UC01</span> Entrar</td><td class="m">LoginScreen</td><td class="m">AuthGateway</td><td class="m">SignInUseCase</td><td class="m">Email</td></tr>
+        <tr><td><span class="idq">UC14</span> Acompanhar corpo</td><td class="m">ProgressoScreen, useAssessments</td><td class="m">AssessmentRepository</td><td class="m">buildBodyHistory <span class="mono">(domain service)</span></td><td class="m">BodyAssessment</td></tr>
+      </tbody>
+    </table>
+    <p class="note">A matriz completa, com os 22 casos de uso, fica no documento da seção 6. Dois desvios estão registrados lá: a captura de foto depende do componente de preview da câmera, que é interface, e a leitura do QR resolve o id dentro da própria tela.</p>
+  </div></div>
+</section>
+
+<!-- ============ 23 · sequência ============ -->
+<section class="slide" data-sec="Sequência">
+  <div class="head tight">
+    <h1>Sequência — registrar série</h1>
+    <p class="sub">O padrão de referência para toda escrita do app: gravação local síncrona, sincronização remota assíncrona.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 396" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de sequência do caso de uso registrar série">
+      <g>
+        <rect class="nd" x="14" y="10" width="140" height="40" rx="11"/>
+        <text class="tl" x="84" y="35" text-anchor="middle">Praticante</text>
+        <rect class="nd-v" x="188" y="10" width="160" height="40" rx="11"/>
+        <text class="tl" x="268" y="35" text-anchor="middle">ExercicioScreen</text>
+        <rect class="nd-v" x="392" y="10" width="180" height="40" rx="11"/>
+        <text class="tl" x="482" y="35" text-anchor="middle">RegisterSetUseCase</text>
+        <rect class="nd-v" x="614" y="10" width="170" height="40" rx="11"/>
+        <text class="tl" x="699" y="35" text-anchor="middle">SQLite · Drizzle</text>
+        <rect class="nd" x="826" y="10" width="150" height="40" rx="11"/>
+        <text class="tl" x="901" y="35" text-anchor="middle">SyncUseCase</text>
+        <rect class="nd-q" x="1004" y="10" width="126" height="40" rx="11"/>
+        <text class="tl" x="1067" y="35" text-anchor="middle">Supabase</text>
+      </g>
+      <g class="ln-d">
+        <path d="M84,50 V386"/><path d="M268,50 V386"/><path d="M482,50 V386"/>
+        <path d="M699,50 V386"/><path d="M901,50 V386"/><path d="M1067,50 V386"/>
+      </g>
+      <g fill="oklch(0.87 0.23 126 / 22%)" stroke="oklch(0.87 0.23 126 / 45%)" stroke-width="1">
+        <rect x="263" y="70" width="10" height="198" rx="2"/>
+        <rect x="477" y="94" width="10" height="118" rx="2"/>
+        <rect x="694" y="120" width="10" height="22" rx="2"/>
+        <rect x="694" y="172" width="10" height="22" rx="2"/>
+      </g>
+      <g fill="oklch(1 0 0 / 8%)" stroke="oklch(1 0 0 / 16%)" stroke-width="1">
+        <rect x="896" y="304" width="10" height="72" rx="2"/>
+        <rect x="1062" y="332" width="10" height="34" rx="2"/>
+      </g>
+
+      <path class="ln-v" d="M84,78 H258" marker-end="url(#arwv)"/>
+      <text class="ts" x="90" y="72">toca o check da série</text>
+      <path class="ln-v" d="M273,102 H472" marker-end="url(#arwv)"/>
+      <text class="ts" x="279" y="96">execute(exerciseId, load)</text>
+      <path class="ln" d="M487,128 H689" marker-end="url(#arw)"/>
+      <text class="ts" x="493" y="122">lastLoadKgForExercise()</text>
+      <path class="ln-d" d="M689,156 H492" marker-end="url(#arw)"/>
+      <text class="ts" x="498" y="150">62,5 kg</text>
+      <path class="ln" d="M487,182 H689" marker-end="url(#arw)"/>
+      <text class="ts" x="493" y="176">save(SetLog · pending · UUID do cliente)</text>
+      <path class="ln-d" d="M689,208 H492" marker-end="url(#arw)"/>
+      <text class="ts" x="498" y="202">gravado</text>
+      <path class="ln-d" d="M472,234 H278" marker-end="url(#arw)"/>
+      <text class="ts" x="284" y="228">delta +2,5 kg</text>
+      <path class="ln-v" d="M273,250 H334 V266 H278" marker-end="url(#arwv)"/>
+      <text class="ts" x="344" y="262">háptico, marca a série e inicia o descanso</text>
+
+      <rect x="196" y="284" width="934" height="100" rx="10" fill="none" stroke="oklch(1 0 0 / 11%)" stroke-width="1"/>
+      <path d="M196,284 h104 v22 h-94 a10,10 0 0 1 -10,-10 z" fill="oklch(1 0 0 / 5%)" stroke="oklch(1 0 0 / 11%)" stroke-width="1"/>
+      <text class="tk" x="210" y="300">PAR · ASSÍNCRONO</text>
+      <text class="ts" x="312" y="300">sincronização oportunista — a tela já respondeu</text>
+      <path class="ln" d="M273,326 H891" marker-end="url(#arw)"/>
+      <text class="ts" x="279" y="320">run()</text>
+      <path class="ln" d="M906,352 H1057" marker-end="url(#arw)"/>
+      <text class="ts" x="912" y="346">upsert onConflict: id</text>
+      <path class="ln-d" d="M1057,376 H911" marker-end="url(#arw)"/>
+      <text class="ts" x="917" y="370">ok, então markSynced()</text>
+    </svg>
+    <p class="note"><b>Alternativo sem rede:</b> o quadro <span class="mono">par</span> consulta a conectividade antes de qualquer coisa e devolve <span class="mono">offline</span> sem fazer uma única requisição. O registro continua pendente e sobe no próximo gatilho — para o usuário, o fluxo é idêntico.</p>
+  </div></div>
+</section>
+
+<!-- ============ 24 · atividades ============ -->
+<section class="slide" data-sec="Atividades">
+  <div class="head tight">
+    <h1>Atividades — registrar foto de progresso</h1>
+    <p class="sub">O fluxo que atravessa as duas decisões obrigatórias de um app mobile: permissão do sistema e conectividade.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 392" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de atividades do fluxo de registrar foto de progresso">
+      <circle cx="258" cy="26" r="8" class="fillv"/>
+      <path class="ln-v" d="M258,36 V52" marker-end="url(#arwv)"/>
+      <rect class="nd-v" x="168" y="58" width="180" height="46" rx="13"/>
+      <text class="tl" x="258" y="86" text-anchor="middle">Tocar “Tirar foto de hoje”</text>
+      <path class="ln-v" d="M258,104 V116" marker-end="url(#arwv)"/>
+      <path class="nd" d="M258,118 L344,158 L258,198 L172,158 z"/>
+      <text class="tl" x="258" y="154" text-anchor="middle">Permissão</text>
+      <text class="tl" x="258" y="170" text-anchor="middle">de câmera?</text>
+
+      <path class="ln" d="M258,198 V224" marker-end="url(#arw)"/>
+      <text class="tk" x="268" y="216">NEGADA</text>
+      <rect class="nd" x="168" y="230" width="180" height="46" rx="13"/>
+      <text class="tl" x="258" y="252" text-anchor="middle">Cartão explicativo</text>
+      <text class="tk" x="258" y="268" text-anchor="middle">SEMPRE COM SAÍDA</text>
+      <path class="ln" d="M258,276 V286" marker-end="url(#arw)"/>
+      <path class="nd" d="M258,288 L334,322 L258,356 L182,322 z"/>
+      <text class="tl" x="258" y="327" text-anchor="middle">Concede?</text>
+      <path class="ln" d="M182,322 H120" marker-end="url(#arw)"/>
+      <text class="tk" x="126" y="314">NÃO · “AGORA NÃO”</text>
+      <circle cx="102" cy="322" r="11" fill="none" stroke="oklch(0.73 0.014 264 / 70%)" stroke-width="1.3"/>
+      <circle cx="102" cy="322" r="6" fill="oklch(0.73 0.014 264 / 80%)"/>
+      <path class="ln-v" d="M334,322 H470"/>
+      <text class="tk" x="344" y="314">SIM</text>
+
+      <path class="ln-v" d="M344,158 H470"/>
+      <text class="tk" x="352" y="150">CONCEDIDA</text>
+      <path class="ln-v" d="M470,322 V110" marker-end="url(#arwv)"/>
+      <circle cx="470" cy="158" r="3.5" class="fillv"/>
+      <rect class="nd-v" x="436" y="58" width="180" height="46" rx="13"/>
+      <text class="tl" x="526" y="80" text-anchor="middle">Capturar</text>
+      <text class="tm" x="526" y="96" text-anchor="middle">JPEG qualidade 0,85</text>
+      <path class="ln-v" d="M616,81 H660" marker-end="url(#arwv)"/>
+      <rect class="nd-v" x="666" y="58" width="190" height="46" rx="13"/>
+      <text class="tl" x="761" y="80" text-anchor="middle">Mover do cache para</text>
+      <text class="tm" x="761" y="96" text-anchor="middle">documents/progress-photos/</text>
+      <path class="ln-v" d="M856,81 H900" marker-end="url(#arwv)"/>
+      <rect class="nd-a" x="906" y="58" width="180" height="46" rx="13"/>
+      <text class="tl" x="996" y="80" text-anchor="middle">Gravar linha</text>
+      <text class="tm" x="996" y="96" text-anchor="middle">sync_status = pending</text>
+
+      <path class="ln" d="M996,104 V128" marker-end="url(#arw)"/>
+      <path class="nd" d="M996,130 L1066,166 L996,202 L926,166 z"/>
+      <text class="tl" x="996" y="171" text-anchor="middle">Tem rede?</text>
+      <path class="ln" d="M926,166 H760" marker-end="url(#arw)"/>
+      <text class="tk" x="800" y="158">SIM</text>
+      <rect class="nd" x="580" y="143" width="176" height="46" rx="13"/>
+      <text class="tl" x="668" y="171" text-anchor="middle">Upload ao bucket</text>
+      <path class="ln" d="M668,189 V214" marker-end="url(#arw)"/>
+      <path class="nd" d="M668,216 L738,252 L668,288 L598,252 z"/>
+      <text class="tl" x="668" y="257" text-anchor="middle">Upload ok?</text>
+
+      <path class="ln-v" d="M668,288 V310" marker-end="url(#arwv)"/>
+      <text class="tk" x="678" y="304">SIM</text>
+      <rect class="nd-v" x="566" y="316" width="204" height="46" rx="13"/>
+      <text class="tl" x="668" y="338" text-anchor="middle">markUploaded · synced</text>
+      <text class="tk" x="668" y="354" text-anchor="middle">PONTO VOLT NA GALERIA</text>
+      <path class="ln-v" d="M770,339 H812" marker-end="url(#arwv)"/>
+      <circle cx="832" cy="339" r="11" fill="none" stroke="oklch(0.87 0.23 126 / 70%)" stroke-width="1.3"/>
+      <circle cx="832" cy="339" r="6" class="fillv"/>
+
+      <path class="ln" d="M996,202 V217" marker-end="url(#arw)"/>
+      <text class="tk" x="1006" y="216">NÃO</text>
+      <path class="ln" d="M738,252 H874" marker-end="url(#arw)"/>
+      <text class="tk" x="806" y="244" text-anchor="middle">NÃO</text>
+      <rect class="nd-a" x="880" y="223" width="200" height="46" rx="13"/>
+      <text class="tl" x="980" y="245" text-anchor="middle">Continua pendente</text>
+      <text class="tk" x="980" y="261" text-anchor="middle">PONTO ÂMBAR NA GALERIA</text>
+      <path class="ln" d="M980,269 V302" marker-end="url(#arw)"/>
+      <circle cx="980" cy="322" r="11" fill="none" stroke="oklch(0.73 0.014 264 / 70%)" stroke-width="1.3"/>
+      <circle cx="980" cy="322" r="6" fill="oklch(0.73 0.014 264 / 80%)"/>
+      <text class="tc" x="1000" y="327">sobe no próximo gatilho</text>
+    </svg>
+  </div></div>
+</section>
+
+<!-- ============ 25 · componentes ============ -->
+<section class="slide" data-sec="Componentes">
+  <div class="head tight">
+    <h1>Componentes e camadas</h1>
+    <p class="sub">O monorepo transforma as camadas da Clean Architecture em pacotes, porque web e mobile compartilham o mesmo domínio.</p>
+  </div>
+  <div class="body"><div class="panel flush">
+    <svg class="dg" viewBox="0 0 1140 392" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de componentes com as camadas da Clean Architecture">
+      <rect class="nd" x="66" y="10" width="790" height="62" rx="15"/>
+      <text class="tk" x="84" y="30">UI · EXPO ROUTER — apps/mobile/src/app</text>
+      <text class="ts" x="84" y="52">Telas: Exercicio · Academias · Camera · Fotos · Configuracoes · Login</text>
+      <text class="ts" x="84" y="66">Hooks de leitura: useLoadProgression · usePendingSync · useProgressPhotos    ·    useWorkoutSync</text>
+
+      <rect class="nd" x="66" y="86" width="790" height="52" rx="15"/>
+      <text class="tk" x="84" y="106">COMPOSITION ROOTS — apps/mobile/src/lib</text>
+      <text class="ts" x="84" y="128">workout.ts · photos.ts · gyms.ts · auth-context.tsx    —    onde o caso de uso encontra o adapter</text>
+
+      <rect class="nd-v" x="66" y="152" width="790" height="104" rx="15"/>
+      <text class="tk" x="84" y="172">@PX/CORE — DOMAIN + APPLICATION · packages/core</text>
+      <text class="ts" x="84" y="194">Use cases: RegisterSet · UnregisterSet · SyncPendingSetLogs · SaveProgressPhoto · FindNearbyGyms · SignIn · SignUp</text>
+      <text class="ts" x="84" y="214">Entities e VOs: SetLog · Load · ProgressPhoto · Workout · BodyAssessment · GeoPoint · Email</text>
+      <text class="ts" x="84" y="234">Serviços puros: streak · load-progression · week-activity · body-history · measurements</text>
+      <rect x="84" y="240" width="754" height="0" fill="none"/>
+      <text class="tm fillv" x="84" y="250">Ports: SetLogRepository · WorkoutSyncGateway · LocationGateway · AuthGateway · ConnectivityStatus · Clock · IdGenerator</text>
+
+      <rect class="nd" x="66" y="270" width="386" height="54" rx="15"/>
+      <text class="tk" x="84" y="290">ADAPTERS DO MOBILE — src/db, src/lib</text>
+      <text class="ts" x="84" y="312">DrizzleSetLogRepository · ExpoLocationGateway · OverpassGymFinder</text>
+      <rect class="nd" x="470" y="270" width="386" height="54" rx="15"/>
+      <text class="tk" x="488" y="290">@PX/DB — ADAPTERS SUPABASE · packages/db</text>
+      <text class="ts" x="488" y="312">SupabaseWorkoutSyncGateway · SupabaseAuthGateway · repositórios</text>
+
+      <rect class="nd-q" x="66" y="338" width="790" height="46" rx="15"/>
+      <text class="tk" x="84" y="358">FRAMEWORKS &amp; DRIVERS</text>
+      <text class="ts" x="84" y="376">expo-sqlite + drizzle-orm · expo-location · expo-camera · expo-file-system · NetInfo · supabase-js · Overpass API</text>
+
+      <path class="ln-v" d="M40,86 V148" marker-end="url(#arwv)"/>
+      <path class="ln-v" d="M40,338 V262" marker-end="url(#arwv)"/>
+      <text class="tk" x="30" y="206" text-anchor="middle" transform="rotate(-90 30 206)">DEPENDÊNCIA APONTA PARA DENTRO</text>
+      <path class="ln-d" d="M259,270 V262" marker-end="url(#arw)"/>
+      <path class="ln-d" d="M663,270 V262" marker-end="url(#arw)"/>
+      <text class="tk" x="461" y="266" text-anchor="middle">IMPLEMENTAM OS PORTS</text>
+
+      <path class="ln-h" d="M890,10 H1136"/>
+      <text class="tk" x="890" y="32">REGRA DE DEPENDÊNCIA</text>
+      <text class="tc" x="890" y="56">A camada externa depende da</text>
+      <text class="tc" x="890" y="74">interna, nunca o contrário. Não é</text>
+      <text class="tc" x="890" y="92">convenção: é verificável por grep.</text>
+      <path class="ln-h" d="M890,116 H1136"/>
+      <text class="tk" x="890" y="138">O DOMÍNIO NÃO IMPORTA NADA</text>
+      <text class="tm" x="890" y="164" style="font-size:9.5px">grep -rhoE 'from "[^".][^"]*"' \</text>
+      <text class="tm" x="890" y="180" style="font-size:9.5px">  packages/core/src</text>
+      <text class="tc" x="890" y="204">Saída esperada: vazia.</text>
+      <path class="ln-h" d="M890,228 H1136"/>
+      <text class="tk" x="890" y="250">TELAS NÃO FAZEM SQL</text>
+      <text class="tm" x="890" y="276" style="font-size:9.5px">grep -rlE 'drizzle-orm|@/db' \</text>
+      <text class="tm" x="890" y="292" style="font-size:9.5px">  apps/mobile/src/app</text>
+      <text class="tc" x="890" y="316">Saída esperada: só o layout raiz,</text>
+      <text class="tc" x="890" y="334">que aplica as migrations no boot.</text>
+    </svg>
+  </div></div>
+</section>
