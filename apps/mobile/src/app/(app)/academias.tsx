@@ -13,6 +13,7 @@ import { CloudOff, MapPin, Menu, Navigation } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import type { FindNearbyGymsResult } from "@px/core";
 import { Screen } from "@/components/screen";
+import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { GymMap } from "@/components/gym-map";
 import { PillButton } from "@/components/pill-button";
@@ -71,11 +72,14 @@ export default function AcademiasScreen() {
   return (
     <Screen bottomInset={24}>
       <View className="mb-6 flex-row items-center justify-between">
-        <View>
-          <Text className="font-sans text-sm text-fog">Por perto</Text>
-          <Text className="font-sans-semibold text-3xl text-paper">
-            Academias
-          </Text>
+        <View className="flex-1 flex-row items-center gap-3">
+          <BackButton />
+          <View>
+            <Text className="font-sans text-sm text-fog">Por perto</Text>
+            <Text className="font-sans-semibold text-3xl text-paper">
+              Academias
+            </Text>
+          </View>
         </View>
         <Pressable
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

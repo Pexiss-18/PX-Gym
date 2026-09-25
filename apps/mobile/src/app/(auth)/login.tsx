@@ -26,7 +26,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <Screen scroll={false} bottomInset={24}>
+    <Screen avoidKeyboard bottomInset={24}>
       <View className="flex-1 justify-center">
         <View className="mb-8 items-center">
           <Text className="font-sans-semibold text-3xl text-paper">

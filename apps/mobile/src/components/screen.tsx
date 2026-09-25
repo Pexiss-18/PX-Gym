@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@px/tokens";
 
@@ -7,12 +7,21 @@ import { colors } from "@px/tokens";
  * Moldura padrão de tela: fundo ink-ground com os dois campos de cor
  * ambiente do DESIGN.md (lime no topo, coral na base, 5–7%, nos cantos,
  * nunca atrás da coluna de texto).
+ *
+ * `avoidKeyboard`: pra telas de formulário. Encolhe a área útil quando o
+ * teclado sobe e deixa rolar, pra o campo focado nunca ficar escondido.
+ * O conteúdo continua podendo centralizar (flex-1) quando o teclado some.
  */
 export function Screen({
   children,
   scroll = true,
   bottomInset = 96,
-}: PropsWithChildren<{ scroll?: boolean; bottomInset?: number }>) {
+  avoidKeyboard = false,
+}: PropsWithChildren<{
+  scroll?: boolean;
+  bottomInset?: number;
+  avoidKeyboard?: boolean;
+}>) {
   const insets = useSafeAreaInsets();
 
   const body = (
@@ -42,7 +51,21 @@ export function Screen({
           }}
         />
       </View>
-      {scroll ? (
+      {avoidKeyboard ? (
+        // Edge-to-edge (padrão no SDK 57) desliga o adjustResize do Android,
+        // então "padding" é o comportamento certo nas duas plataformas.
+        <KeyboardAvoidingView className="flex-1" behavior="padding">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          >
+            {body}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      ) : scroll ? (
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}

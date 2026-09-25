@@ -6,6 +6,7 @@ import Constants from "expo-constants";
 import { LogOut, Menu, RefreshCw } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
+import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/lib/auth-context";
@@ -77,9 +78,12 @@ export default function ConfiguracoesScreen() {
   return (
     <Screen bottomInset={24}>
       <View className="mb-6 flex-row items-center justify-between">
-        <Text className="font-sans-semibold text-3xl text-paper">
-          Configurações
-        </Text>
+        <View className="flex-1 flex-row items-center gap-3">
+          <BackButton />
+          <Text className="flex-1 font-sans-semibold text-3xl text-paper">
+            Configurações
+          </Text>
+        </View>
         <Pressable
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           className="h-10 w-10 items-center justify-center rounded-full border border-hairline bg-glass-fill"

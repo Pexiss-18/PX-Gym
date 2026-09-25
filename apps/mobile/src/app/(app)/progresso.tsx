@@ -11,6 +11,7 @@ import {
   type BodyHistoryPoint,
 } from "@px/core";
 import { Screen } from "@/components/screen";
+import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { Readout } from "@/components/readout";
 import { MeasurementsCard } from "@/components/measurements-card";
@@ -94,11 +95,14 @@ export default function ProgressoScreen() {
   return (
     <Screen bottomInset={24}>
       <View className="mb-6 flex-row items-center justify-between">
-        <View>
-          <Text className="font-sans text-sm text-fog">Evolução</Text>
-          <Text className="font-sans-semibold text-3xl text-paper">
-            Progresso
-          </Text>
+        <View className="flex-1 flex-row items-center gap-3">
+          <BackButton />
+          <View>
+            <Text className="font-sans text-sm text-fog">Evolução</Text>
+            <Text className="font-sans-semibold text-3xl text-paper">
+              Progresso
+            </Text>
+          </View>
         </View>
         <Pressable
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { Camera, ImageIcon, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
+import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/lib/auth-context";
@@ -23,9 +24,12 @@ export default function FotosScreen() {
   return (
     <Screen bottomInset={24}>
       <View className="mb-6 flex-row items-center justify-between">
-        <View>
-          <Text className="font-sans text-sm text-fog">Progresso</Text>
-          <Text className="font-sans-semibold text-3xl text-paper">Fotos</Text>
+        <View className="flex-1 flex-row items-center gap-3">
+          <BackButton />
+          <View>
+            <Text className="font-sans text-sm text-fog">Progresso</Text>
+            <Text className="font-sans-semibold text-3xl text-paper">Fotos</Text>
+          </View>
         </View>
         <Pressable
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

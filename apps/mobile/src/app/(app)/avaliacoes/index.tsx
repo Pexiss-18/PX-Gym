@@ -5,6 +5,7 @@ import { ClipboardList, CloudOff, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import type { AssessmentStatus, BodyAssessment } from "@px/core";
 import { Screen } from "@/components/screen";
+import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { Readout } from "@/components/readout";
 import { useAssessments } from "@/lib/remote";
@@ -95,11 +96,14 @@ export default function AvaliacoesScreen() {
   return (
     <Screen bottomInset={24}>
       <View className="mb-6 flex-row items-center justify-between">
-        <View>
-          <Text className="font-sans text-sm text-fog">Histórico</Text>
-          <Text className="font-sans-semibold text-3xl text-paper">
-            Avaliações
-          </Text>
+        <View className="flex-1 flex-row items-center gap-3">
+          <BackButton />
+          <View>
+            <Text className="font-sans text-sm text-fog">Histórico</Text>
+            <Text className="font-sans-semibold text-3xl text-paper">
+              Avaliações
+            </Text>
+          </View>
         </View>
         <Pressable
           onPress={() => navigation.dispatch(DrawerActions.openDrawer())}

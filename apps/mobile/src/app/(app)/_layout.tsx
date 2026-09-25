@@ -103,6 +103,9 @@ export default function AppLayout() {
   return (
     <Drawer
       drawerContent={(props) => <PxDrawerContent {...props} />}
+      // Voltar (seta ou botão do Android) retorna à tela anterior de verdade,
+      // não sempre pro início — ex.: câmera volta pra Fotos.
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         drawerType: "front",
