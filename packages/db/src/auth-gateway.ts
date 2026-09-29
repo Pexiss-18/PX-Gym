@@ -5,6 +5,8 @@ import {
 import type {
   AuthFailure,
   AuthGateway,
+  Papel,
+  Sessao,
   SignInOutcome,
   SignUpOutcome,
 } from "@px/core";
@@ -40,11 +42,12 @@ export class SupabaseAuthGateway implements AuthGateway {
   constructor(private readonly client: PxSupabaseClient) {}
 
   async signIn(email: string, password: string): Promise<SignInOutcome> {
-    const { error } = await this.client.auth.signInWithPassword({
+    const { data, error } = await this.client.auth.signInWithPassword({
       email,
       password,
     });
-    return error ? { ok: false, reason: toAuthFailure(error) } : { ok: true };
+    if (error) return { ok: false, reason: toAuthFailure(error) };
+    return { ok: true, sessao: paraSessao(data.session) };
   }
 
   async signUp(email: string, password: string): Promise<SignUpOutcome> {
@@ -59,4 +62,29 @@ export class SupabaseAuthGateway implements AuthGateway {
     // falha (sem rede), então o erro aqui não impede a saída.
     await this.client.auth.signOut();
   }
+}
+
+const PAPEIS: readonly Papel[] = ["aluno", "personal", "coordenacao"];
+
+type SessaoSupabase = {
+  access_token: string;
+  user: { id: string; email?: string; user_metadata?: Record<string, unknown> };
+};
+
+/**
+ * Traduz a sessão do Supabase pro domínio. O papel vem do user_metadata
+ * (quem não tem é aluno). Sem expiração local: o supabase-js renova o token.
+ */
+export function paraSessao(sessao: SessaoSupabase): Sessao {
+  const meta = sessao.user.user_metadata ?? {};
+  const email = sessao.user.email ?? "";
+  const papel = PAPEIS.includes(meta.papel as Papel) ? (meta.papel as Papel) : "aluno";
+  const nomeMeta = typeof meta.name === "string" ? meta.name.trim() : "";
+  const prefixo = email.split("@")[0] ?? "";
+  const nome = nomeMeta || prefixo.charAt(0).toUpperCase() + prefixo.slice(1) || "Atleta";
+  return {
+    usuario: { id: sessao.user.id, nome, email, papel },
+    token: sessao.access_token,
+    expiraEm: null,
+  };
 }

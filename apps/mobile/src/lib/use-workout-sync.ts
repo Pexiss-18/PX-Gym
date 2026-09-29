@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
-import { useAuth } from "./auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { trySyncSetLogs } from "./workout";
 import { trySyncPhotos } from "./photos";
 
@@ -12,8 +12,8 @@ import { trySyncPhotos } from "./photos";
  * e a próxima janela tenta de novo.
  */
 export function useWorkoutSync() {
-  const { session } = useAuth();
-  const userId = session?.user.id;
+  const { sessao } = useAuth();
+  const userId = sessao?.usuario.id;
 
   useEffect(() => {
     if (!userId) return;

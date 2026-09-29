@@ -15,14 +15,17 @@ import {
 import { GeistMono_600SemiBold } from "@expo-google-fonts/geist-mono";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { colors } from "@px/tokens";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { AuthProvider } from "@/adapters/context/AuthContext";
+import { CasosDeUsoProvider } from "@/adapters/context/CasosDeUsoContext";
+import { useAuth } from "@/adapters/hooks/useAuth";
+import { composicao } from "@/adapters/instancia";
 import { db } from "@/db";
 import migrations from "../../drizzle/migrations";
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { session, loading } = useAuth();
+  const { sessao, carregando } = useAuth();
 
   const [fontsLoaded] = useFonts({
     Geist_400Regular,
@@ -35,7 +38,7 @@ function RootNavigator() {
   const { success: dbReady, error: dbError } = useMigrations(db, migrations);
   if (dbError) throw dbError;
 
-  const ready = fontsLoaded && !loading && dbReady;
+  const ready = fontsLoaded && !carregando && dbReady;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -53,10 +56,10 @@ function RootNavigator() {
         contentStyle: { backgroundColor: colors.inkGround },
       }}
     >
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!sessao}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
-      <Stack.Protected guard={!session}>
+      <Stack.Protected guard={!sessao}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
     </Stack>
@@ -66,9 +69,13 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <StatusBar style="light" />
-        <RootNavigator />
+      {/* Context API: a sessão e os use cases ficam disponíveis pra
+          qualquer tela, sem prop drilling. */}
+      <AuthProvider servicos={composicao.auth}>
+        <CasosDeUsoProvider casos={composicao.casos}>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </CasosDeUsoProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );

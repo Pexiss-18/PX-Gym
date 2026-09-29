@@ -3,7 +3,7 @@ import {
   AuthRetryableFetchError,
 } from "@supabase/supabase-js";
 import type { PxSupabaseClient } from "../client";
-import { SupabaseAuthGateway, toAuthFailure } from "../auth-gateway";
+import { SupabaseAuthGateway, paraSessao, toAuthFailure } from "../auth-gateway";
 
 function apiError(code: string | undefined, status = 400) {
   const error = new AuthApiError("recusado", status, code);
@@ -44,13 +44,37 @@ function fakeAuthClient(auth: Record<string, unknown>) {
 }
 
 describe("SupabaseAuthGateway", () => {
-  it("signIn ok", async () => {
+  it("signIn ok devolve a sessão traduzida pro domínio", async () => {
     const client = fakeAuthClient({
-      signInWithPassword: async () => ({ data: {}, error: null }),
+      signInWithPassword: async () => ({
+        data: {
+          session: {
+            access_token: "jwt",
+            user: { id: "u1", email: "paulo@exemplo.com", user_metadata: {} },
+          },
+        },
+        error: null,
+      }),
     });
-    expect(await new SupabaseAuthGateway(client).signIn("a@b.co", "x")).toEqual(
-      { ok: true },
-    );
+    expect(await new SupabaseAuthGateway(client).signIn("a@b.co", "x")).toEqual({
+      ok: true,
+      sessao: {
+        usuario: { id: "u1", nome: "Paulo", email: "paulo@exemplo.com", papel: "aluno" },
+        token: "jwt",
+        expiraEm: null,
+      },
+    });
+  });
+
+  it("papel e nome vêm do user_metadata quando existem", () => {
+    const s = paraSessao({
+      access_token: "jwt",
+      user: { id: "u2", email: "c@x.com", user_metadata: { papel: "coordenacao", name: " Carla " } },
+    });
+    expect(s.usuario).toMatchObject({ nome: "Carla", papel: "coordenacao" });
+    expect(
+      paraSessao({ access_token: "j", user: { id: "u3", user_metadata: { papel: "admin" } } }).usuario,
+    ).toMatchObject({ nome: "Atleta", papel: "aluno", email: "" });
   });
 
   it("signIn sem rede não diz que a senha está errada", async () => {

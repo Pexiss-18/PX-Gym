@@ -5,10 +5,10 @@ import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { Field } from "@/components/field";
 import { PillButton } from "@/components/pill-button";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 
 export default function CadastroScreen() {
-  const { signUp } = useAuth();
+  const { cadastrar, entrar } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -20,16 +20,22 @@ export default function CadastroScreen() {
     setLoading(true);
     setError(null);
     // Regras de senha/e-mail moram no SignUpUseCase (@px/core).
-    const result = await signUp(email, password, confirm);
-    if (result.error) {
-      setError(result.error);
+    const result = await cadastrar(email, password, confirm);
+    if (result.erro) {
+      setError(result.erro);
       setLoading(false);
-    } else if (result.confirmationSent) {
-      // Sem sessão ainda: o Supabase espera o clique no link do e-mail.
+    } else if (result.confirmacaoEnviada) {
+      // Sem sessão ainda: o provedor espera o clique no link do e-mail.
       setConfirmationSent(true);
       setLoading(false);
+    } else {
+      // Conta criada já liberada: entra direto; o Stack.Protected troca de área.
+      const { erro } = await entrar(email, password);
+      if (erro) {
+        setError(erro);
+        setLoading(false);
+      }
     }
-    // conta já com sessão: o Stack.Protected do root troca de área sozinho
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
-import { router, useNavigation } from "expo-router";
+import { router, useNavigation, Redirect } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import { ArrowRight, Flame, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
@@ -13,7 +13,7 @@ import { ProgressBar } from "@/components/progress-bar";
 import { WeekStrip } from "@/components/week-strip";
 import { LineChart } from "@/components/charts/line-chart";
 import { todayWorkout } from "@/lib/mock-data";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName } from "@/lib/identity";
 import {
   useStreakDays,
@@ -68,10 +68,10 @@ function Metric({
   );
 }
 
-export default function InicioScreen() {
+function InicioScreen() {
   const navigation = useNavigation();
-  const { session } = useAuth();
-  const name = displayName(session);
+  const { sessao } = useAuth();
+  const name = displayName(sessao);
 
   const streakDays = useStreakDays();
   const doneByExercise = useTodayDoneByExercise();
@@ -297,4 +297,14 @@ export default function InicioScreen() {
       </View>
     </Screen>
   );
+}
+
+/**
+ * Personal e coordenação não treinam no app: a casa deles é a lista de
+ * relatórios do ciclo.
+ */
+export default function Inicio() {
+  const { sessao } = useAuth();
+  if (sessao && sessao.usuario.papel !== "aluno") return <Redirect href="/relatorios" />;
+  return <InicioScreen />;
 }

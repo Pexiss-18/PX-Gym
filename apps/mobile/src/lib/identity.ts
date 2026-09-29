@@ -1,17 +1,8 @@
-import type { Session } from "@supabase/supabase-js";
+import type { Sessao } from "@px/core";
 
-/**
- * Nome exibível a partir da sessão: user_metadata.name quando existir (o
- * cadastro ainda não coleta nome), senão o prefixo do e-mail capitalizado.
- */
-export function displayName(session: Session | null): string {
-  if (!session) return "Atleta";
-  const fromMetadata = session.user.user_metadata?.name;
-  if (typeof fromMetadata === "string" && fromMetadata.trim()) {
-    return fromMetadata.trim();
-  }
-  const prefix = session.user.email?.split("@")[0] ?? "Atleta";
-  return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+/** Nome exibível: o que a sessão traz (o gateway já resolve metadata/e-mail). */
+export function displayName(sessao: Sessao | null): string {
+  return sessao?.usuario.nome.trim() || "Atleta";
 }
 
 export function initials(name: string): string {

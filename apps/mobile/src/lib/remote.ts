@@ -6,7 +6,7 @@ import {
   SupabaseNutritionPlanRepository,
 } from "@px/db";
 import { supabase } from "./supabase";
-import { useAuth } from "./auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 
 /*
  * Dados remotos (Supabase) com refetch a cada focus da tela — o usuário que
@@ -25,8 +25,8 @@ export type Remote<T> =
   | { status: "ready"; data: T };
 
 function useRemote<T>(fetcher: (userId: string) => Promise<T>): Remote<T> {
-  const { session } = useAuth();
-  const userId = session?.user.id;
+  const { sessao } = useAuth();
+  const userId = sessao?.usuario.id;
   const [state, setState] = useState<Remote<T>>({
     status: "loading",
     data: null,

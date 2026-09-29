@@ -1,10 +1,10 @@
-import type { SetLog } from "../entities/set-log";
-import type { ProgressPhoto } from "../entities/progress-photo";
-import type { BodyAssessment } from "../entities/body-assessment";
-import type { NutritionPlan } from "../entities/nutrition-plan";
-import type { Gym } from "../entities/gym";
-import type { GeoPoint } from "../value-objects/geo";
-import { LocationUnavailableError } from "../errors";
+import type { SetLog } from "../domain/entities/set-log";
+import type { ProgressPhoto } from "../domain/entities/progress-photo";
+import type { BodyAssessment } from "../domain/entities/body-assessment";
+import type { NutritionPlan } from "../domain/entities/nutrition-plan";
+import type { Gym } from "../domain/entities/gym";
+import type { GeoPoint } from "../domain/value-objects/geo";
+import { LocationUnavailableError } from "../domain/errors";
 import type {
   AssessmentRepository,
   AuthGateway,
@@ -21,7 +21,7 @@ import type {
   SignInOutcome,
   SignUpOutcome,
   WorkoutSyncGateway,
-} from "../ports";
+} from "../domain/contracts";
 
 export class FixedClock implements Clock {
   constructor(private readonly date: Date) {}
@@ -213,7 +213,14 @@ export class FakeGymFinder implements NearbyGymsFinder {
 /** Provedor de identidade falso: responde o que o cenário configurar. */
 export class FakeAuthGateway implements AuthGateway {
   calls: { op: "signIn" | "signUp"; email: string }[] = [];
-  signInOutcome: SignInOutcome = { ok: true };
+  signInOutcome: SignInOutcome = {
+    ok: true,
+    sessao: {
+      usuario: { id: "u-aluno", nome: "Paulo", email: "paulo@exemplo.com", papel: "aluno" },
+      token: "tok-123",
+      expiraEm: null,
+    },
+  };
   signUpOutcome: SignUpOutcome = { ok: true, needsConfirmation: false };
   signedOut = false;
 

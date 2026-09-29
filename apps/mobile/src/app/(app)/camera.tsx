@@ -1,31 +1,46 @@
-import { useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { CameraView } from "expo-camera";
+import type { PermissaoCamera } from "@px/core";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, SwitchCamera, X } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { persistCapture, saveProgressPhotoUseCase } from "@/lib/photos";
+import { CameraGatewayExpo } from "@/adapters/gateways/CameraGatewayExpo";
 
 /**
- * Captura de foto de progresso. A foto é gravada no app e no SQLite na hora
- * (pending) — o upload pro bucket acontece em background quando há rede.
+ * Captura de foto de progresso. A tela só desenha o preview: permissão e
+ * captura passam pelo CameraGateway (expo-camera embrulhado), então a
+ * câmera fica atrás da interface do domínio. A foto é gravada no app e no
+ * SQLite na hora (pending) — o upload acontece em background quando há rede.
  */
 export default function CameraScreen() {
-  const { session } = useAuth();
+  const { sessao } = useAuth();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
-  const [permission, requestPermission] = useCameraPermissions();
+  const camera = useMemo(() => new CameraGatewayExpo(() => cameraRef.current), []);
+  const [permissao, setPermissao] = useState<PermissaoCamera | null>(null);
+
+  useEffect(() => {
+    void camera.permissao().then(setPermissao);
+  }, [camera]);
+
+  // Negada de vez: o diálogo não abre mais, só as configurações resolvem.
+  const requestPermission = () =>
+    permissao === "bloqueada"
+      ? void Linking.openSettings()
+      : void camera.solicitarPermissao().then(setPermissao);
   const [facing, setFacing] = useState<"back" | "front">("back");
   const [saving, setSaving] = useState(false);
 
-  if (!permission) return <View className="flex-1 bg-black" />;
+  if (!permissao) return <View className="flex-1 bg-black" />;
 
-  if (!permission.granted) {
+  if (permissao !== "concedida") {
     return (
       <Screen bottomInset={24}>
         <View className="flex-1 justify-center">
@@ -56,14 +71,13 @@ export default function CameraScreen() {
   }
 
   async function capture() {
-    if (saving || !session) return;
-    const photo = await cameraRef.current?.takePictureAsync({ quality: 0.85 });
-    if (!photo) return;
+    if (saving || !sessao) return;
     setSaving(true);
     try {
-      const localUri = persistCapture(photo.uri);
+      const foto = await camera.capturar();
+      const localUri = persistCapture(foto.uri);
       await saveProgressPhotoUseCase.execute({
-        userId: session.user.id,
+        userId: sessao.usuario.id,
         localUri,
       });
       router.back();

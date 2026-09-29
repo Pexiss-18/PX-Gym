@@ -8,7 +8,7 @@ import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { useProgressPhotos } from "@/lib/use-local-data";
 
 function formatDay(ms: Date): string {
@@ -18,8 +18,8 @@ function formatDay(ms: Date): string {
 /** Galeria offline-first: as fotos moram no aparelho; o dot mostra o sync. */
 export default function FotosScreen() {
   const navigation = useNavigation();
-  const { session } = useAuth();
-  const photos = useProgressPhotos(session?.user.id ?? "");
+  const { sessao } = useAuth();
+  const photos = useProgressPhotos(sessao?.usuario.id ?? "");
 
   return (
     <Screen bottomInset={24}>

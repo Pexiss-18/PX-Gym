@@ -1,13 +1,21 @@
 {
-  // Typecheck dos testes de adapters (o jest só transpila). Separado do
-  // tsconfig do app pra que os globais de Jest/Node não vazem pras telas.
+  // Typecheck dos testes (o jest só transpila). Separado do tsconfig do app
+  // pra que os globais de Jest/Node não vazem pras telas.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"],
+      // fakes do core (Map em memória, stubs) usados pelos testes das telas
+      "@px/core/testing/*": ["../../packages/core/src/testing/*"]
+    }
   },
   "include": [
     "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
     "src/types/**/*.d.ts",
+    ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
   ],

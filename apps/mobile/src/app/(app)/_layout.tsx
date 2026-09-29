@@ -8,17 +8,18 @@ import {
 import {
   Camera,
   ClipboardList,
+  FileSignature,
   MapPin,
   Settings,
   TrendingUp,
 } from "lucide-react-native";
 import { colors } from "@px/tokens";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName } from "@/lib/identity";
 import { useWorkoutSync } from "@/lib/use-workout-sync";
 
 function PxDrawerContent(props: DrawerContentComponentProps) {
-  const { session } = useAuth();
+  const { sessao } = useAuth();
   return (
     <DrawerContentScrollView
       {...props}
@@ -29,9 +30,21 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
           Px <Text className="text-volt">GYM</Text>
         </Text>
         <Text className="mt-1 font-sans text-sm text-fog">
-          {displayName(session)}
+          {displayName(sessao)}
         </Text>
       </View>
+      <DrawerItem
+        label="Relatórios do ciclo"
+        labelStyle={{
+          color: colors.paperForeground,
+          fontFamily: "Geist_500Medium",
+          fontSize: 14,
+        }}
+        icon={({ size }) => (
+          <FileSignature size={size ?? 20} color={colors.fogMuted} />
+        )}
+        onPress={() => props.navigation.navigate("relatorios")}
+      />
       <DrawerItem
         label="Progresso"
         labelStyle={{
@@ -117,6 +130,7 @@ export default function AppLayout() {
       }}
     >
       <Drawer.Screen name="(tabs)" />
+      <Drawer.Screen name="relatorios" />
       <Drawer.Screen name="progresso" />
       <Drawer.Screen name="avaliacoes" />
       <Drawer.Screen name="configuracoes" />

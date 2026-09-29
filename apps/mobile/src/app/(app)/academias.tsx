@@ -31,7 +31,7 @@ type ScreenState = { status: "searching" } | FindNearbyGymsResult;
 /**
  * Academias perto do usuário. A tela só desenha estados: permissão, GPS (com
  * fallback pra última posição conhecida) e busca no Overpass/OSM ficam no
- * FindNearbyGymsUseCase + ExpoLocationGateway. Mapa Apple Maps no iOS e
+ * FindNearbyGymsUseCase + LocationGatewayExpo. Mapa Apple Maps no iOS e
  * MapLibre+OSM no Android (GymMap resolve por extensão de plataforma).
  */
 export default function AcademiasScreen() {

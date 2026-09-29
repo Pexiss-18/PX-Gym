@@ -11,13 +11,13 @@ import {
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName, initials } from "@/lib/identity";
 
 export default function PerfilScreen() {
-  const { session, signOut } = useAuth();
+  const { sessao, sair } = useAuth();
   const navigation = useNavigation();
-  const name = displayName(session);
+  const name = displayName(sessao);
 
   const rows = [
     {
@@ -57,7 +57,7 @@ export default function PerfilScreen() {
                 {name}
               </Text>
               <Text className="font-sans text-sm text-fog">
-                {session?.user.email}
+                {sessao?.usuario.email}
               </Text>
             </View>
           </View>
@@ -93,7 +93,7 @@ export default function PerfilScreen() {
                 {
                   text: "Sair",
                   style: "destructive",
-                  onPress: () => void signOut(),
+                  onPress: () => void sair(),
                 },
               ],
             )

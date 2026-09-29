@@ -9,7 +9,7 @@ import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/adapters/hooks/useAuth";
 import { trySyncPhotos } from "@/lib/photos";
 import { usePendingSync } from "@/lib/use-local-data";
 import { trySyncSetLogs } from "@/lib/workout";
@@ -20,7 +20,7 @@ import { trySyncSetLogs } from "@/lib/workout";
  */
 export default function ConfiguracoesScreen() {
   const navigation = useNavigation();
-  const { session, signOut } = useAuth();
+  const { sessao, sair } = useAuth();
 
   const pending = usePendingSync();
 
@@ -28,11 +28,11 @@ export default function ConfiguracoesScreen() {
   const [feedback, setFeedback] = useState<string | null>(null);
 
   async function syncNow() {
-    if (!session || syncing) return;
+    if (!sessao || syncing) return;
     setSyncing(true);
     setFeedback(null);
     try {
-      const result = await trySyncSetLogs(session.user.id);
+      const result = await trySyncSetLogs(sessao.usuario.id);
       const photos = await trySyncPhotos();
 
       if (result.status === "offline" && photos?.status === "offline") {
@@ -70,7 +70,7 @@ export default function ConfiguracoesScreen() {
       "Seus registros locais continuam salvos no aparelho.",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Sair", style: "destructive", onPress: () => void signOut() },
+        { text: "Sair", style: "destructive", onPress: () => void sair() },
       ],
     );
   }
@@ -99,7 +99,7 @@ export default function ConfiguracoesScreen() {
             <View className="p-3.5">
               <Text className="font-sans text-[11px] text-fog">E-mail</Text>
               <Text className="font-sans-medium text-sm text-paper">
-                {session?.user.email}
+                {sessao?.usuario.email}
               </Text>
             </View>
             <Pressable
