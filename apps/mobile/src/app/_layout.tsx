@@ -18,11 +18,21 @@ import { colors } from "@px/tokens";
 import { AuthProvider } from "@/adapters/context/AuthContext";
 import { CasosDeUsoProvider } from "@/adapters/context/CasosDeUsoContext";
 import { useAuth } from "@/adapters/hooks/useAuth";
-import { composicao } from "@/adapters/instancia";
+import { MODO_MOCK, composicao } from "@/adapters/instancia";
 import { db } from "@/db";
 import migrations from "../../drizzle/migrations";
 
 SplashScreen.preventAutoHideAsync();
+
+// Aplica as migrations do SQLite antes de qualquer tela tocar no banco. No
+// modo mock não há banco: nada a migrar, nada a esperar.
+const useBancoPronto: () => boolean = MODO_MOCK
+  ? () => true
+  : () => {
+      const { success, error } = useMigrations(db, migrations);
+      if (error) throw error;
+      return success;
+    };
 
 function RootNavigator() {
   const { sessao, carregando } = useAuth();
@@ -34,9 +44,7 @@ function RootNavigator() {
     GeistMono_600SemiBold,
   });
 
-  // Aplica as migrations do SQLite antes de qualquer tela tocar no banco.
-  const { success: dbReady, error: dbError } = useMigrations(db, migrations);
-  if (dbError) throw dbError;
+  const dbReady = useBancoPronto();
 
   const ready = fontsLoaded && !carregando && dbReady;
 

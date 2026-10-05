@@ -12,11 +12,32 @@ import {
   MapPin,
   Settings,
   TrendingUp,
+  type LucideIcon,
 } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName } from "@/lib/identity";
+import { MODO_MOCK } from "@/lib/modo";
 import { useWorkoutSync } from "@/lib/use-workout-sync";
+
+type ItemMenu = { rota: string; rotulo: string; Icone: LucideIcon };
+
+const RELATORIOS: ItemMenu = {
+  rota: "relatorios",
+  rotulo: "Relatórios do ciclo",
+  Icone: FileSignature,
+};
+
+/** Telas que leem do SQLite/Supabase — fora do ar no modo mock. */
+const TELAS_COM_BANCO: ItemMenu[] = [
+  { rota: "progresso", rotulo: "Progresso", Icone: TrendingUp },
+  { rota: "avaliacoes", rotulo: "Avaliações", Icone: ClipboardList },
+  { rota: "fotos", rotulo: "Fotos de progresso", Icone: Camera },
+  { rota: "academias", rotulo: "Academias por perto", Icone: MapPin },
+  { rota: "configuracoes", rotulo: "Configurações", Icone: Settings },
+];
+
+const MENU = MODO_MOCK ? [RELATORIOS] : [RELATORIOS, ...TELAS_COM_BANCO];
 
 function PxDrawerContent(props: DrawerContentComponentProps) {
   const { sessao } = useAuth();
@@ -33,78 +54,21 @@ function PxDrawerContent(props: DrawerContentComponentProps) {
           {displayName(sessao)}
         </Text>
       </View>
-      <DrawerItem
-        label="Relatórios do ciclo"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <FileSignature size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("relatorios")}
-      />
-      <DrawerItem
-        label="Progresso"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <TrendingUp size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("progresso")}
-      />
-      <DrawerItem
-        label="Avaliações"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <ClipboardList size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("avaliacoes")}
-      />
-      <DrawerItem
-        label="Fotos de progresso"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <Camera size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("fotos")}
-      />
-      <DrawerItem
-        label="Academias por perto"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <MapPin size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("academias")}
-      />
-      <DrawerItem
-        label="Configurações"
-        labelStyle={{
-          color: colors.paperForeground,
-          fontFamily: "Geist_500Medium",
-          fontSize: 14,
-        }}
-        icon={({ size }) => (
-          <Settings size={size ?? 20} color={colors.fogMuted} />
-        )}
-        onPress={() => props.navigation.navigate("configuracoes")}
-      />
+      {MENU.map(({ rota, rotulo, Icone }) => (
+        <DrawerItem
+          key={rota}
+          label={rotulo}
+          labelStyle={{
+            color: colors.paperForeground,
+            fontFamily: "Geist_500Medium",
+            fontSize: 14,
+          }}
+          icon={({ size }) => (
+            <Icone size={size ?? 20} color={colors.fogMuted} />
+          )}
+          onPress={() => props.navigation.navigate(rota)}
+        />
+      ))}
     </DrawerContentScrollView>
   );
 }
@@ -129,15 +93,21 @@ export default function AppLayout() {
         sceneStyle: { backgroundColor: colors.inkGround },
       }}
     >
-      <Drawer.Screen name="(tabs)" />
+      {/* No modo mock só o relatório do ciclo existe: o resto depende do
+          SQLite/Supabase e nem entra na navegação. */}
+      <Drawer.Protected guard={!MODO_MOCK}>
+        <Drawer.Screen name="(tabs)" />
+      </Drawer.Protected>
       <Drawer.Screen name="relatorios" />
-      <Drawer.Screen name="progresso" />
-      <Drawer.Screen name="avaliacoes" />
-      <Drawer.Screen name="configuracoes" />
-      <Drawer.Screen name="fotos" />
-      <Drawer.Screen name="academias" />
-      <Drawer.Screen name="camera" options={{ swipeEnabled: false }} />
-      <Drawer.Screen name="scanner" options={{ swipeEnabled: false }} />
+      <Drawer.Protected guard={!MODO_MOCK}>
+        <Drawer.Screen name="progresso" />
+        <Drawer.Screen name="avaliacoes" />
+        <Drawer.Screen name="configuracoes" />
+        <Drawer.Screen name="fotos" />
+        <Drawer.Screen name="academias" />
+        <Drawer.Screen name="camera" options={{ swipeEnabled: false }} />
+        <Drawer.Screen name="scanner" options={{ swipeEnabled: false }} />
+      </Drawer.Protected>
     </Drawer>
   );
 }

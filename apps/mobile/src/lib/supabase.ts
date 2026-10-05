@@ -5,6 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Crypto from "expo-crypto";
 import * as aesjs from "aes-js";
 import { createPxSupabaseClient } from "@px/db";
+import { MODO_MOCK, desligadoNoMock } from "./modo";
 
 /**
  * O SecureStore tem limite prático de ~2KB por valor — pequeno demais pra
@@ -55,17 +56,27 @@ class LargeSecureStore {
   }
 }
 
-export const supabase = createPxSupabaseClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-  { storage: new LargeSecureStore(), detectSessionInUrl: false },
-);
+type PxSupabase = ReturnType<typeof createPxSupabaseClient>;
 
-// Refresh de token só com o app em foreground (recomendação do supabase-js).
-AppState.addEventListener("change", (state) => {
-  if (state === "active") {
-    supabase.auth.startAutoRefresh();
-  } else {
-    supabase.auth.stopAutoRefresh();
-  }
-});
+function conectar(): PxSupabase {
+  const cliente = createPxSupabaseClient(
+    process.env.EXPO_PUBLIC_SUPABASE_URL!,
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
+    { storage: new LargeSecureStore(), detectSessionInUrl: false },
+  );
+
+  // Refresh de token só com o app em foreground (recomendação do supabase-js).
+  AppState.addEventListener("change", (state) => {
+    if (state === "active") {
+      cliente.auth.startAutoRefresh();
+    } else {
+      cliente.auth.stopAutoRefresh();
+    }
+  });
+  return cliente;
+}
+
+// No modo mock o cliente nem é criado: nenhuma chamada sai pro Supabase.
+export const supabase: PxSupabase = MODO_MOCK
+  ? desligadoNoMock<PxSupabase>("O Supabase")
+  : conectar();

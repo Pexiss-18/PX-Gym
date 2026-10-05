@@ -1,4 +1,5 @@
 import { SupabaseAuthGateway } from "@px/db";
+import { MODO_MOCK } from "@/lib/modo";
 import { supabase } from "@/lib/supabase";
 import { cryptoIds, systemClock } from "@/lib/system";
 import { SessionStorageSecureStore } from "./auth/SessionStorageSecureStore";
@@ -6,13 +7,13 @@ import { criarComposicao } from "./composicao";
 import { SENHA_DEMO } from "./memoria/gateways-simulados";
 import type { ContaDemo } from "./screens/LoginScreen";
 
-/**
- * Fase atual: domínio e interface primeiro, 100% mock. O login usa o
- * AuthGatewayStub e os relatórios vivem em Map. EXPO_PUBLIC_MODO_MOCK=0 liga
- * o login real do Supabase (o resto do relatório continua em memória).
- */
-export const MODO_MOCK = process.env.EXPO_PUBLIC_MODO_MOCK !== "0";
+export { MODO_MOCK };
 
+/*
+ * No modo mock o login usa o AuthGatewayStub e os relatórios vivem em Map.
+ * Com EXPO_PUBLIC_MODO_MOCK=0 entra o login real do Supabase (o relatório
+ * continua em memória).
+ */
 export const composicao = criarComposicao({
   clock: systemClock,
   ids: cryptoIds,

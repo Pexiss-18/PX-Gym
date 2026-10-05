@@ -15,6 +15,7 @@ import { LineChart } from "@/components/charts/line-chart";
 import { todayWorkout } from "@/lib/mock-data";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName } from "@/lib/identity";
+import { MODO_MOCK } from "@/lib/modo";
 import {
   useStreakDays,
   useTodayDoneByExercise,
@@ -301,10 +302,11 @@ function InicioScreen() {
 
 /**
  * Personal e coordenação não treinam no app: a casa deles é a lista de
- * relatórios do ciclo.
+ * relatórios do ciclo. No modo mock é a casa de todo mundo — o painel de
+ * treino lê do SQLite, que está desligado.
  */
 export default function Inicio() {
   const { sessao } = useAuth();
-  if (sessao && sessao.usuario.papel !== "aluno") return <Redirect href="/relatorios" />;
+  if (MODO_MOCK || (sessao && sessao.usuario.papel !== "aluno")) return <Redirect href="/relatorios" />;
   return <InicioScreen />;
 }
