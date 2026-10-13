@@ -28,16 +28,19 @@ const RELATORIOS: ItemMenu = {
   Icone: FileSignature,
 };
 
+const FOTOS: ItemMenu = { rota: "fotos", rotulo: "Fotos de progresso", Icone: Camera };
+
 /** Telas que leem do SQLite/Supabase — fora do ar no modo mock. */
 const TELAS_COM_BANCO: ItemMenu[] = [
   { rota: "progresso", rotulo: "Progresso", Icone: TrendingUp },
   { rota: "avaliacoes", rotulo: "Avaliações", Icone: ClipboardList },
-  { rota: "fotos", rotulo: "Fotos de progresso", Icone: Camera },
+  FOTOS,
   { rota: "academias", rotulo: "Academias por perto", Icone: MapPin },
   { rota: "configuracoes", rotulo: "Configurações", Icone: Settings },
 ];
 
-const MENU = MODO_MOCK ? [RELATORIOS] : [RELATORIOS, ...TELAS_COM_BANCO];
+// No modo mock as fotos usam galeria em memória e câmera simulada.
+const MENU = MODO_MOCK ? [RELATORIOS, FOTOS] : [RELATORIOS, ...TELAS_COM_BANCO];
 
 function PxDrawerContent(props: DrawerContentComponentProps) {
   const { sessao } = useAuth();
@@ -99,11 +102,12 @@ export default function AppLayout() {
         <Drawer.Screen name="(tabs)" />
       </Drawer.Protected>
       <Drawer.Screen name="relatorios" />
+      <Drawer.Screen name="fotos" />
+      <Drawer.Screen name="camera-demo" options={{ swipeEnabled: false }} />
       <Drawer.Protected guard={!MODO_MOCK}>
         <Drawer.Screen name="progresso" />
         <Drawer.Screen name="avaliacoes" />
         <Drawer.Screen name="configuracoes" />
-        <Drawer.Screen name="fotos" />
         <Drawer.Screen name="academias" />
         <Drawer.Screen name="camera" options={{ swipeEnabled: false }} />
         <Drawer.Screen name="scanner" options={{ swipeEnabled: false }} />

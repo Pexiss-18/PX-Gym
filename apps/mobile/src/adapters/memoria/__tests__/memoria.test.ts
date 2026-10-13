@@ -5,6 +5,8 @@ import { criarComposicao } from "../../composicao";
 import { criarDadosDemo, TOKEN_DEMO } from "../dados-demo";
 import {
   AuthGatewayStub,
+  LOCAL_DEMO,
+  LocationGatewaySimulado,
   PdfGatewaySimulado,
   SENHA_DEMO,
   SincronizacaoGatewaySimulado,
@@ -113,6 +115,13 @@ describe("gateways simulados", () => {
     expect(uri).toBe("memoria://relatorios/ciclo-1.pdf");
     await expect(new SincronizacaoGatewaySimulado(0).enviar()).resolves.toBeUndefined();
     expect(await conectividadeSimulada.isOnline()).toBe(true);
+  });
+
+  it("GPS simulado: permissão sempre concedida e posição fixa da academia de demo", async () => {
+    const gps = new LocationGatewaySimulado(0);
+    expect(await gps.permission()).toBe("granted");
+    expect(await gps.requestPermission()).toBe("granted");
+    expect(await gps.currentPosition()).toMatchObject(LOCAL_DEMO);
   });
 });
 

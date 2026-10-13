@@ -1,8 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { AtividadesFormScreen } from "@/adapters/screens/AtividadesFormScreen";
-import { LocationGatewayExpo } from "@/adapters/gateways/LocationGatewayExpo";
-
-const localizacao = new LocationGatewayExpo();
+import { localizacao } from "@/adapters/instancia";
 
 export default function AtividadesRoute() {
   const { cicloId } = useLocalSearchParams<{ cicloId: string }>();

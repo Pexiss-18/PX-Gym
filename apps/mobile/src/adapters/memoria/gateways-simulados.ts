@@ -1,6 +1,10 @@
+import { geoPoint } from "@px/core";
 import type {
   AuthGateway,
   ConnectivityStatus,
+  GeoPoint,
+  LocationGateway,
+  LocationPermission,
   PdfGateway,
   RelatorioParaPdf,
   Sessao,
@@ -73,6 +77,31 @@ export class SincronizacaoGatewaySimulado implements SincronizacaoGateway {
 
   async enviar(): Promise<void> {
     await espera(this.latenciaMs);
+  }
+}
+
+/** Posição fixa da academia de demonstração (Px GYM Centro, Belo Horizonte). */
+export const LOCAL_DEMO = { latitude: -19.9191, longitude: -43.9386 };
+
+/**
+ * GPS de mentira: a permissão já vem concedida e a posição é sempre a da
+ * academia de demonstração. No modo mock o check-in não toca no sensor nem
+ * abre o diálogo de permissão do sistema.
+ */
+export class LocationGatewaySimulado implements LocationGateway {
+  constructor(private readonly latenciaMs = 300) {}
+
+  async permission(): Promise<LocationPermission> {
+    return "granted";
+  }
+
+  async requestPermission(): Promise<LocationPermission> {
+    return "granted";
+  }
+
+  async currentPosition(): Promise<GeoPoint> {
+    await espera(this.latenciaMs);
+    return geoPoint(LOCAL_DEMO.latitude, LOCAL_DEMO.longitude, Date.now());
   }
 }
 
