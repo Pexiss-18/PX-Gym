@@ -1,0 +1,382 @@
+=== 1 · Domínio puro
+# Seção 1 — A camada de domínio puro
+> Aqui moram as regras de negócio. Nenhum arquivo desta pasta importa React, Expo ou biblioteca de UI: é TypeScript puro, testado em Node sem emulador.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:17%"><col style="width:35%"><col></colgroup>
+    <thead><tr><th>Bloco</th><th>O que foi construído</th><th>Arquivos</th></tr></thead>
+    <tbody>
+      <tr><td>Value Objects</td><td class="m">Criterio, Coordenada, Assinatura, CargaHoraria, StatusSincronizacao, StatusCiclo. Imutáveis, sem identidade, validados na criação.</td><td>{{r core/domain/value-objects/criterio.ts}} {{r core/domain/value-objects/coordenada.ts}} {{r core/domain/value-objects/assinatura.ts}} {{r core/domain/value-objects/carga-horaria.ts}} {{r core/domain/value-objects/status.ts}}</td></tr>
+      <tr><td>Aggregate Root</td><td class="m">CicloAvaliacao agrupa atividades, avaliação do personal, autoavaliação e assinaturas, e protege as invariantes.</td><td>{{r core/domain/entities/ciclo-avaliacao.ts :: export class CicloAvaliacao}}</td></tr>
+      <tr><td>Entidades</td><td class="m">Acompanhamento e TokenPersonal, com raiz e ciclo de vida próprios.</td><td>{{r core/domain/entities/acompanhamento.ts :: export class Acompanhamento}} {{r core/domain/entities/token-personal.ts :: export class TokenPersonal}}</td></tr>
+      <tr><td>Domain Services</td><td class="m">RegraGeracaoPdfService, RegraDevolucaoService e SincronizacaoService: regras que cruzam entidades.</td><td>{{r core/domain/services/regra-geracao-pdf.ts :: export class}} {{r core/domain/services/regra-devolucao.ts :: export class}} {{r core/domain/services/sincronizacao.ts :: export class}}</td></tr>
+      <tr><td>Contratos</td><td class="m">Interfaces de repositórios e gateways, puramente declarativas.</td><td>{{r core/domain/contracts/ciclo.ts :: export interface CicloAvaliacaoRepository}} {{r core/domain/contracts/index.ts :: export interface AuthGateway}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Volume de testes desta camada:</b> 115 testes só do ciclo de avaliação (176 no domínio inteiro), todos unitários, em memória e sem nenhum mock.</p>
+</div>
+
+=== 1 · Domínio puro
+# Value Object: Criterio
+> Guarda nome e nota de 0 a 10 e calcula a faixa. A faixa é derivada da nota, nunca informada, para que as duas não possam discordar.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Construtor privado.</b> <span>Só existe <code>Criterio.criar()</code>, então não há critério inválido circulando.</span></li>
+      <li><b>Validado na criação:</b> <span>nome não vazio, nota finita entre 0 e 10, em passos de 0,5.</span></li>
+      <li><b>Faixa calculada:</b> <span>MB a partir de 9, B a partir de 7, R a partir de 5, F abaixo disso.</span></li>
+      <li><b>Imutável:</b> <span><code>Object.freeze(this)</code> no construtor.</span></li>
+    </ul>
+    <p class="note"><b>Teste em tabela:</b> oito notas de fronteira (10, 9, 8,5, 7, 6,5, 5, 4,5 e 0) conferem a faixa esperada.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/value-objects/criterio.ts :: static criar(nome: string, nota: number) :: <equals(outro :: Math.round(nota * 2) ;; if (this.nota >= 9) :: small}}</div>
+</div>
+@refs core/domain/value-objects/criterio.ts :: Object.freeze(this) :: imutável ;; core/domain/__tests__/criterio.test.ts :: cai na faixa :: teste das faixas ;; core/domain/__tests__/criterio.test.ts :: rejeita nota fora do passo :: passo de 0,5
+
+=== 1 · Domínio puro
+# Value Object: Coordenada
+> Latitude, longitude e marca temporal do check-in do treino. Coordenada fora da faixa ou data inválida nunca entra no domínio.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Três campos:</b> <span><code>latitude</code>, <code>longitude</code> e <code>timestamp</code>.</span></li>
+      <li><b>Faixas conferidas:</b> <span>latitude de −90 a 90, longitude de −180 a 180.</span></li>
+      <li><b>Cópia defensiva do Date:</b> <span>quem criou pode alterar o objeto original depois; o do value object não muda.</span></li>
+      <li><b>Comportamento próprio:</b> <span><code>distanciaAte()</code> devolve metros por haversine.</span></li>
+    </ul>
+    <p class="note"><b>Onde é usada:</b> o use case de registrar atividades converte o que veio do GPS em Coordenada antes de entregar ao agregado.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/value-objects/coordenada.ts :: static criar(latitude :: return new Coordenada( :: new Date(timestamp.getTime())}}</div>
+</div>
+@refs core/domain/value-objects/coordenada.ts :: distanciaAte(outra :: distanciaAte() ;; core/domain/__tests__/coordenada-assinatura.test.ts :: não é afetada se o Date original mudar :: cópia defensiva ;; core/application/use-cases/registrar-atividades.ts :: Coordenada.criar( :: uso no use case
+
+=== 1 · Domínio puro
+# Value Object: Assinatura
+> A assinatura digital desenhada na tela: a imagem em base64 e o instante em que foi feita. Um toque acidental no quadro não vira assinatura.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Dois campos:</b> <span><code>base64</code> e <code>timestamp</code>.</span></li>
+      <li><b>Aceita data URI</b> <span>de SVG ou PNG e guarda só o base64.</span></li>
+      <li><b>Mínimo de 24 caracteres:</b> <span>menos que isso é quadro vazio ou toque sem querer.</span></li>
+      <li><b>Formato conferido:</b> <span>tamanho múltiplo de 4 e alfabeto base64.</span></li>
+    </ul>
+    <p class="note"><b>Efeito na tela:</b> o quadro em branco chega ao use case como string vazia e volta como erro de dado inválido, sem a tela ter regra nenhuma.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/value-objects/assinatura.ts :: const BASE64 :: +4}}
+    {{code core/domain/value-objects/assinatura.ts :: static criar(conteudo :: return new Assinatura( :: base64.length < MINIMO_CARACTERES}}
+  </div>
+</div>
+@refs core/domain/value-objects/assinatura.ts :: get dataUri :: dataUri para a tela e o PDF ;; core/domain/__tests__/coordenada-assinatura.test.ts :: rejeita quadro vazio :: toque acidental ;; mobile/adapters/screens/__tests__/AssinaturaEAvaliacaoScreen.test.tsx :: quadro em branco :: na tela
+
+=== 1 · Domínio puro
+# Value Object: CargaHoraria
+> Valida horas totais, mínimas e do período. Somar horas não altera o objeto: devolve uma carga nova, já validada.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Totais:</b> <span>horas de treino já registradas no ciclo.</span></li>
+      <li><b>Mínimas:</b> <span>o que o ciclo exige para poder ser assinado. Nunca zero.</span></li>
+      <li><b>Período:</b> <span>o teto que o ciclo comporta. Nem o mínimo nem o total passam dele.</span></li>
+      <li><b>Derivados:</b> <span><code>cumpriuMinimo</code>, <code>faltam</code> e <code>progresso</code> de 0 a 1.</span></li>
+    </ul>
+    <p class="note"><b>No agregado:</b> a carga é recalculada a partir das atividades a cada leitura, então não existe total guardado que possa ficar errado.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/value-objects/carga-horaria.ts :: if (minimas > periodo) { :: return new CargaHoraria(arredondar :: minimas > periodo ;; totais > periodo :: small}}
+    {{code core/domain/value-objects/carga-horaria.ts :: return CargaHoraria.criar({ :: +5 :: totais: this.totais + horas :: small}}
+  </div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: get cargaHoraria() :: recalculada no agregado ;; core/domain/__tests__/carga-horaria-status.test.ts :: adicionar devolve uma carga nova :: imutável ;; core/domain/__tests__/carga-horaria-status.test.ts :: não deixa passar do teto :: teto do período
+
+=== 1 · Domínio puro
+# Enums de status: StatusSincronizacao e StatusCiclo
+> Dois enums no formato objeto constante + tipo: o valor existe em runtime e o tipo é a união das strings. StatusCiclo é o estado do relatório do ciclo.
+<div class="cols two">
+  <div class="panel flush">
+    {{code core/domain/value-objects/status.ts :: export const StatusSincronizacao = { :: +7 ::  :: cols=65}}
+    {{code core/domain/value-objects/status.ts :: export const StatusCiclo = { :: +6 ::  :: cols=65}}
+  </div>
+  <div class="panel flush">
+    <svg class="dg" viewBox="0 0 520 320" role="img" aria-label="Ciclo de vida do relatório">
+      <rect class="nd" x="20" y="34" width="168" height="50" rx="16"/>
+      <text x="104" y="64" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">em_andamento</text>
+      <rect class="nd" x="320" y="34" width="190" height="50" rx="16"/>
+      <text x="415" y="64" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">aguardando_aprovacao</text>
+      <rect class="nd-v" x="320" y="236" width="190" height="50" rx="16"/>
+      <text x="415" y="266" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">aprovado</text>
+      <rect class="nd-a" x="20" y="236" width="168" height="50" rx="16"/>
+      <text x="104" y="266" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">devolvido</text>
+
+      <path class="ln" d="M188,59 L318,59" marker-end="url(#arw)"/>
+      <text x="253" y="46" text-anchor="middle" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">os dois assinam</text>
+
+      <path class="ln-v" d="M468,84 L468,234" marker-end="url(#arwv)"/>
+      <text x="458" y="150" text-anchor="end" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">coordenação aprova</text>
+
+      <path class="ln" d="M338,84 L166,232" marker-end="url(#arwa)" style="stroke:oklch(0.82 0.15 78 / 60%)"/>
+      <text x="222" y="132" text-anchor="end" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">coordenação devolve</text>
+
+      <path class="ln" d="M188,250 L360,88" marker-end="url(#arw)"/>
+      <text x="270" y="206" text-anchor="start" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">corrige e assina de novo</text>
+
+      <text x="415" y="306" text-anchor="middle" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">PDF só com assinaturas synced</text>
+    </svg>
+  </div>
+</div>
+@refs core/domain/value-objects/status.ts :: ROTULO_STATUS_CICLO :: rótulos para a tela ;; core/domain/__tests__/carga-horaria-status.test.ts :: StatusSincronizacao é pending :: teste do enum ;; core/domain/__tests__/carga-horaria-status.test.ts :: StatusCiclo cobre o ciclo de vida
+
+=== 1 · Domínio puro
+# Imutável, sem identidade, validado na criação
+> As três propriedades de um value object, conferidas uma a uma em cada tipo.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:30%"><col></colgroup>
+      <thead><tr><th>Value object</th><th>Congelado · igual por valor</th></tr></thead>
+      <tbody>
+        <tr><td>Criterio</td><td>{{rs core/domain/value-objects/criterio.ts :: Object.freeze(this)}} {{rs core/domain/value-objects/criterio.ts :: equals(outro}}</td></tr>
+        <tr><td>Coordenada</td><td>{{rs core/domain/value-objects/coordenada.ts :: Object.freeze(this)}} {{rs core/domain/value-objects/coordenada.ts :: equals(outra}}</td></tr>
+        <tr><td>Assinatura</td><td>{{rs core/domain/value-objects/assinatura.ts :: Object.freeze(this)}} {{rs core/domain/value-objects/assinatura.ts :: equals(outra}}</td></tr>
+        <tr><td>CargaHoraria</td><td>{{rs core/domain/value-objects/carga-horaria.ts :: Object.freeze(this)}}</td></tr>
+      </tbody>
+    </table>
+    <ul class="marks tiny" style="margin-top:16px">
+      <li><b>Sem identidade:</b> <span>nenhum tem <code>id</code>. Dois critérios com mesmo nome e nota são o mesmo critério.</span></li>
+      <li><b>Erro tipado:</b> <span>valor inválido lança <code>InvalidValueError</code>; regra quebrada lança <code>BusinessRuleError</code>.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/__tests__/criterio.test.ts :: it("é imutável" :: +12 :: Object.isFrozen(c) ;; toThrow(TypeError)}}</div>
+</div>
+@refs core/domain/errors.ts :: export class InvalidValueError :: erros de domínio ;; core/domain/__tests__/coordenada-assinatura.test.ts :: é imutável e compara por valor ;; core/domain/__tests__/coordenada-assinatura.test.ts :: igualdade por valor
+
+=== 1 · Domínio puro
+# Aggregate Root: CicloAvaliacao
+> O relatório de um ciclo de treino. Toda mudança em atividades, avaliações e assinaturas passa por ele, porque é o único lugar que conhece as invariantes.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col><col style="width:46%"></colgroup>
+      <thead><tr><th>O que o agregado guarda</th><th>Tipo declarado em</th></tr></thead>
+      <tbody>
+        <tr><td>Atividades desenvolvidas</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type AtividadeDesenvolvida}}</td></tr>
+        <tr><td>Avaliação e autoavaliação</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type Avaliacao}}</td></tr>
+        <tr><td>Assinaturas</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type RegistroAssinatura}}</td></tr>
+        <tr><td>Devoluções com motivo</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type Devolucao}}</td></tr>
+        <tr><td>Status e aprovação</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type CicloAvaliacaoProps}}</td></tr>
+      </tbody>
+    </table>
+    <ul class="marks tiny" style="margin-top:14px">
+      <li><b>Estado privado:</b> <span>as props só mudam por método do agregado.</span></li>
+      <li><b>Duas portas:</b> <span><code>abrir()</code> valida tudo; <code>restaurar()</code> reidrata do repositório.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/ciclo-avaliacao.ts :: - relatório assinado ou aprovado não aceita :: private constructor(private props :: relatório assinado ou aprovado ;; PDF só sai aprovado}}</div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: static abrir(input :: abrir() ;; core/domain/entities/ciclo-avaliacao.ts :: static restaurar(props :: restaurar() ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: nasce em andamento, vazio e editável
+
+=== 1 · Domínio puro
+# Invariante: ciclo aprovado bloqueia a segunda avaliação
+> A regra mora num método privado do agregado, por onde passam tanto a avaliação do personal quanto a autoavaliação.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Um ponto só:</b> <span><code>registrarAvaliacaoPersonal</code> e <code>registrarAutoAvaliacao</code> chamam o mesmo <code>novaAvaliacao</code>.</span></li>
+      <li><b>Aprovado:</b> <span>lança <code>BusinessRuleError</code> com a mensagem da linha destacada.</span></li>
+      <li><b>Já assinado:</b> <span>também recusa, e orienta a pedir devolução.</span></li>
+      <li><b>Enquanto editável,</b> <span>reavaliar substitui a avaliação anterior.</span></li>
+    </ul>
+    <p class="note"><b>Teste com o nome da regra:</b> “INVARIANTE: ciclo aprovado bloqueia uma 2ª avaliação”.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/entities/ciclo-avaliacao.ts :: private novaAvaliacao(input :: this.exigirEditavel("mudar a avaliação") :: Ciclo aprovado: não aceita uma segunda avaliação}}
+    {{code core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: ciclo aprovado bloqueia :: +5 :: Ciclo aprovado: não aceita uma segunda avaliação :: small}}
+  </div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: private exigirEditavel :: exigirEditavel() ;; core/domain/entities/ciclo-avaliacao.ts :: get editavel() :: editavel ;; core/application/__tests__/registrar-e-avaliar.test.ts :: 2ª avaliação em ciclo aprovado :: mesma regra pelo use case
+
+=== 1 · Domínio puro :: tight
+# Ciclo de vida no agregado: assinar, aprovar e devolver
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Só assina</b> <span>relatório em andamento ou devolvido, e cada signatário uma vez.</span></li>
+      <li><b>Pendências impedem:</b> <span>horas mínimas, avaliação do personal e autoavaliação.</span></li>
+      <li><b>Transição automática:</b> <span>com as duas assinaturas o ciclo vai para aguardando aprovação.</span></li>
+      <li><b>Aprovar e devolver</b> <span>só valem em aguardando aprovação.</span></li>
+      <li><b>Devolver apaga as assinaturas:</b> <span>o conteúdo vai mudar, então a assinatura antiga não vale mais.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/ciclo-avaliacao.ts :: assinar(signatario: Signatario, assinatura: Assinatura) :: this.props.status = StatusCiclo.AGUARDANDO_APROVACAO; :: const pendencias = this.pendenciasParaAssinar() ;; this.props.status = StatusCiclo.AGUARDANDO_APROVACAO :: small}}</div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: pendenciasParaAssinar(): string[] :: pendências ;; core/domain/entities/ciclo-avaliacao.ts :: aprovar(agora: Date) :: aprovar() ;; core/domain/entities/ciclo-avaliacao.ts :: devolver(motivo: string, agora: Date) :: devolver() ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: devolver apaga as assinaturas :: teste da devolução
+
+=== 1 · Domínio puro
+# Invariante: PDF só com todas as assinaturas sincronizadas
+> Não basta estar aprovado: as duas assinaturas precisam existir e já ter chegado à nuvem.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Três condições juntas:</b> <span>status aprovado, os dois signatários presentes e todas as assinaturas com status <code>synced</code>.</span></li>
+      <li><b>Erro de envio também bloqueia:</b> <span>assinatura em <code>error</code> não é <code>synced</code>.</span></li>
+      <li><b>A resposta é do agregado;</b> <span>o serviço de domínio só explica o que falta.</span></li>
+    </ul>
+    <p class="note"><b>Quatro estados no mesmo teste:</b> pronto para assinar, aguardando, aprovado sem sincronizar e aprovado sincronizado. Só o último libera.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/entities/ciclo-avaliacao.ts :: podeGerarPdf(): boolean :: +9 :: a.statusSincronizacao === StatusSincronizacao.SYNCED}}
+    {{code core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: podeGerarPdf :: +6 :: assinaturasSincronizadas: false :: small}}
+  </div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: marcarSincronizacao( :: marcarSincronizacao() ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: assinatura com erro de envio também bloqueia ;; core/domain/services/regra-geracao-pdf.ts :: if (ciclo.podeGerarPdf()) :: serviço usa a invariante
+
+=== 1 · Domínio puro :: tight
+# Atividades desenvolvidas: as regras de um treino dentro do ciclo
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Só com o ciclo editável:</b> <span>depois da primeira assinatura o conteúdo fica bloqueado.</span></li>
+      <li><b>Data dentro do ciclo,</b> <span>no formato AAAA-MM-DD.</span></li>
+      <li><b>Descrição</b> <span>com pelo menos 3 letras.</span></li>
+      <li><b>Duração entre 0 e 4 horas:</b> <span>protege contra “10h” digitado errado.</span></li>
+      <li><b>Id único</b> <span>e teto de horas do período, via CargaHoraria.</span></li>
+      <li><b>Nasce <code>pending</code>:</b> <span>todo treino entra na fila de sincronização.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/ciclo-avaliacao.ts :: if (!DATA.test(input.data)) :: this.cargaHoraria.adicionar(input.horas) :: input.data < this.props.inicio ;; this.cargaHoraria.adicionar(input.horas) :: small}}</div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: export const MAX_HORAS_POR_TREINO :: limite de 4h ;; core/domain/entities/ciclo-avaliacao.ts :: statusSincronizacao: StatusSincronizacao.PENDING :: nasce pending ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: recusa treino fora das datas do ciclo ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: depois da primeira assinatura
+
+=== 1 · Domínio puro
+# Entidade: Acompanhamento
+> O vínculo entre aluno e personal numa academia. Tem raiz e ciclo de vida próprios, e é dentro dele que correm os ciclos de avaliação.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Identidade própria:</b> <span>tem <code>id</code> e é guardado em repositório separado do ciclo.</span></li>
+      <li><b>Validação ao iniciar:</b> <span>datas coerentes, e aluno e personal precisam ser pessoas diferentes.</span></li>
+      <li><b>Ativo</b> <span>significa dentro das datas e não encerrado antes da hora.</span></li>
+      <li><b>Encerrar é definitivo:</b> <span>não encerra duas vezes.</span></li>
+    </ul>
+    <p class="note"><b>Consequência:</b> token de personal só dá acesso enquanto o acompanhamento estiver ativo.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/acompanhamento.ts :: Ativo = dentro das datas :: <toProps(): AcompanhamentoProps :: if (this.props.encerradoEm !== null) return false}}</div>
+</div>
+@refs core/domain/entities/acompanhamento.ts :: static iniciar(props :: iniciar() ;; core/domain/contracts/ciclo.ts :: export interface AcompanhamentoRepository ;; core/domain/__tests__/acompanhamento-token.test.ts :: encerrado antes da hora ;; core/application/use-cases/acessar-via-token.ts :: acompanhamento.estaAtivo(hoje) :: uso no acesso por token
+
+=== 1 · Domínio puro
+# Entidade: TokenPersonal
+> O personal acessa por um código, sem ter conta de autenticação. O código expira sozinho e pode ser revogado antes.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Emissão validada:</b> <span>código com 8 caracteres ou mais, validade de 1 hora a 30 dias.</span></li>
+      <li><b>Três situações:</b> <span><code>valido</code>, <code>expirado</code> e <code>revogado</code>.</span></li>
+      <li><b>Revogação vence expiração:</b> <span>token revogado nunca volta a ser válido.</span></li>
+      <li><b>O relógio vem de fora:</b> <span><code>situacao(agora)</code> recebe a data, então o teste controla o tempo.</span></li>
+    </ul>
+    <p class="note"><b>Normalização:</b> o código é guardado em maiúsculas, e o use case compara do mesmo jeito.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/token-personal.ts :: Revogação vence expiração :: <toProps(): TokenPersonalProps :: if (this.props.revogadoEm !== null) return "revogado" ;; return "expirado"}}</div>
+</div>
+@refs core/domain/entities/token-personal.ts :: static emitir(input :: emitir() ;; core/domain/entities/token-personal.ts :: export const VALIDADE_MAXIMA_HORAS :: 30 dias ;; core/domain/__tests__/acompanhamento-token.test.ts :: revogado nunca volta a valer ;; core/domain/__tests__/acompanhamento-token.test.ts :: é válido até expirar
+
+=== 1 · Domínio puro
+# Domain Service: RegraGeracaoPdfService
+> Responde uma pergunta sobre o ciclo sem mudar estado e sem I/O. Quando a resposta é não, explica o motivo, para a tela mostrar exatamente o que falta.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Sem estado e sem dependência:</b> <span>recebe o agregado e devolve um resultado.</span></li>
+      <li><b>Reaproveita a invariante:</b> <span>o sim vem de <code>ciclo.podeGerarPdf()</code>.</span></li>
+      <li><b>Pendências legíveis:</b> <span>não aprovado, assinatura faltando ou assinatura que ainda não chegou à nuvem.</span></li>
+    </ul>
+    <p class="note"><b>Quem usa:</b> o GerarPdfUseCase, antes de chamar o gateway, e o modelo de leitura, para a tela já saber se o botão fica habilitado.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/services/regra-geracao-pdf.ts :: export class RegraGeracaoPdfService :: return { permitido: false, pendencias } :: if (ciclo.podeGerarPdf()) return { permitido: true } :: small}}</div>
+</div>
+@refs core/domain/services/regra-geracao-pdf.ts :: export type VerificacaoPdf :: tipo do retorno ;; core/application/use-cases/gerar-pdf.ts :: this.regra.verificar(ciclo) :: uso no use case ;; core/domain/__tests__/servicos-ciclo.test.ts :: explica tudo que falta ;; core/domain/__tests__/servicos-ciclo.test.ts :: aprovado mas com assinatura ainda local
+
+=== 1 · Domínio puro
+# Domain Service: RegraDevolucaoService
+> Quem pode devolver um relatório, quando, e com que justificativa. A regra cruza o papel do usuário com o estado do ciclo, por isso não cabe em nenhum dos dois.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Só a coordenação devolve.</b> <span>Aluno e personal recebem <code>sem-permissao</code>.</span></li>
+      <li><b>Só em aguardando aprovação.</b> <span>Fora disso, <code>status-invalido</code>.</span></li>
+      <li><b>Motivo com 10 caracteres ou mais:</b> <span>motivo curto não ajuda o aluno a corrigir nada.</span></li>
+    </ul>
+    <p class="note"><b>Resultado tipado:</b> cada recusa tem um <code>motivo</code> próprio, e o use case traduz cada um no tipo de erro certo para a tela.</p>
+  </div>
+  <div class="panel flush">{{code core/domain/services/regra-devolucao.ts :: if (input.papel !== "coordenacao") :: +14 :: if (input.papel !== "coordenacao") ;; input.ciclo.status !== StatusCiclo.AGUARDANDO_APROVACAO}}</div>
+</div>
+@refs core/domain/services/regra-devolucao.ts :: export const MINIMO_MOTIVO_DEVOLUCAO :: mínimo de 10 ;; core/domain/services/regra-devolucao.ts :: motivo: "motivo-curto" :: motivo curto ;; core/domain/__tests__/servicos-ciclo.test.ts :: não devolve", (papel) :: aluno e personal ;; core/application/use-cases/devolver-relatorio.ts :: this.regra.verificar({ :: uso no use case
+
+=== 1 · Domínio puro
+# Domain Service: SincronizacaoService
+> Monta e resume a fila offline-first de todos os ciclos. Decide a ordem de envio, que é regra de negócio: a assinatura sobe primeiro porque é ela que destrava o PDF.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Entram na fila</b> <span>os itens <code>pending</code> e <code>error</code>. O que já está <code>synced</code> sai.</span></li>
+      <li><b>Prioridade por tipo:</b> <span>assinatura, depois avaliação, depois atividade.</span></li>
+      <li><b>Erro passa na frente</b> <span>do pendente do mesmo tipo: é o que espera há mais tempo.</span></li>
+      <li><b><code>resumir()</code></b> <span>conta pendentes, com erro e sincronizados para a tela.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/services/sincronizacao.ts :: const PRIORIDADE :: +5 :: assinatura: 0 :: small}}
+    {{code core/domain/services/sincronizacao.ts :: montarFila(ciclos :: <resumir(ciclos :: i.status !== StatusSincronizacao.SYNCED :: small}}
+  </div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: itensSincronizaveis(): ItemSincronizavel[] :: itens do agregado ;; core/domain/__tests__/servicos-ciclo.test.ts :: fila: assinaturas primeiro ;; core/domain/__tests__/servicos-ciclo.test.ts :: sincronizado sai da fila
+
+=== 1 · Domínio puro
+# Contratos: repositórios e gateways são só interfaces
+> O domínio declara do que precisa. Quem implementa é a borda: Map em memória nesta fase, SQLite e Supabase na próxima. Os use cases enxergam apenas estas interfaces.
+<div class="cols two">
+  <div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:56%"><col></colgroup>
+      <thead><tr><th>Contrato</th><th>Linha em contracts/</th></tr></thead>
+      <tbody>
+        <tr><td>CicloAvaliacaoRepository</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CicloAvaliacaoRepository}}</td></tr>
+        <tr><td>TokenPersonalRepository</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface TokenPersonalRepository}}</td></tr>
+        <tr><td>SessionStorage</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface SessionStorage}}</td></tr>
+        <tr><td>CameraGateway</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CameraGateway}}</td></tr>
+        <tr><td>LocationGateway</td><td>{{rs core/domain/contracts/index.ts :: export interface LocationGateway}}</td></tr>
+        <tr><td>AuthGateway</td><td>{{rs core/domain/contracts/index.ts :: export interface AuthGateway}}</td></tr>
+        <tr><td>PdfGateway</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface PdfGateway}}</td></tr>
+        <tr><td>SincronizacaoGateway</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface SincronizacaoGateway}}</td></tr>
+        <tr><td>Clock · IdGenerator</td><td>{{rs core/domain/contracts/index.ts :: export interface Clock}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/contracts/ciclo.ts :: export interface CicloAvaliacaoRepository :: +7 ::  :: small cols=68}}
+    {{code core/domain/contracts/ciclo.ts :: export interface CameraGateway :: +5 ::  :: small cols=68}}
+  </div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: Só declaração: quem implementa é a borda :: comentário do arquivo ;; core/domain/contracts/index.ts :: export type SignInOutcome :: retorno do AuthGateway
+
+=== 1 · Domínio puro
+# Papéis e sessão: aluno, personal e coordenação
+> Os três atores (aluno, personal e coordenação) são um tipo do domínio. É por ele que os use cases decidem permissão, sem conhecer provedor de login.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Aluno</b> <span>treina, registra atividades, se autoavalia e assina.</span></li>
+      <li><b>Personal</b> <span>avalia o desempenho e assina.</span></li>
+      <li><b>Coordenação</b> <span>da academia aprova ou devolve o relatório.</span></li>
+      <li><b>Sessão com validade opcional:</b> <span><code>expiraEm</code> nulo quando o provedor renova sozinho; com data quando o acesso veio de um token.</span></li>
+    </ul>
+    <p class="note"><b>Função pura:</b> <code>sessaoValida(sessao, agora)</code> decide se a sessão guardada ainda vale ao abrir o app.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/value-objects/sessao.ts :: export type Papel :: +1}}
+    {{code core/domain/value-objects/sessao.ts :: export type Sessao = { :: return sessao.expiraEm === null :: readonly expiraEm: Date | null}}
+  </div>
+</div>
+@refs core/domain/value-objects/sessao.ts :: export const ROTULO_PAPEL :: rótulos ;; core/domain/__tests__/carga-horaria-status.test.ts :: vale até o instante da expiração :: teste da validade ;; core/application/use-cases/gerenciar-sessao.ts :: sessaoValida(sessao, this.clock.now()) :: uso ao abrir o app

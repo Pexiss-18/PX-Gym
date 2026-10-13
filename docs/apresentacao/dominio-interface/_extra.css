@@ -1,0 +1,159 @@
+
+/* ================= fase "Domínio e Interface Primeiro" ================= */
+::selection{background:oklch(0.87 0.23 126 / 28%);color:var(--paper)}
+.sub b,.marks li span b{color:var(--paper);font-weight:500}
+.sub code,.marks code,.note code,.kv code,.lead code{font-family:var(--mono);font-size:.9em;letter-spacing:-0.01em;color:var(--paper);background:oklch(1 0 0 / 5%);padding:1px 5px;border-radius:5px}
+.cols.c64{grid-template-columns:0.74fr 1.26fr}
+.cols.c46{grid-template-columns:1.26fr 0.74fr}
+.cols.c37{grid-template-columns:0.56fr 1.44fr}
+.cols.three{grid-template-columns:1fr 1fr 1fr}
+.stack{display:flex;flex-direction:column;gap:14px;min-height:0}
+.panel.fit{flex:0 0 auto}
+.panel h2{font-size:15px;font-weight:600;letter-spacing:-0.01em;margin-bottom:12px}
+.lead{font-size:15px;line-height:1.55;color:var(--fog);text-wrap:pretty}
+.lead b{color:var(--paper);font-weight:500}
+.lead + .marks,.marks + .lead{margin-top:14px}
+.marks.tiny{gap:8px}
+.marks.tiny li{font-size:13.5px;line-height:1.45;padding-left:22px}
+.marks.tiny li::before{width:11px;top:9px}
+
+/* ---------- referências de código ---------- */
+.refs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 7px;margin-top:13px;flex:0 0 auto}
+.refs .lb{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--fog-dim);margin-right:5px}
+.ref{
+  display:inline-flex;align-items:baseline;font-family:var(--mono);font-size:11.5px;letter-spacing:-0.012em;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--hair);background:oklch(1 0 0 / 3%);
+  white-space:nowrap;line-height:1.5;font-variant-numeric:tabular-nums;
+}
+.ref u{text-decoration:none;color:var(--fog-dim)}
+.ref b{color:var(--paper);font-weight:500}
+.ref i{color:var(--volt);font-style:normal;font-weight:600}
+.ref em{font-family:var(--sans);font-style:normal;color:var(--fog);margin-left:7px;letter-spacing:0}
+td .ref,li .ref,p .ref{font-size:11px;padding:1px 7px;vertical-align:1px}
+
+/* ---------- bloco de código (linhas reais do arquivo) ---------- */
+.cb{display:flex;flex-direction:column;min-height:0;margin:0;min-width:0}
+.cb + .cb{margin-top:14px}
+.cb .cap{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:-0.012em;
+  padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--hair-soft);white-space:nowrap;
+}
+.cb .cap u{text-decoration:none;color:var(--fog-dim)}
+.cb .cap b{color:var(--paper);font-weight:500}
+.cb .cap i{color:var(--volt);font-style:normal;font-weight:600;font-variant-numeric:tabular-nums}
+.cb pre{
+  font-family:var(--mono);font-size:12px;line-height:19px;color:var(--fog);
+  letter-spacing:-0.012em;margin:0;overflow:hidden;font-variant-numeric:tabular-nums;
+}
+.cb.small pre{font-size:11.5px;line-height:17.5px}
+.cb .l{display:block;white-space:pre;border-radius:5px;padding-right:6px}
+.cb .n{display:inline-block;width:30px;margin-right:13px;text-align:right;color:var(--fog-dim);font-weight:500;user-select:none}
+.cb .l.h{background:oklch(0.87 0.23 126 / 10%)}
+.cb .l.h .n{color:var(--volt);font-weight:600}
+.cb pre b{color:var(--paper);font-weight:600}
+.cb pre s{text-decoration:none;color:oklch(0.9 0.006 264)}
+.cb pre u{text-decoration:none;color:var(--fog-dim)}
+
+/* ---------- fluxo em etapas ---------- */
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .st{flex:1 1 0;min-width:0;background:oklch(1 0 0 / 3.5%);border:1px solid var(--hair);border-radius:18px;padding:15px 16px}
+.flow .st.on{background:oklch(0.87 0.23 126 / 8%);border-color:oklch(0.87 0.23 126 / 38%)}
+.flow .st h3{font-size:14.5px;font-weight:600;letter-spacing:-0.01em;margin-bottom:5px}
+.flow .st p{font-size:12.5px;line-height:1.45;color:var(--fog)}
+.flow .st .mono{display:block;margin-top:8px;font-size:11.5px}
+.flow .ar{flex:0 0 30px;display:grid;place-items:center}
+.flow .ar svg{width:18px;height:18px;display:block}
+.flow.v{flex-direction:column}
+.flow.v .ar{flex:0 0 22px}
+.flow.v .ar svg{transform:rotate(90deg)}
+
+/* ---------- números de leitura ---------- */
+.strip.five{grid-template-columns:repeat(5,1fr)}
+.strip.three{grid-template-columns:repeat(3,1fr)}
+.strip .num small{font-size:14px;font-weight:600;color:var(--fog);letter-spacing:0;margin-left:2px}
+
+/* ---------- camadas ---------- */
+.layers{display:grid;grid-template-columns:repeat(4,1fr);gap:0 0;align-items:stretch}
+.layers .ly{position:relative;border:1px solid var(--hair);background:oklch(1 0 0 / 3%);padding:16px 18px 16px;margin-right:26px;border-radius:20px}
+.layers .ly:last-child{margin-right:0;background:oklch(0.87 0.23 126 / 8%);border-color:oklch(0.87 0.23 126 / 40%)}
+.layers .ly:not(:last-child)::after{
+  content:'';position:absolute;right:-22px;top:50%;width:16px;height:16px;margin-top:-8px;
+  background:no-repeat center/16px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23b3b6c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 8h11M9 4l4 4-4 4'/%3E%3C/svg%3E");
+}
+.layers h3{font-size:15px;font-weight:600;letter-spacing:-0.01em}
+.layers .where{font-family:var(--mono);font-size:11.5px;color:var(--fog-dim);margin:3px 0 11px;letter-spacing:-0.01em}
+.layers ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.layers li{font-size:12.5px;line-height:1.4;color:var(--fog)}
+.layers li b{color:var(--paper);font-weight:500}
+
+/* ---------- pirâmide de testes ---------- */
+.pyr{display:flex;flex-direction:column;gap:9px;justify-content:center;flex:1 1 auto}
+.pyr .row{display:grid;grid-template-columns:230px 1fr 64px;align-items:center;gap:16px}
+.pyr .lbl{font-size:14px;letter-spacing:-0.005em;text-align:right}
+.pyr .lbl small{display:block;font-size:11.5px;color:var(--fog-dim);margin-top:1px}
+.pyr .bar{height:30px;border-radius:9px;background:oklch(1 0 0 / 6%);display:flex;justify-content:center;overflow:hidden}
+.pyr .bar i{display:block;height:100%;border-radius:9px;background:var(--volt);min-width:5px}
+.pyr .bar i.dim{background:oklch(0.87 0.23 126 / 42%)}
+.pyr .cnt{font-family:var(--mono);font-size:19px;font-weight:600;letter-spacing:-0.02em;color:var(--paper);font-variant-numeric:tabular-nums}
+
+/* ---------- barra de cobertura (track-and-fill do app) ---------- */
+.cov{display:flex;align-items:center;gap:10px}
+.cov .tr{flex:1 1 auto;height:6px;border-radius:6px;background:oklch(1 0 0 / 6%);overflow:hidden;position:relative}
+.cov .tr i{position:absolute;inset:0;background:var(--volt);transform-origin:left center;border-radius:6px}
+.cov .tr::after{content:'';position:absolute;left:80%;top:-2px;bottom:-2px;width:1px;background:var(--paper);opacity:.55}
+.cov b{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--paper);width:52px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- matriz ---------- */
+.t .ok{color:var(--volt);font-weight:600;white-space:nowrap}
+.t .no{color:var(--fog-dim);white-space:nowrap}
+.t td.c,.t th.c{text-align:center}
+.t.matrix td{vertical-align:middle}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--volt);vertical-align:1px}
+.dot.off{background:none;border:1px solid var(--fog-dim)}
+
+/* ---------- desenho de tela (não é captura) ---------- */
+.phone{
+  width:262px;flex:0 0 auto;align-self:center;border-radius:36px;border:1px solid oklch(1 0 0 / 14%);
+  background:var(--ink-ground);padding:20px 15px 18px;display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden;
+}
+.phone::before{content:'';position:absolute;width:190px;height:150px;right:-70px;top:-80px;border-radius:50%;background:var(--volt);opacity:.06;filter:blur(40px)}
+.phone > *{position:relative}
+.phone .pt{font-size:17px;font-weight:600;letter-spacing:-0.015em;line-height:1.2}
+.phone .ps{font-size:11.5px;color:var(--fog);margin-top:-5px}
+.phone .pc{border:1px solid var(--hair);background:oklch(1 0 0 / 3.2%);border-radius:18px;padding:11px 12px;display:flex;flex-direction:column;gap:7px}
+.phone .pl{font-size:11px;color:var(--fog);font-weight:500}
+.phone .pi{border:1px solid var(--hair);border-radius:11px;padding:7px 10px;font-size:12px;color:var(--paper);background:oklch(1 0 0 / 2.5%)}
+.phone .pi.ph{color:var(--fog-dim)}
+.phone .pr{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+.phone .pr span{color:var(--fog)}
+.phone .pr b{font-family:var(--mono);font-weight:600;font-size:12px}
+.phone .pb{border-radius:999px;background:var(--volt);color:var(--ink-surface);font-size:12.5px;font-weight:600;text-align:center;padding:9px 12px}
+.phone .pb.sec{background:oklch(1 0 0 / 5%);border:1px solid var(--hair);color:var(--paper);font-weight:500}
+.phone .pb.off{opacity:.42}
+.phone .pv{color:var(--volt);font-size:11.5px}
+.phone .sel{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;background:oklch(1 0 0 / 7%);color:var(--fog)}
+.phone .sel.v{background:oklch(0.87 0.23 126 / 15%);color:var(--volt)}
+.phone .sel.a{background:oklch(0.82 0.15 78 / 15%);color:var(--amber)}
+.phone .sig{height:96px;border:1px dashed oklch(1 0 0 / 16%);border-radius:14px;display:grid;place-items:center}
+.phone .sig svg{width:86%;height:70%}
+.shot{display:flex;flex-direction:column;align-items:center;gap:10px;justify-content:center}
+.shot .cap{font-size:11.5px;color:var(--fog-dim);text-align:center;max-width:250px;line-height:1.4}
+
+/* ---------- capa / fecho ---------- */
+.cover h1.two{font-size:66px;line-height:1.02;text-wrap:balance}
+.cover .kicker b{color:var(--paper);font-weight:500}
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.72;color:var(--fog);white-space:pre;letter-spacing:-0.012em}
+.tree b{color:var(--paper);font-weight:600}
+.tree i{color:var(--volt);font-style:normal}
+.tree u{color:var(--fog-dim);text-decoration:none}
+.agenda .l small{display:block;font-size:12px;color:var(--fog-dim);margin-top:2px;letter-spacing:0}
+.agenda a{align-items:flex-start}
+.agenda .n{padding-top:3px}
+.sub code,.marks code,.note code,.lead code,.t code{white-space:nowrap}
+
+/* piso de 11px para rótulos funcionais (o deck anterior usa 10.5px) */
+.t th,.strip dt,.refs .lb{font-size:11px}
+.dg .ts,.dg .tm,.dg .tk{font-size:11px}
+.shot .cap .ref{margin-bottom:5px}
+.shot .cap{max-width:290px}

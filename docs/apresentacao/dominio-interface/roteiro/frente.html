@@ -1,0 +1,132 @@
+<div class="capa">
+  <div class="mk"><i></i>Px GYM</div>
+  <h1>Roteiro de apresentação</h1>
+  <div class="r"></div>
+  <p>Fase “Domínio e Interface Primeiro”, 100% mock, com mais de 80% de cobertura. Guia completo para apresentar o deck de 27 slides: preparação, tempo, o que falar em cada slide, onde apontar e como responder às perguntas.</p>
+  <div class="pe">Paulo Rogério · Sistemas de Informação · CEFET-MG · 2026</div>
+</div>
+
+<h1 class="parte" style="break-before:auto">Parte 1 — Antes de apresentar</h1>
+<p class="lead">Leia esta parte com calma pelo menos um dia antes. Ela cobre a mensagem, o tempo, a preparação do computador e a forma de usar as referências de código, que foi o pedido explícito do professor.</p>
+
+<h2>Como usar este roteiro</h2>
+<ul>
+  <li><b>Parte 1</b> prepara você: mensagem, tempo, computador, teclas e demonstração.</li>
+  <li><b>Parte 2</b> é o roteiro slide a slide, com miniatura, tempo, fala sugerida, onde apontar e perguntas prováveis.</li>
+  <li><b>Parte 3</b> reúne as perguntas difíceis com respostas prontas.</li>
+  <li><b>Parte 4</b> é material de consulta rápida: mapa de onde está cada coisa, glossário, o que não dizer e o checklist do dia.</li>
+</ul>
+<p>A fala sugerida não é para decorar nem para ler. Cada parágrafo carrega uma ideia; entenda a ideia e diga do seu jeito. O que vale a pena decorar são só três coisas: a frase de abertura, as duas invariantes do slide 7 e a frase final.</p>
+
+<h2>A mensagem em uma frase</h2>
+<div class="caixa v"><p><b>Se a regra de negócio mora num lugar que não conhece tela nem banco, dá para provar que ela está certa antes de existir tela ou banco.</b></p></div>
+<p>Tudo o que você mostrar é evidência dessa frase. Se der branco em qualquer momento, volte para ela.</p>
+
+<h2>As três ideias que o professor precisa levar</h2>
+<ol>
+  <li><b>A arquitetura respeita a direção de dependência.</b> O domínio não importa ninguém; a Context API fica na borda; um único arquivo conhece classes concretas.</li>
+  <li><b>As regras estão no domínio e são testadas pelo nome.</b> As duas invariantes existem no agregado, com teste que leva a palavra “INVARIANTE”.</li>
+  <li><b>Está tudo em mock e medido.</b> Sem SQLite, sem Supabase, 416 testes passando, 93% de cobertura no core e 99% nos adapters, com o limite de 80% configurado no Jest.</li>
+</ol>
+
+<h2>O que o professor pediu e onde isso aparece</h2>
+<table>
+  <thead><tr><th>Seção</th><th class="c">Slides</th><th>O ponto que não pode faltar</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1 · Domínio puro</td><td class="c">5–9</td><td>Value objects imutáveis; agregado com as duas invariantes; duas entidades; três serviços; contratos como interfaces</td></tr>
+    <tr><td class="k">2 · Aplicação</td><td class="c">10–13</td><td>Os dez casos de uso; orquestram sem decidir regra; fakes em Map; teste de caminho feliz, erro e permissão</td></tr>
+    <tr><td class="k">3 · Adapters e Context</td><td class="c">14–18</td><td>AuthProvider na raiz, sem prop drilling; sessão segura no SecureStore; hooks com idle, salvando e salvo; CameraGatewayExpo</td></tr>
+    <tr><td class="k">4 · Interface e rotas</td><td class="c">19–20</td><td>Expo Router como fronteira; View e Text com StyleSheet e Flexbox; as três telas nomeadas</td></tr>
+    <tr><td class="k">5 · Mock</td><td class="c">21</td><td>Sem banco, sem sensor real em teste, repositórios em Map, stub de sessão</td></tr>
+    <tr><td class="k">6 · Testes e cobertura</td><td class="c">22–24</td><td>Pirâmide com números; meta de 80%; RNTL com render, press e changeText; um E2E</td></tr>
+    <tr><td class="k">7 · Checklist</td><td class="c">25–27</td><td>Os oito passos entregues; limites ditos com franqueza</td></tr>
+  </tbody>
+</table>
+
+<h2>Plano de tempo</h2>
+<p>No ritmo sugerido, a apresentação leva cerca de <b>__TOTAL__</b>, sem contar perguntas. A coluna “no relógio” mostra em que minuto você deve estar ao terminar cada seção. Deixe o cronômetro do celular visível.</p>
+<table>
+  <thead><tr><th>Seção</th><th class="c">Slides</th><th class="c">Duração</th><th class="c">No relógio</th></tr></thead>
+  <tbody>__TABELA_TEMPO__</tbody>
+</table>
+<div class="caixa">
+  <h4>Se você tiver 15 minutos</h4>
+  <p>Fale normalmente os slides 1 a 7, 10, 11, 13, 14, 16, 20, 21, 22 e 25 a 27. Passe em 15 a 20 segundos, com uma frase só, pelos slides 8, 9, 12, 17, 18, 19, 23 e 24. Pule o 15.</p>
+</div>
+<div class="caixa">
+  <h4>Se você tiver 10 minutos</h4>
+  <p>Caminho essencial: 1, 3, 4, 6, 7, 10, 11, 14, 16, 20, 21, 22, 26 e 27. Nos slides 4, 10, 16 e 20 fale só a primeira frase. Os outros slides você atravessa sem parar, dizendo o título. Cada bloco da Parte 2 tem a linha “se o tempo estiver curto” com a decisão para aquele slide.</p>
+</div>
+<p><b>Se estourar o tempo no meio:</b> não acelere a fala. Corte slides. Um slide bem explicado vale mais do que três atropelados, e os que não podem ser cortados são o 7 (invariantes), o 21 (mock), o 22 (pirâmide) e o 26 (limites).</p>
+
+<h2>Preparação na véspera</h2>
+<ul class="chk">
+  <li>Abra o deck pela pasta certa: <code>C:\dev\Px GYM\docs\apresentacao\apresentacao-dominio-interface.html</code>. A pasta antiga do OneDrive está vazia.</li>
+  <li>Passe os 27 slides uma vez em tela cheia, no monitor ou projetor que vai usar, e veja se o código está legível do fundo da sala.</li>
+  <li>Abra também a versão completa, <code>apresentacao-dominio-interface-completa.html</code>, em uma segunda aba. É nela que estão os trechos de código de cada item.</li>
+  <li>Gere um PDF de reserva do deck: <kbd>Ctrl</kbd>+<kbd>P</kbd>, paisagem, margens “nenhuma” e a opção “gráficos de plano de fundo” marcada.</li>
+  <li>Rode os testes uma vez, para aquecer o cache e confirmar que está tudo verde (comandos na seção de demonstração).</li>
+  <li>Ensaie em voz alta, com cronômetro, pelo menos duas vezes. Na primeira você vai passar do tempo; é normal.</li>
+  <li>Copie a pasta do projeto ou os dois arquivos HTML para um pendrive. Os decks funcionam sem internet.</li>
+</ul>
+
+<h2>Quinze minutos antes</h2>
+<ul class="chk">
+  <li>Notebook na tomada, modo “não perturbe” ligado, notificações e abas pessoais fechadas.</li>
+  <li>Navegador com zoom em 100% (<kbd>Ctrl</kbd>+<kbd>0</kbd>). O deck se ajusta sozinho à tela.</li>
+  <li>Aba 1: deck de 27 slides, no slide 1, em tela cheia. Aba 2: deck completo.</li>
+  <li>Editor de código aberto na pasta <code>C:\dev\Px GYM</code>, com o arquivo <code>ciclo-avaliacao.ts</code> já aberto.</li>
+  <li>Terminal aberto em <code>C:\dev\Px GYM</code>, com fonte grande, caso peçam para rodar os testes.</li>
+  <li>Cronômetro do celular à vista, água por perto, este roteiro impresso ou no celular.</li>
+</ul>
+
+<h2>Teclas do deck</h2>
+<table>
+  <thead><tr><th>Tecla</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>→</kbd> <kbd>espaço</kbd> <kbd>PageDown</kbd></td><td>Próximo slide. Passador de slides sem fio costuma enviar PageDown e funciona.</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>PageUp</kbd></td><td>Slide anterior</td></tr>
+    <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>Primeiro / último slide</td></tr>
+    <tr><td><kbd>O</kbd></td><td>Visão geral com todos os slides. Clique em um para ir direto. É o jeito mais rápido de voltar a um slide durante as perguntas.</td></tr>
+    <tr><td><kbd>F</kbd></td><td>Tela cheia</td></tr>
+    <tr><td>Clique</td><td>Na metade direita avança, na esquerda volta. <b>Cuidado:</b> clicar para “mostrar” algo com o mouse também troca de slide. Aponte movendo o cursor, sem clicar.</td></tr>
+  </tbody>
+</table>
+<p>O endereço guarda o slide atual. Para pular direto, troque o número no fim do endereço, por exemplo <code>…interface.html#17</code>, e pressione Enter. Os itens da agenda (slide 2) também são clicáveis.</p>
+
+<h2>Como usar as referências de código</h2>
+<p>O professor disse que quer ver a referência aos códigos. Em quase todo slide há uma faixa “no código” no rodapé, ou chips dentro das tabelas, com o arquivo e a linha.</p>
+<ul>
+  <li><b>Como ler:</b> <code>core/</code> é <code>packages/core/src/</code>; <code>mobile/</code> é <code>apps/mobile/src/</code>; <code>raiz/</code> é a raiz do repositório. O número em verde é a linha.</li>
+  <li><b>Como falar:</b> não leia os chips. Diga uma vez por seção algo como “o arquivo e a linha estão aqui embaixo, se o senhor quiser que eu abra”. Nos slides com código, aponte a linha destacada e diga o que ela faz.</li>
+  <li><b>Se pedirem para abrir um arquivo:</b> no VS Code, <kbd>Ctrl</kbd>+<kbd>P</kbd>, digite o nome do arquivo seguido de dois pontos e a linha, por exemplo <code>ciclo-avaliacao.ts:390</code>, e Enter. Em outro editor, abra o arquivo e use “ir para a linha”.</li>
+  <li><b>Se pedirem o código de um item que só aparece em tabela:</b> vá para a aba do deck completo. A Parte 4 deste roteiro tem o mapa de qual slide abrir.</li>
+  <li><b>Os números de linha são reais.</b> O deck é gerado por um script que procura cada trecho no código; se você alterar o código, gere o deck de novo antes de apresentar (<code>node docs/apresentacao/dominio-interface/build.mjs</code>, a partir de <code>C:\dev\Px GYM</code>).</li>
+</ul>
+
+<h2>Demonstração ao vivo (opcional)</h2>
+<p>Não é obrigatória, e só vale a pena se sobrar tempo ou se pedirem. A melhor demonstração é rodar os testes: mostra em poucos segundos que os números dos slides são reais.</p>
+<div class="caixa">
+  <h4>Core: domínio e casos de uso, com a tabela de cobertura</h4>
+  <p><code>cd "C:\dev\Px GYM\packages\core"</code><br><code>npm run test:coverage</code></p>
+  <p>Leva cerca de meio minuto. O que mostrar na saída: “Tests: 281 passed”, a linha “All files” da tabela com 93% e as linhas dos arquivos do ciclo em 100%.</p>
+  <h4 style="margin-top:8px">Mobile: Context, hooks, telas e o teste de ponta a ponta</h4>
+  <p><code>cd "C:\dev\Px GYM\apps\mobile"</code><br><code>npm test</code></p>
+  <p>Leva de dez segundos a um minuto, conforme o cache. O que mostrar: “Tests: 115 passed” e a linha do arquivo <code>fluxo-relatorio.e2e.test.tsx</code>.</p>
+</div>
+<ul>
+  <li><b>Rode antes, no mesmo dia.</b> A primeira execução é a mais lenta. E rode sempre a partir de <code>C:\dev</code>; na pasta do OneDrive o Jest não encontrava os testes.</li>
+  <li><b>Enquanto roda, fale.</b> Explique o que está sendo executado em vez de ficar olhando o terminal em silêncio.</li>
+  <li><b>Se falhar ao vivo:</b> não tente consertar. Diga “rodei hoje mais cedo e estava verde; mostro o resultado depois” e volte ao deck.</li>
+  <li><b>Não tente rodar o app no emulador</b> durante a apresentação. Esse fluxo não foi validado em aparelho nesta fase, e você mesmo diz isso no slide 26.</li>
+</ul>
+
+<h2>Como falar</h2>
+<ul>
+  <li><b>Abra cada seção dizendo o número dela:</b> “seção dois, a camada de aplicação”. O professor está conferindo uma lista.</li>
+  <li><b>Nos slides de código, não leia o código.</b> Aponte a linha destacada e diga a regra em português.</li>
+  <li><b>Nos slides de tabela, não leia a tabela.</b> Diga o que ela prova e leia no máximo uma linha como exemplo.</li>
+  <li><b>Fale para as pessoas, não para a tela.</b> Olhe para o slide só para apontar.</li>
+  <li><b>Diga os números devagar.</b> “Quatrocentos e dezesseis testes” é uma frase inteira; faça uma pausa depois.</li>
+  <li><b>Tratamento:</b> a fala sugerida usa “o senhor”. Troque pelo tratamento que você já usa com o professor.</li>
+</ul>

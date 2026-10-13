@@ -1,0 +1,121 @@
+@@raw
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.73 0.014 264 / 80%)"/></marker>
+  <marker id="arwv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.87 0.23 126 / 85%)"/></marker>
+  <marker id="arwa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.82 0.15 78 / 85%)"/></marker>
+</defs></svg>
+
+<section class="slide cover" data-sec="Capa">
+  <div class="mark">
+    <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="oklch(0.2 0.008 264)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg></span>
+    <span class="wm">Px GYM</span>
+  </div>
+  <div class="head" style="margin:0">
+    <h1 class="two">Domínio e Interface Primeiro</h1>
+    <div class="rule"></div>
+    <p class="kicker">Fase <b>100% mock</b>, com <b>mais de 80% de cobertura</b>. A ordem de construção foi Domínio, Use Cases, Context API com sessão segura e, por último, telas com fakes. Tudo testado antes de qualquer dado tocar em SQLite ou Supabase.</p>
+  </div>
+  <div class="who">
+    <b>Paulo Rogério</b><em>·</em><span>Sistemas de Informação</span><em>·</em><span>CEFET-MG</span><em>·</em><span class="mono">2026</span>
+  </div>
+</section>
+
+<section class="slide" data-sec="Agenda">
+  <div class="head tight">
+    <h1>Agenda</h1>
+    <p class="sub">As sete seções da fase. Cada slide traz, no rodapé, o arquivo e a linha do código que sustenta o que está escrito.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <nav class="agenda">
+      <a data-go="Abertura"><span class="n">00</span><span class="l">Abertura<small>o que a fase pede, referências de código, camadas</small></span></a>
+      <a data-go="4 · Interface e rotas"><span class="n">04</span><span class="l">Interface do usuário e rotas<small>Expo Router, StyleSheet e Flexbox, telas</small></span></a>
+      <a data-go="1 · Domínio puro"><span class="n">01</span><span class="l">Camada de domínio puro<small>value objects, agregado, serviços, contratos</small></span></a>
+      <a data-go="5 · O que fica em mock"><span class="n">05</span><span class="l">O que fica em mock ou fake<small>sem banco, sem sensor, repositórios em Map</small></span></a>
+      <a data-go="2 · Aplicação"><span class="n">02</span><span class="l">Camada de aplicação<small>dez casos de uso e fakes em memória</small></span></a>
+      <a data-go="6 · Testes e cobertura"><span class="n">06</span><span class="l">Estratégia de testes e cobertura<small>pirâmide com números reais, meta de 80%</small></span></a>
+      <a data-go="3 · Adapters e Context"><span class="n">03</span><span class="l">Adaptadores, estado global e Context API<small>AuthContext, sessão segura, hooks, gateways</small></span></a>
+      <a data-go="7 · Checklist e fecho"><span class="n">07</span><span class="l">Checklist sequencial e fechamento<small>os oito passos, rastreabilidade, limites</small></span></a>
+    </nav>
+  </div></div>
+</section>
+@@end
+
+=== Abertura
+# O que esta fase pede
+> Um fluxo incremental e desacoplado, de dentro para fora. Cada etapa só começa quando a anterior já tem teste passando, e nenhuma delas conhece banco de dados.
+<div class="flow">
+  <div class="st on"><h3>Domínio</h3><p>Value objects, agregado, entidades, serviços e contratos. TypeScript puro.</p><span class="mono">core/domain/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Use Cases</h3><p>Orquestração. Fala com o domínio e com interfaces, nunca com classes concretas.</p><span class="mono">core/application/use-cases/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Context API e sessão segura</h3><p>AuthProvider, SecureStore, hooks de ponte e gateways de hardware.</p><span class="mono">mobile/adapters/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Telas com fakes</h3><p>Componentes nativos, StyleSheet e Flexbox, testados com use cases fakes injetados.</p><span class="mono">mobile/adapters/screens/</span></div>
+</div>
+<dl class="strip five" style="margin-top:18px">
+  <div><dt>Testes passando</dt><dd><span class="num">416</span>281 no core, 115 no mobile, 20 no pacote de banco</dd></div>
+  <div><dt>Cobertura do core</dt><dd><span class="num">93<small>%</small></span>linhas de domínio + aplicação; a menor métrica é 87%</dd></div>
+  <div><dt>Cobertura dos adapters</dt><dd><span class="num">99<small>%</small></span>Context, sessão, hooks, gateways e telas</dd></div>
+  <div><dt>Casos de uso</dt><dd><span class="num">10</span>um arquivo para cada caso de uso</dd></div>
+  <div><dt>Banco no modo mock</dt><dd><span class="num">0</span>SQLite não abre e o cliente Supabase não é criado</dd></div>
+</dl>
+@refs raiz/packages/core/jest.config.cjs :: coverageThreshold :: meta de 80% ;; raiz/apps/mobile/jest.config.js :: coverageThreshold ;; mobile/lib/modo.ts :: export const MODO_MOCK
+
+=== Abertura
+# Como ler as referências de código
+> Todo slide termina com os arquivos e linhas que sustentam o que ele afirma. Os trechos de código são copiados do repositório na hora de gerar o deck, com a numeração real.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Chip de referência</b> <span>mostra o caminho do arquivo e, em verde, a linha:</span><br><span style="display:inline-block;margin-top:7px">{{r core/domain/value-objects/criterio.ts :: static criar :: Criterio.criar()}}</span></li>
+      <li><b><code>core/</code></b> <span>é <code>packages/core/src/</code>: domínio e aplicação, sem React nem Expo.</span></li>
+      <li><b><code>mobile/</code></b> <span>é <code>apps/mobile/src/</code>: adapters, telas e rotas.</span></li>
+      <li><b><code>raiz/</code></b> <span>é a raiz do repositório, usada para arquivos de configuração.</span></li>
+      <li><b>Linha destacada</b> <span>num trecho marca o ponto exato da regra que o slide comenta.</span></li>
+    </ul>
+    <p class="note"><b>Garantia:</b> o script que monta o deck procura cada trecho no arquivo. Se o código mudar e a referência deixar de existir, a geração falha em vez de mostrar uma linha errada.</p>
+  </div>
+  <div class="panel flush">
+<pre class="tree"><b>packages/core/src/</b>                 <i>core/</i>
+├─ domain/
+│  ├─ value-objects/   <u>Criterio, Coordenada, Assinatura, CargaHoraria</u>
+│  ├─ entities/        <u>CicloAvaliacao, Acompanhamento, TokenPersonal</u>
+│  ├─ services/        <u>regras que cruzam entidades</u>
+│  └─ contracts/       <u>interfaces de repositórios e gateways</u>
+├─ application/use-cases/   <u>um arquivo por caso de uso</u>
+└─ testing/            <u>fakes em Map e cenário dos testes</u>
+
+<b>apps/mobile/src/</b>                   <i>mobile/</i>
+├─ adapters/
+│  ├─ context/  auth/  hooks/  gateways/
+│  ├─ memoria/         <u>repositórios em Map e stubs desta fase</u>
+│  ├─ screens/         <u>telas em StyleSheet + Flexbox</u>
+│  └─ composicao.ts    <u>composition root</u>
+└─ app/                <u>rotas do Expo Router</u></pre>
+  </div>
+</div>
+@refs raiz/docs/apresentacao/dominio-interface/build.mjs :: function find :: resolve trecho em linha ;; core/index.ts :: domain/entities/ciclo-avaliacao :: o que o core exporta
+
+=== Abertura
+# Quatro camadas, uma direção de dependência
+> Cada camada só importa a que está à sua direita. O domínio não importa ninguém, e é isso que permite testá-lo em Node puro, sem emulador.
+<div class="layers">
+  <div class="ly"><h3>Rotas</h3><p class="where">mobile/app/</p><ul><li><b>Fronteira de entrada:</b> o toque entra aqui</li><li>Traduz navegação em props da tela</li><li>Injeta o gateway de hardware real</li></ul></div>
+  <div class="ly"><h3>Adapters</h3><p class="where">mobile/adapters/</p><ul><li><b>Context API</b>, sessão segura, hooks</li><li>Telas e gateways Expo</li><li>Repositórios em Map desta fase</li></ul></div>
+  <div class="ly"><h3>Aplicação</h3><p class="where">core/application/</p><ul><li><b>Use cases:</b> orquestram, não decidem regra</li><li>Enxergam só interfaces</li><li>Devolvem um Resultado tipado</li></ul></div>
+  <div class="ly"><h3>Domínio</h3><p class="where">core/domain/</p><ul><li><b>Regras de negócio</b> e invariantes</li><li>Declara os contratos</li><li>Zero import de framework</li></ul></div>
+</div>
+<div class="cols c64" style="margin-top:18px">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Domínio e aplicação nunca importam</b> <span><code>react</code>, <code>react-native</code>, <code>expo-*</code>, <code>@supabase/*</code> ou <code>drizzle-*</code>. Uma busca por esses imports nas duas pastas devolve zero ocorrências.</span></li>
+      <li><b>O domínio define, a borda implementa.</b> <span>Repositório e gateway são interfaces declaradas em <code>contracts/</code>; quem implementa é o adapter.</span></li>
+      <li><b>Um único lugar conhece classes concretas:</b> <span>o composition root.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/ciclo-avaliacao.ts :: import { BusinessRuleError :: +6 ::  :: small}}</div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: Só declaração :: contratos ;; mobile/adapters/composicao.ts :: Composition root :: composition root ;; mobile/adapters/context/AuthContext.tsx :: domínio e aplicação :: Context fica fora do core

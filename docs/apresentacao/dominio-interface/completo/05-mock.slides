@@ -1,0 +1,120 @@
+=== 5 · O que fica em mock :: tight
+# Seção 5 — O que fica em mock ou fake nesta fase
+> Nada de banco e nada de hardware real. O isolamento é total, e é por isso que a suíte inteira roda em segundos.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:23%"><col style="width:36%"><col></colgroup>
+    <thead><tr><th>Item</th><th>Como está</th><th>Onde conferir</th></tr></thead>
+    <tbody>
+      <tr><td>Sem SQLite local</td><td class="m">No modo mock o arquivo do banco não é aberto e as migrations não rodam</td><td>{{r mobile/db/index.ts :: desligadoNoMock<Db>}}</td></tr>
+      <tr><td>Sem Supabase</td><td class="m">O cliente não é criado; nenhuma chamada sai para a nuvem</td><td>{{r mobile/lib/supabase.ts :: desligadoNoMock<PxSupabase>}}</td></tr>
+      <tr><td>Sem sincronização real</td><td class="m">O sync de treinos do app antigo não dispara</td><td>{{r mobile/lib/use-workout-sync.ts :: if (!userId || MODO_MOCK) return;}}</td></tr>
+      <tr><td>Câmera e GPS</td><td class="m">Gateways fakes nos testes; os módulos do Expo são mockados</td><td>{{r core/testing/fakes-ciclo.ts :: export class CameraGatewayFake}}</td></tr>
+      <tr><td>Repositórios em Map</td><td class="m">Um Map em memória no lugar do banco, no app e nos testes</td><td>{{r mobile/adapters/memoria/repositorios.ts :: private readonly dados = new Map}}</td></tr>
+      <tr><td>Stub de autenticação</td><td class="m">Três contas fixas que devolvem sessões válidas</td><td>{{r mobile/adapters/memoria/gateways-simulados.ts :: export class AuthGatewayStub}}</td></tr>
+      <tr><td>PDF e envio simulados</td><td class="m">O PDF devolve um endereço em memória; o envio aceita tudo</td><td>{{r mobile/adapters/memoria/gateways-simulados.ts :: export class PdfGatewaySimulado}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>O que continua real:</b> a sessão. O SessionStorageSecureStore grava de verdade no cofre do aparelho, porque faz parte do escopo desta fase.</p>
+</div>
+
+=== 5 · O que fica em mock
+# Modo mock: uma constante decide se a infraestrutura existe
+> O modo mock é o padrão. Para religar SQLite e Supabase é preciso declarar a variável de ambiente com zero.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>MODO_MOCK</code></b> <span>vale verdadeiro a menos que <code>EXPO_PUBLIC_MODO_MOCK</code> seja <code>"0"</code>.</span></li>
+      <li><b><code>desligadoNoMock()</code></b> <span>devolve um objeto que ocupa o lugar do recurso real.</span></li>
+      <li><b>Guardar a referência é de graça;</b> <span>usar lança erro na hora, dizendo qual recurso e qual acesso.</span></li>
+      <li><b>Vantagem:</b> <span>se alguma tela tentar tocar no banco nesta fase, o erro aparece no primeiro uso, não em silêncio.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code mobile/lib/modo.ts :: export const MODO_MOCK :: +15 :: process.env.EXPO_PUBLIC_MODO_MOCK !== "0" ;; throw new Error( :: small cols=90}}</div>
+</div>
+@refs mobile/adapters/instancia.ts :: auth: MODO_MOCK ? undefined : new SupabaseAuthGateway(supabase) :: login real só fora do mock ;; mobile/adapters/instancia.ts :: export const CONTAS_DEMO :: contas de demonstração ;; mobile/lib/__tests__/modo.test.ts :: é o padrão: não abre o SQLite
+
+=== 5 · O que fica em mock
+# Sem SQLite e sem Supabase: o que o código faz no lugar
+> As duas portas de infraestrutura do app passam pela mesma constante. No modo mock, nem o arquivo do banco é aberto nem o cliente da nuvem é criado.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Banco local:</b> <span><code>openDatabaseSync</code> só é chamado dentro de <code>abrir()</code>, que não roda no modo mock.</span></li>
+      <li><b>Migrations:</b> <span>o layout raiz usa um hook que devolve “pronto” direto, sem tocar no banco.</span></li>
+      <li><b>Nuvem:</b> <span><code>conectar()</code> cria o cliente e liga a renovação de token; no modo mock ela nunca é chamada.</span></li>
+      <li><b>Modo real intacto:</b> <span>com a variável em zero o comportamento é o de antes.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/db/index.ts :: const sqlite = openDatabaseSync("pxgym.db" :: export const db: Db :: openDatabaseSync("pxgym.db" ;; export const db: Db :: small}}
+    {{code mobile/app/_layout.tsx :: const useBancoPronto :: +4 :: ? () => true :: small}}
+  </div>
+</div>
+@refs mobile/lib/supabase.ts :: function conectar(): PxSupabase :: conectar() ;; mobile/lib/supabase.ts :: export const supabase: PxSupabase = MODO_MOCK ;; mobile/app/_layout.tsx :: const dbReady = useBancoPronto(); ;; mobile/lib/__tests__/modo.test.ts :: EXPO_PUBLIC_MODO_MOCK=0 religa SQLite e Supabase
+
+=== 5 · O que fica em mock
+# No modo mock só o relatório do ciclo existe, e um teste prova
+> As telas antigas do app (treino, nutrição, fotos) leem do SQLite. Nesta fase elas saem da navegação, em vez de ficarem quebradas.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Menu lateral:</b> <span>no modo mock só aparece “Relatórios do ciclo”.</span></li>
+      <li><b>Rotas protegidas:</b> <span>as telas com banco ficam atrás de um guarda que depende de <code>MODO_MOCK</code>.</span></li>
+      <li><b>Teste dedicado:</b> <span>carrega os módulos de banco e de nuvem e confere que <code>openDatabaseSync</code> e a criação do cliente não foram chamados.</span></li>
+      <li><b>E o contrário:</b> <span>com a variável em zero, os dois são chamados uma vez.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/app/(app)/_layout.tsx :: const MENU = MODO_MOCK :: +1 ::  :: small}}
+    {{code mobile/app/(app)/_layout.tsx :: <Drawer.Protected guard={!MODO_MOCK}> :: +5 :: guard={!MODO_MOCK} :: small}}
+    {{code mobile/lib/__tests__/modo.test.ts :: it("é o padrão: não abre o SQLite :: +8 :: expect(openDatabaseSync).not.toHaveBeenCalled() ;; expect(createPxSupabaseClient).not.toHaveBeenCalled() :: small}}
+  </div>
+</div>
+@refs mobile/app/(app)/_layout.tsx :: Telas que leem do SQLite/Supabase :: lista das telas com banco ;; mobile/lib/__tests__/modo.test.ts :: usar o banco ou a nuvem no modo mock falha na hora ;; mobile/app/(app)/(tabs)/index.tsx :: if (MODO_MOCK || :: início redireciona
+
+=== 5 · O que fica em mock :: tight
+# Repositórios em Map e stub de sessão
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>As mesmas interfaces</b> <span>que o banco vai implementar depois.</span></li>
+      <li><b>Guarda props, não instâncias:</b> <span>cada leitura reidrata um agregado novo, como um banco faria.</span></li>
+      <li><b>Fechou o app, perdeu.</b> <span>É de propósito: sem persistência real até a fase de infraestrutura.</span></li>
+      <li><b>O stub de autenticação</b> <span>responde como o provedor responderia: sessão válida ou <code>invalid-credentials</code>.</span></li>
+      <li><b>Latência simulada</b> <span>no app, para a interface mostrar o estado de carregando; zero nos testes.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/memoria/repositorios.ts :: export class CicloAvaliacaoRepositoryMemoria :: return props ? CicloAvaliacao.restaurar(props) : null; :: new Map<string, CicloAvaliacaoProps>() :: small}}
+    {{code mobile/adapters/memoria/gateways-simulados.ts :: const usuario = USUARIOS_DEMO[email]; :: +6 :: return { ok: true, sessao }; :: small}}
+  </div>
+</div>
+@refs mobile/adapters/memoria/repositorios.ts :: Trocar por banco = outra classe :: comentário do arquivo ;; mobile/adapters/memoria/gateways-simulados.ts :: export const conectividadeSimulada :: conectividade fixa ;; mobile/adapters/memoria/__tests__/memoria.test.ts :: stub de auth: três contas fixas
+
+=== 5 · O que fica em mock
+# Dados de demonstração montados pelo próprio domínio
+> O app abre com três ciclos prontos, um em cada fase do ciclo de vida. Eles são construídos chamando o agregado, do mesmo jeito que um usuário faria.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:40%"><col></colgroup>
+      <thead><tr><th>Para demonstrar</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Aluno</td><td><span class="mono">aluno@pxgym.dev</span></td></tr>
+        <tr><td>Personal com conta</td><td><span class="mono">personal@pxgym.dev</span></td></tr>
+        <tr><td>Coordenação</td><td><span class="mono">coordenacao@pxgym.dev</span></td></tr>
+        <tr><td>Senha das três</td><td><span class="mono">pxgym123</span></td></tr>
+        <tr><td>Personal sem conta</td><td><span class="mono">CARLA-2026</span> <span class="m">(código)</span></td></tr>
+      </tbody>
+    </table>
+    <ul class="marks tiny" style="margin-top:14px">
+      <li><b>Datas relativas a hoje:</b> <span>mês atual em andamento, mês passado aguardando, mês retrasado aprovado.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/memoria/dados-demo.ts :: Dados de demonstração, montados PELO DOMÍNIO :: +8}}
+    {{code mobile/adapters/memoria/dados-demo.ts :: const aprovado = abrir("ciclo-1" :: +6 :: aprovado.aprovar(hoje) :: small cols=90}}
+  </div>
+</div>
+@refs mobile/adapters/memoria/dados-demo.ts :: export function criarDadosDemo :: criarDadosDemo() ;; mobile/adapters/memoria/gateways-simulados.ts :: export const USUARIOS_DEMO :: usuários ;; mobile/adapters/memoria/__tests__/memoria.test.ts :: três ciclos, um em cada fase do ciclo de vida ;; mobile/adapters/memoria/__tests__/memoria.test.ts :: funciona em qualquer mês

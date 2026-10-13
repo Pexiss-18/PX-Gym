@@ -1,0 +1,197 @@
+=== 4 · Interface e rotas :: tight
+# Seção 4 — Interface do usuário e rotas
+> A estrutura de arquivos em <code>app/</code> é a fronteira de entrada visual: é ali que o toque do usuário entra no aplicativo. Cada arquivo de rota só escolhe a tela e liga a navegação.
+<div class="panel flush">
+  <table class="t micro">
+    <colgroup><col style="width:38%"><col style="width:24%"><col></colgroup>
+    <thead><tr><th>Arquivo em mobile/app/</th><th>Tela</th><th>Quem usa</th></tr></thead>
+    <tbody>
+      <tr><td><span class="mono">(auth)/login.tsx</span></td><td>LoginScreen</td><td class="m">quem tem conta: aluno, personal ou coordenação</td></tr>
+      <tr><td><span class="mono">(auth)/token.tsx</span></td><td>AcessoTokenScreen</td><td class="m">personal sem conta, com o código do aluno</td></tr>
+      <tr><td><span class="mono">(app)/relatorios/index.tsx</span></td><td>HistoricoRelatoriosScreen</td><td class="m">todos: cada papel vê os relatórios que pode ver</td></tr>
+      <tr><td><span class="mono">(app)/relatorios/[cicloId]/index.tsx</span></td><td>RelatorioScreen</td><td class="m">todos: as ações mudam conforme papel e status</td></tr>
+      <tr><td><span class="mono">(app)/relatorios/[cicloId]/atividades.tsx</span></td><td>AtividadesFormScreen</td><td class="m">aluno do ciclo</td></tr>
+      <tr><td><span class="mono">(app)/relatorios/[cicloId]/avaliacao.tsx</span></td><td>AvaliacaoScreen</td><td class="m">personal avalia; aluno se autoavalia</td></tr>
+      <tr><td><span class="mono">(app)/relatorios/[cicloId]/assinatura.tsx</span></td><td>AssinaturaScreen</td><td class="m">aluno e personal</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Grupos de rota:</b> são <code>(auth)</code> e <code>(app)</code>, e não um por papel, porque a mesma tela de relatório serve aos três papéis e quem separa o que cada um pode fazer é o use case.</p>
+</div>
+@refs mobile/app/(auth)/login.tsx :: export default function LoginRoute ;; mobile/app/(app)/relatorios/index.tsx :: export default function HistoricoRelatoriosRoute ;; mobile/app/(app)/relatorios/_layout.tsx :: export default function RelatoriosLayout
+
+=== 4 · Interface e rotas
+# A rota é só fronteira: traduz navegação em props da tela
+> As telas não importam o Expo Router. Elas recebem funções como <code>onVoltar</code>, e por isso rodam em teste sem navegador nenhum.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>O arquivo de rota</b> <span>lê o parâmetro da URL e passa para a tela.</span></li>
+      <li><b>Navegar é da rota:</b> <span><code>router.push</code> e <code>router.back</code> só aparecem em <code>app/</code>.</span></li>
+      <li><b>Gateway real entra aqui:</b> <span>a rota de atividades cria o LocationGatewayExpo.</span></li>
+      <li><b>Sessão protege o grupo:</b> <span>sem sessão, o grupo <code>(app)</code> inteiro fica inacessível.</span></li>
+    </ul>
+    <p class="note"><b>No teste E2E</b> a navegação do Expo Router é trocada por um roteador mínimo com o mesmo contrato das rotas.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/app/(auth)/login.tsx :: Rota = fronteira :: +10 :: onAcessoPersonal}}
+    {{code mobile/app/(app)/relatorios/[cicloId]/assinatura.tsx :: export default function AssinaturaRoute :: +4 :: useLocalSearchParams :: cols=90 small}}
+  </div>
+</div>
+@refs mobile/app/(app)/relatorios/[cicloId]/atividades.tsx :: const localizacao = new LocationGatewayExpo(); :: gateway real na rota ;; mobile/app/_layout.tsx :: <Stack.Protected guard={!!sessao}> :: grupo protegido ;; mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: só a navegação do Expo Router é trocada :: roteador do teste
+
+=== 4 · Interface e rotas
+# Layouts: componentes nativos, StyleSheet e Flexbox
+> As telas do relatório usam só <code>&lt;View&gt;</code> e <code>&lt;Text&gt;</code> nativos, com estilo em <code>StyleSheet.create</code>. O eixo principal é coluna, o padrão do React Native; linha só onde é declarada.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>flexDirection: column</code> por padrão:</b> <span>a tela empilha os cartões sem declarar nada.</span></li>
+      <li><b><code>flexDirection: "row"</code></b> <span>aparece só em cabeçalho, linha de rótulo e valor, e par de botões.</span></li>
+      <li><b><code>flex: 1</code></b> <span>divide o espaço entre dois botões lado a lado.</span></li>
+      <li><b>Tokens do design system:</b> <span>cores, raios e espaçamentos vêm de <code>@px/tokens</code>, os mesmos do app.</span></li>
+    </ul>
+    <p class="note"><b>Sem <code>className</code>:</b> nenhuma das telas desta fase usa NativeWind. São dez arquivos em <code>screens/</code>, todos em StyleSheet.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/screens/ui.tsx :: Kit visual das telas do relatório :: +3}}
+    {{code mobile/adapters/screens/ui.tsx :: export const styles = StyleSheet.create({ :: +5 :: flexDirection: "row" :: small cols=90}}
+    {{code mobile/adapters/screens/AssinaturaScreen.tsx :: const styles = StyleSheet.create({ :: +4 :: flexDirection: "row"}}
+  </div>
+</div>
+@refs mobile/adapters/screens/ui.tsx :: import { colors, glass, radius, spacing } from "@px/tokens"; :: tokens do app ;; mobile/adapters/screens/AtividadesFormScreen.tsx :: const styles = StyleSheet.create({ ;; mobile/adapters/screens/RelatorioScreen.tsx :: export function RelatorioScreen
+
+=== 4 · Interface e rotas
+# O kit visual das telas
+> Um arquivo com os componentes que todas as telas do relatório compartilham. É ele que garante o mesmo visual do resto do app: fundo escuro, cartões de vidro e o verde volt só no que é ação ou progresso.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:17%"><col><col style="width:22%"></colgroup>
+    <thead><tr><th>Componente</th><th>O que é</th><th>mobile/adapters/screens/</th></tr></thead>
+    <tbody>
+      <tr><td><code>Tela</code></td><td class="m">Moldura da tela: fundo, rolagem, área segura, título, subtítulo e botão de voltar</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Tela}}</td></tr>
+      <tr><td><code>Cartao</code></td><td class="m">Cartão de vidro com borda fina, o mesmo raio grande do app</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Cartao}}</td></tr>
+      <tr><td><code>Botao</code></td><td class="m">Pílula: primário em volt, secundário neutro, perigo; estados de carregando e desabilitado</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Botao}}</td></tr>
+      <tr><td><code>Campo</code></td><td class="m">Rótulo e entrada de texto ligados por acessibilidade</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Campo}}</td></tr>
+      <tr><td><code>Selo</code></td><td class="m">Status do ciclo e status de sincronização</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Selo}}</td></tr>
+      <tr><td><code>Aviso</code></td><td class="m">Mensagem de erro, sucesso ou informação</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Aviso}}</td></tr>
+      <tr><td><code>BarraProgresso</code></td><td class="m">Trilha e preenchimento da carga horária, com papel de barra de progresso para leitor de tela</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function BarraProgresso}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Acessibilidade como contrato de teste:</b> os testes encontram os elementos por papel e rótulo, do mesmo jeito que um leitor de tela encontraria.</p>
+</div>
+@refs mobile/adapters/screens/ui.tsx :: accessibilityRole="progressbar" :: barra acessível ;; mobile/adapters/screens/ui.tsx :: export const fontes :: Geist e Geist Mono ;; mobile/adapters/screens/__tests__/AtividadesFormScreen.test.tsx :: screen.getByRole("button", { name: "Salvar treinos" }) :: busca por papel e nome
+
+=== 4 · Interface e rotas :: tight
+# Tela principal: AtividadesFormScreen
+<div class="cols" style="grid-template-columns:292px 1fr">
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Registrar treinos</div>
+      <div class="ps">Monte a lista e salve de uma vez.</div>
+      <div class="pc">
+        <span class="pl">O que você treinou</span>
+        <div class="pi">Treino C — pernas</div>
+        <span class="pl">Duração em horas</span>
+        <div class="pi">1,5</div>
+        <span class="pv">Check-in: -19.9245, -43.9352</span>
+        <div class="pb sec">Adicionar à lista</div>
+      </div>
+      <span class="pl">Para salvar (2)</span>
+      <div class="pr"><span>Treino C — pernas</span><b>1,5h</b></div>
+      <div class="pr"><span>Cardio na esteira</span><b>0,5h</b></div>
+      <div class="pb">Salvar 2 treinos</div>
+    </div>
+    <p class="cap">Desenho da tela feito a partir do código. Não é captura de aparelho.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/screens/AtividadesFormScreen.tsx :: function adicionar() :: if (await registrar(lote)) setLote([]); :: // Checagem de formulário ;; if (await registrar(lote)) setLote([]); :: cols=108 small}}
+    <ul class="marks tiny" style="margin-top:10px">
+      <li><b>A tela só confere o formulário:</b> <span>campo vazio e texto que não é número. Data fora do ciclo e teto de horas são regras do domínio e voltam como erro.</span></li>
+      <li><b>Monta um lote</b> <span>e envia de uma vez pelo hook <code>useAtividades</code>; o GPS entra pelo gateway injetado.</span></li>
+    </ul>
+  </div>
+</div>
+@refs mobile/adapters/screens/AtividadesFormScreen.tsx :: export function AtividadesFormScreen :: componente ;; mobile/adapters/screens/AtividadesFormScreen.tsx :: async function marcarLocal() :: check-in por GPS ;; mobile/adapters/screens/__tests__/AtividadesFormScreen.test.tsx :: monta um lote com GPS, salva e mostra :: teste
+
+=== 4 · Interface e rotas :: tight
+# Tela principal: AssinaturaScreen
+<div class="cols" style="grid-template-columns:292px 1fr">
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Assinar relatório</div>
+      <div class="ps">Ciclo de setembro — Hipertrofia</div>
+      <div class="pc">
+        <div class="pr"><span>Treinos registrados</span><b>6</b></div>
+        <div class="pr"><span>Carga horária</span><b>12h</b></div>
+        <div class="pr"><span>Média do personal</span><b>8,6</b></div>
+      </div>
+      <span class="pl" style="line-height:1.4">Declaro que os treinos e a autoavaliação deste ciclo são verdadeiros.</span>
+      <div class="sig"><svg viewBox="0 0 300 120" fill="none" stroke="oklch(0.97 0.004 264)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 78 L30 30 L44 70 L60 28 L78 82 L110 50 L150 64 L196 40 L240 58 L286 44"/><path d="M40 96 L250 90"/></svg></div>
+      <div style="display:flex;gap:8px"><div class="pb sec" style="flex:1">Limpar</div><div class="pb" style="flex:1.5">Confirmar</div></div>
+    </div>
+    <p class="cap">Desenho da tela feito a partir do código. Não é captura de aparelho.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/screens/AssinaturaScreen.tsx :: const usuario = useUsuario(); :: if (await acoes.assinar(base64)) setTracos([]); :: useRelatorio(cicloId) ;; useAcoesRelatorio(cicloId) ;; acoes.assinar(base64) :: cols=108 small}}
+    <ul class="marks tiny" style="margin-top:14px">
+      <li><b>O desenho vira SVG em base64</b> <span>e vai para o AssinarRelatorioUseCase. Quem decide se é assinatura de verdade é o value object.</span></li>
+      <li><b>Quadro em branco</b> <span>manda string vazia: a recusa volta do domínio e aparece no aviso de erro.</span></li>
+      <li><b>O resumo acima do quadro</b> <span>vem do modelo de leitura; a tela não soma nada.</span></li>
+    </ul>
+  </div>
+</div>
+@refs mobile/adapters/screens/QuadroAssinatura.tsx :: export function QuadroAssinatura :: quadro de desenho ;; mobile/adapters/screens/assinatura-svg.ts :: export function tracosParaSvg :: traços viram SVG ;; mobile/adapters/screens/__tests__/AssinaturaEAvaliacaoScreen.test.tsx :: aluno assina o ciclo completo :: teste
+
+=== 4 · Interface e rotas :: tight
+# Tela principal: HistoricoRelatoriosScreen
+<div class="cols" style="grid-template-columns:292px 1fr">
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Relatórios do ciclo</div>
+      <div class="ps">Paulo Rogério · Aluno</div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de setembro</span><span class="sel">Em andamento</span></div>
+        <div class="pr"><span>Carga horária</span><b>6h / 12h</b></div>
+      </div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de agosto</span><span class="sel a">Aguardando</span></div>
+        <div class="pr"><span>Carga horária</span><b>12h / 12h</b></div>
+      </div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de julho</span><span class="sel v">Aprovado</span></div>
+        <div class="pr"><span>Carga horária</span><b>12h / 12h</b></div>
+      </div>
+      <div class="pb sec">Sair</div>
+    </div>
+    <p class="cap">Desenho da tela feito a partir do código. Não é captura de aparelho.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/screens/HistoricoRelatoriosScreen.tsx :: const { sessao, sair } = useAuth(); :: +2 :: useHistoricoRelatorios() :: cols=108 small}}
+    {{code mobile/adapters/screens/HistoricoRelatoriosScreen.tsx :: {consulta.estado === "carregando" :: <<Pressable :: consulta.estado === "carregando" ;; consulta.estado === "erro" ;; consulta.dados.length === 0 :: cols=108 small}}
+    <ul class="marks tiny" style="margin-top:12px">
+      <li><b>Três estados de consulta,</b> <span>carregando, erro e pronto, mais o caso de lista vazia.</span></li>
+      <li><b>O que cada papel vê</b> <span>é decidido pelo ListarRelatoriosUseCase: aluno os seus, personal os que acompanha, coordenação todos.</span></li>
+    </ul>
+  </div>
+</div>
+@refs mobile/adapters/hooks/useRelatorios.ts :: export function useHistoricoRelatorios :: hook ;; core/application/use-cases/consultar-relatorios.ts :: switch (usuario.papel) :: quem vê o quê ;; mobile/adapters/screens/__tests__/HistoricoERelatorioScreen.test.tsx :: aluno vê seus três ciclos :: teste
+
+=== 4 · Interface e rotas
+# As outras telas do fluxo
+> Quatro telas completam o ciclo de avaliação. Todas seguem o mesmo molde: props de navegação, um hook, e o kit visual.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:15%"><col><col style="width:19%"><col style="width:29%"></colgroup>
+    <thead><tr><th>Tela</th><th>O que faz</th><th>mobile/adapters/screens/</th><th>Teste</th></tr></thead>
+    <tbody>
+      <tr><td>LoginScreen</td><td class="m">E-mail e senha; atalhos das três contas de demonstração; link para o acesso do personal</td><td>{{rs mobile/adapters/screens/LoginScreen.tsx :: export function LoginScreen}}</td><td>{{rs mobile/adapters/screens/__tests__/LoginETokenScreen.test.tsx :: digitar e-mail e senha e tocar em Entrar}}</td></tr>
+      <tr><td>AcessoTokenScreen</td><td class="m">Personal digita o código; cada recusa mostra o motivo</td><td>{{rs mobile/adapters/screens/AcessoTokenScreen.tsx :: export function AcessoTokenScreen}}</td><td>{{rs mobile/adapters/screens/__tests__/LoginETokenScreen.test.tsx :: código válido entra como personal}}</td></tr>
+      <tr><td>RelatorioScreen</td><td class="m">Carga horária, treinos, avaliações e assinaturas; os botões dependem de papel e status</td><td>{{rs mobile/adapters/screens/RelatorioScreen.tsx :: export function RelatorioScreen}}</td><td>{{rs mobile/adapters/screens/__tests__/HistoricoERelatorioScreen.test.tsx :: coordenação aprova; PDF fica bloqueado}}</td></tr>
+      <tr><td>AvaliacaoScreen</td><td class="m">Nota por critério em passos de 0,5, com a faixa acompanhando</td><td>{{rs mobile/adapters/screens/AvaliacaoScreen.tsx :: export function AvaliacaoScreen}}</td><td>{{rs mobile/adapters/screens/__tests__/AssinaturaEAvaliacaoScreen.test.tsx :: personal ajusta notas}}</td></tr>
+    </tbody>
+  </table>
+  <ul class="marks tiny" style="margin-top:16px">
+    <li><b>Botão desabilitado pelo modelo de leitura:</b> <span>“Assinar” depende de <code>pendenciasParaAssinar</code> e “Gerar PDF” de <code>pdf.permitido</code>, os dois calculados pelo domínio.</span> {{r mobile/adapters/screens/RelatorioScreen.tsx :: desabilitado={ciclo.pendenciasParaAssinar.length > 0}} {{r mobile/adapters/screens/RelatorioScreen.tsx :: desabilitado={!ciclo.pdf.permitido}}</li>
+    <li><b>A faixa na tela de avaliação</b> <span>vem do próprio value object, para não existir uma segunda tabela de faixas.</span> {{r mobile/adapters/screens/AvaliacaoScreen.tsx :: Criterio.criar(nome, nota).faixa}}</li>
+  </ul>
+</div>

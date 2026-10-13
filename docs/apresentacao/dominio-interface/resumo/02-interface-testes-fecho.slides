@@ -1,0 +1,240 @@
+=== 4 · Interface e rotas
+# Seção 4 — Rotas como fronteira; telas em StyleSheet e Flexbox
+> Os arquivos em <code>app/</code> são a entrada visual: escolhem a tela e ligam a navegação. As telas usam só <code>&lt;View&gt;</code> e <code>&lt;Text&gt;</code> nativos, com o eixo em coluna por padrão.
+<div class="cols two">
+  <div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:60%"><col></colgroup>
+      <thead><tr><th>Arquivo em mobile/app/</th><th>Tela</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">(auth)/login.tsx</span></td><td>LoginScreen</td></tr>
+        <tr><td><span class="mono">(auth)/token.tsx</span></td><td>AcessoTokenScreen</td></tr>
+        <tr><td><span class="mono">(app)/relatorios/index.tsx</span></td><td>HistoricoRelatoriosScreen</td></tr>
+        <tr><td><span class="mono">(app)/relatorios/[cicloId]/index.tsx</span></td><td>RelatorioScreen</td></tr>
+        <tr><td><span class="mono">…/[cicloId]/atividades.tsx</span></td><td>AtividadesFormScreen</td></tr>
+        <tr><td><span class="mono">…/[cicloId]/avaliacao.tsx</span></td><td>AvaliacaoScreen</td></tr>
+        <tr><td><span class="mono">…/[cicloId]/assinatura.tsx</span></td><td>AssinaturaScreen</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Grupos de rota:</b> são <code>(auth)</code> e <code>(app)</code>, e não um por papel, porque a mesma tela serve aos três papéis.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/app/(auth)/login.tsx :: Rota = fronteira :: +10 :: onAcessoPersonal :: small cols=68}}
+    {{code mobile/adapters/screens/AssinaturaScreen.tsx :: const styles = StyleSheet.create({ :: +4 :: flexDirection: "row" :: small cols=68}}
+  </div>
+</div>
+@refs mobile/adapters/screens/ui.tsx :: Kit visual das telas do relatório :: kit visual em StyleSheet ;; mobile/adapters/screens/ui.tsx :: import { colors, glass, radius, spacing } from "@px/tokens"; :: tokens do app ;; mobile/app/_layout.tsx :: <Stack.Protected guard={!!sessao}> :: rotas protegidas
+
+=== 4 · Interface e rotas :: tight
+# As três telas principais
+<div class="cols three">
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Registrar treinos</div>
+      <div class="ps">Monte a lista e salve de uma vez.</div>
+      <div class="pc">
+        <span class="pl">O que você treinou</span>
+        <div class="pi">Treino C — pernas</div>
+        <span class="pl">Duração em horas</span>
+        <div class="pi">1,5</div>
+        <span class="pv">Check-in: -19.9245, -43.9352</span>
+        <div class="pb sec">Adicionar à lista</div>
+      </div>
+      <span class="pl">Para salvar (1)</span>
+      <div class="pr"><span>Treino C — pernas</span><b>1,5h</b></div>
+      <div class="pb">Salvar 1 treino</div>
+    </div>
+    <p class="cap">{{rs mobile/adapters/screens/AtividadesFormScreen.tsx :: export function AtividadesFormScreen}}<br>A tela só confere o formulário; data e horas são regras do domínio.</p>
+  </div>
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Assinar relatório</div>
+      <div class="ps">Ciclo de setembro — Hipertrofia</div>
+      <div class="pc">
+        <div class="pr"><span>Treinos registrados</span><b>6</b></div>
+        <div class="pr"><span>Carga horária</span><b>12h</b></div>
+        <div class="pr"><span>Média do personal</span><b>8,6</b></div>
+      </div>
+      <span class="pl" style="line-height:1.4">Declaro que os treinos e a autoavaliação deste ciclo são verdadeiros.</span>
+      <div class="sig"><svg viewBox="0 0 300 120" fill="none" stroke="oklch(0.97 0.004 264)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 78 L30 30 L44 70 L60 28 L78 82 L110 50 L150 64 L196 40 L240 58 L286 44"/><path d="M40 96 L250 90"/></svg></div>
+      <div style="display:flex;gap:8px"><div class="pb sec" style="flex:1">Limpar</div><div class="pb" style="flex:1.5">Confirmar</div></div>
+    </div>
+    <p class="cap">{{rs mobile/adapters/screens/AssinaturaScreen.tsx :: export function AssinaturaScreen}}<br>O desenho vira SVG em base64; o value object decide se vale.</p>
+  </div>
+  <div class="shot">
+    <div class="phone">
+      <div class="pt">Relatórios do ciclo</div>
+      <div class="ps">Paulo Rogério · Aluno</div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de setembro</span><span class="sel">Em andamento</span></div>
+        <div class="pr"><span>Carga horária</span><b>6h / 12h</b></div>
+      </div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de agosto</span><span class="sel a">Aguardando</span></div>
+        <div class="pr"><span>Carga horária</span><b>12h / 12h</b></div>
+      </div>
+      <div class="pc">
+        <div class="pr"><span style="color:var(--paper)">Ciclo de julho</span><span class="sel v">Aprovado</span></div>
+        <div class="pr"><span>Carga horária</span><b>12h / 12h</b></div>
+      </div>
+      <div class="pb sec">Sair</div>
+    </div>
+    <p class="cap">{{rs mobile/adapters/screens/HistoricoRelatoriosScreen.tsx :: export function HistoricoRelatoriosScreen}}<br>O que cada papel vê é decidido pelo use case.</p>
+  </div>
+</div>
+@refs mobile/adapters/screens/RelatorioScreen.tsx :: export function RelatorioScreen :: mais quatro telas ;; mobile/adapters/screens/AvaliacaoScreen.tsx :: export function AvaliacaoScreen ;; mobile/adapters/screens/LoginScreen.tsx :: export function LoginScreen ;; mobile/adapters/screens/AcessoTokenScreen.tsx :: export function AcessoTokenScreen
+
+=== 5 · O que fica em mock :: tight
+# Seção 5 — O que fica em mock ou fake nesta fase
+> Nada de banco e nada de hardware real. O modo mock é o padrão do app; para religar SQLite e Supabase é preciso declarar <code>EXPO_PUBLIC_MODO_MOCK=0</code>.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:21%"><col style="width:38%"><col></colgroup>
+    <thead><tr><th>Item</th><th>Como está</th><th>Onde conferir</th></tr></thead>
+    <tbody>
+      <tr><td>Sem SQLite local</td><td class="m">O arquivo do banco não é aberto e as migrations não rodam</td><td>{{r mobile/db/index.ts :: desligadoNoMock<Db>}}</td></tr>
+      <tr><td>Sem Supabase</td><td class="m">O cliente não é criado; nenhuma chamada sai para a nuvem</td><td>{{r mobile/lib/supabase.ts :: desligadoNoMock<PxSupabase>}}</td></tr>
+      <tr><td>Câmera e GPS</td><td class="m">Gateways fakes nos testes; os módulos do Expo são mockados</td><td>{{r core/testing/fakes-ciclo.ts :: export class CameraGatewayFake}}</td></tr>
+      <tr><td>Repositórios em Map</td><td class="m">Um Map em memória no lugar do banco, no app e nos testes</td><td>{{r mobile/adapters/memoria/repositorios.ts :: private readonly dados = new Map}}</td></tr>
+      <tr><td>Stub de sessão</td><td class="m">Três contas fixas que devolvem sessões válidas</td><td>{{r mobile/adapters/memoria/gateways-simulados.ts :: export class AuthGatewayStub}}</td></tr>
+      <tr><td>PDF e envio</td><td class="m">O PDF devolve um endereço em memória; o envio aceita tudo</td><td>{{r mobile/adapters/memoria/gateways-simulados.ts :: export class PdfGatewaySimulado}}</td></tr>
+      <tr><td>Telas antigas do app</td><td class="m">Leem do SQLite, então saem da navegação neste modo</td><td>{{r mobile/app/(app)/_layout.tsx :: <Drawer.Protected guard={!MODO_MOCK}>}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Um teste prova:</b> ao carregar os módulos no modo mock, <code>openDatabaseSync</code> e a criação do cliente Supabase não são chamados. {{rs mobile/lib/__tests__/modo.test.ts :: é o padrão: não abre o SQLite}} {{rs mobile/lib/modo.ts :: export const MODO_MOCK}} <b>Demonstração:</b> <code>aluno@pxgym.dev</code>, <code>personal@pxgym.dev</code> e <code>coordenacao@pxgym.dev</code>, senha <code>pxgym123</code>; código do personal <code>CARLA-2026</code>.</p>
+</div>
+
+=== 6 · Testes e cobertura
+# Seção 6 — A pirâmide de testes, com os números reais
+> Os cinco níveis da pirâmide, de baixo para cima. As barras estão em escala linear: o maior volume está no domínio e existe um único teste de ponta a ponta.
+<div class="cols c46">
+  <div class="panel">
+    <div class="pyr">
+      <div class="row"><div class="lbl">Ponta a ponta<small>fluxo crítico completo</small></div><div class="bar"><i style="width:0.6%"></i></div><div class="cnt">1</div></div>
+      <div class="row"><div class="lbl">Telas e componentes<small>RNTL + jest-expo</small></div><div class="bar"><i style="width:18.2%"></i></div><div class="cnt">32</div></div>
+      <div class="row"><div class="lbl">Context, hooks e adaptadores<small>20 de Context e hooks + 47 de borda</small></div><div class="bar"><i style="width:38.1%"></i></div><div class="cnt">67</div></div>
+      <div class="row"><div class="lbl">Use cases<small>fakes em memória</small></div><div class="bar"><i style="width:59.7%"></i></div><div class="cnt">105</div></div>
+      <div class="row"><div class="lbl">Domínio<small>puro, sem mock</small></div><div class="bar"><i style="width:100%"></i></div><div class="cnt">176</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>416 testes no total,</b> <span>todos passando: 281 no core, 115 no mobile e 20 no pacote de banco.</span></li>
+      <li><b>Só do ciclo de avaliação:</b> <span>115 de domínio e 69 de use cases. O restante desses dois níveis é do app que já existia.</span></li>
+      <li><b>Os 47 de borda</b> <span>são sessão segura (11), gateways de câmera e GPS (17), repositórios em memória (15) e modo mock (4).</span></li>
+      <li><b>Fora da pirâmide:</b> <span>35 testes de repositórios SQLite e Supabase da fase anterior, que continuam passando.</span></li>
+    </ul>
+  </div>
+</div>
+@refs core/domain/__tests__/ciclo-avaliacao.test.ts :: describe("CicloAvaliacao — abertura" :: domínio ;; core/application/__tests__/fluxo-relatorio.test.ts :: describe("AssinarRelatorioUseCase" :: use cases ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: describe("AuthProvider + useAuth :: Context
+
+=== 6 · Testes e cobertura
+# Cobertura: a meta de 80% está no próprio Jest
+> O limite é configuração, não promessa: se qualquer uma das quatro métricas cair abaixo de 80%, o comando de cobertura falha. O traço branco marca os 80%.
+<div class="cols two">
+  <div class="panel">
+    <h2>Core: domínio + aplicação</h2>
+    <div class="stack" style="gap:11px">
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Linhas</span><span class="tr"><i style="transform:scaleX(.931)"></i></span><b>93,1%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Instruções</span><span class="tr"><i style="transform:scaleX(.9329)"></i></span><b>93,3%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Ramos</span><span class="tr"><i style="transform:scaleX(.9276)"></i></span><b>92,8%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Funções</span><span class="tr"><i style="transform:scaleX(.8697)"></i></span><b>87,0%</b></div>
+    </div>
+    <p class="note"><b>Nos arquivos do ciclo:</b> 11 dos 12 arquivos de domínio têm 100% de linhas; o outro tem 93%. O que puxa a média são entidades antigas do app que esta fase não tocou.</p>
+    {{code raiz/packages/core/jest.config.cjs :: coverageThreshold: { :: +3 :: statements: 80, branches: 80, functions: 80, lines: 80 :: small cols=68}}
+  </div>
+  <div class="panel">
+    <h2>Mobile: camada de adapters</h2>
+    <div class="stack" style="gap:11px">
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Linhas</span><span class="tr"><i style="transform:scaleX(1)"></i></span><b>100%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Instruções</span><span class="tr"><i style="transform:scaleX(.9948)"></i></span><b>99,5%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Ramos</span><span class="tr"><i style="transform:scaleX(.9139)"></i></span><b>91,4%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Funções</span><span class="tr"><i style="transform:scaleX(1)"></i></span><b>100%</b></div>
+    </div>
+    <p class="note"><b>O que é medido:</b> Context, sessão segura, hooks, gateways, memória e telas. Fica de fora só o arquivo que liga o app real, que não roda em teste.</p>
+    {{code raiz/apps/mobile/jest.config.js :: collectCoverageFrom: [ :: +5 :: "!src/adapters/instancia.ts" :: small cols=68}}
+  </div>
+</div>
+@refs raiz/packages/core/jest.config.cjs :: collectCoverageFrom :: o que o core mede ;; raiz/apps/mobile/jest.config.js :: coverageThreshold :: limite no mobile ;; raiz/packages/core/package.json :: test:coverage :: comando
+
+=== 6 · Testes e cobertura :: tight
+# Testes de tela com RNTL, e o único teste de ponta a ponta
+<div class="cols c37">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b><code>render</code></b> <span>dentro do AuthProvider, com use cases fakes injetados.</span></li>
+      <li><b><code>fireEvent.changeText</code></b> <span>preenche os campos pelo rótulo.</span></li>
+      <li><b><code>fireEvent.press</code></b> <span>toca nos botões por papel e nome.</span></li>
+      <li><b>GPS fake</b> <span>injetado por prop.</span></li>
+      <li><b>O E2E</b> <span>percorre os três papéis: aluno registra e assina, personal entra por token e avalia, coordenação aprova, sincroniza e gera o PDF.</span></li>
+    </ul>
+    <p class="note"><b>Context e hooks</b> são testados com <code>renderHook</code>, incluindo o estado intermediário <code>salvando</code>.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/screens/__tests__/AtividadesFormScreen.test.tsx :: it("monta um lote com GPS :: +22 :: montar({ logado: ALUNO }) ;; fireEvent.press(screen.getByLabelText("Marcar check-in por GPS")) ;; fireEvent.press(screen.getByRole("button", { name: "Salvar 2 treinos" })) :: small cols=105}}</div>
+</div>
+@refs mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: E2E: do primeiro treino ao PDF aprovado :: E2E ;; mobile/adapters/__tests__/utils/montar.tsx :: export function montar :: providers + fakes ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: idle → salvando → salvo :: hook ;; raiz/apps/mobile/jest.config.js :: preset: "jest-expo" :: jest-expo
+
+=== 7 · Checklist e fecho :: tight
+# Seção 7 — O checklist sequencial de construção
+> Os oito passos da fase, na ordem de construção, com o que foi entregue em cada um e quantos testes o sustentam.
+<div class="panel flush">
+  <table class="t micro">
+    <colgroup><col style="width:4%"><col style="width:22%"><col><col style="width:8%"><col style="width:27%"></colgroup>
+    <thead><tr><th></th><th>Passo</th><th>Entregue</th><th class="c">Testes</th><th>Ponto de entrada</th></tr></thead>
+    <tbody>
+      <tr><td><span class="id">1</span></td><td>Value Objects</td><td class="m">Criterio, Coordenada, Assinatura, CargaHoraria e os enums de status</td><td class="c"><span class="mono" style="color:var(--paper)">54</span></td><td>{{rs core/domain/value-objects/criterio.ts :: export class Criterio}}</td></tr>
+      <tr><td><span class="id">2</span></td><td>Entities e Aggregates</td><td class="m">CicloAvaliacao, Acompanhamento e TokenPersonal, com as invariantes testadas</td><td class="c"><span class="mono" style="color:var(--paper)">50</span></td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export class CicloAvaliacao}}</td></tr>
+      <tr><td><span class="id">3</span></td><td>Domain Services</td><td class="m">RegraGeracaoPdfService, RegraDevolucaoService e SincronizacaoService</td><td class="c"><span class="mono" style="color:var(--paper)">11</span></td><td>{{rs core/domain/services/regra-geracao-pdf.ts :: export class RegraGeracaoPdfService}}</td></tr>
+      <tr><td><span class="id">4</span></td><td>Interfaces de Repository e Gateway</td><td class="m">Contratos declarados no domínio; são tipos, verificados pelo compilador</td><td class="c"><span class="mono">tsc</span></td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CicloAvaliacaoRepository}}</td></tr>
+      <tr><td><span class="id">5</span></td><td>Use Cases</td><td class="m">Dez casos de uso e quatro de apoio, com fakes em memória</td><td class="c"><span class="mono" style="color:var(--paper)">69</span></td><td>{{rs core/application/use-cases/registrar-atividades.ts :: export class RegistrarAtividadesUseCase}}</td></tr>
+      <tr><td><span class="id">6</span></td><td>Context API + Custom Hooks</td><td class="m">AuthContext, useAuth, useAtividades e os hooks do relatório</td><td class="c"><span class="mono" style="color:var(--paper)">20</span></td><td>{{rs mobile/adapters/context/AuthContext.tsx :: export function AuthProvider}}</td></tr>
+      <tr><td><span class="id">7</span></td><td>Telas com RNTL</td><td class="m">AssinaturaScreen, AtividadesFormScreen, HistoricoRelatoriosScreen e mais quatro, com um E2E</td><td class="c"><span class="mono" style="color:var(--paper)">33</span></td><td>{{rs mobile/adapters/screens/AssinaturaScreen.tsx :: export function AssinaturaScreen}}</td></tr>
+      <tr><td><span class="id">8</span></td><td>Sessão Segura</td><td class="m">SessionStorageSecureStore sobre o expo-secure-store, mockado nos testes</td><td class="c"><span class="mono" style="color:var(--paper)">11</span></td><td>{{rs mobile/adapters/auth/SessionStorageSecureStore.ts :: export class SessionStorageSecureStore}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Somando os passos:</b> 248 testes só do que esta fase construiu. Os outros 168 são gateways, memória, modo mock e a suíte do app anterior, que continua verde.</p>
+</div>
+
+=== 7 · Checklist e fecho
+# Os limites desta fase, e o que muda na próxima
+> O que esta entrega não é, para que nenhuma pergunta encontre uma resposta improvisada.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:27%"><col></colgroup>
+    <thead><tr><th>Limite</th><th>O que significa na prática</th></tr></thead>
+    <tbody>
+      <tr><td>TDD não aparece no histórico do git</td><td class="m">A fase entrou no repositório em um commit só. O que se pode conferir são os testes por regra e a cobertura.</td></tr>
+      <tr><td>Validado por teste, não em aparelho</td><td class="m">O fluxo inteiro roda no teste de ponta a ponta com RNTL. Não houve rodada em emulador ou celular nesta fase.</td></tr>
+      <tr><td>PDF e envio são simulados</td><td class="m">As regras de quando gerar e em que ordem enviar são reais e testadas; o gerador e o backend, não.</td></tr>
+      <tr><td>A câmera não entra no relatório</td><td class="m">CameraGatewayExpo existe e é testado, mas o relatório do ciclo usa o GPS. A câmera serve à rota de fotos, fora do modo mock.</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Próxima fase:</b> entrar com SQLite e Supabase é escrever classes novas que implementam os contratos e trocar quatro linhas no composition root. Domínio, use cases, hooks, telas e testes não mudam. {{rs mobile/adapters/composicao.ts :: const ciclos = new CicloAvaliacaoRepositoryMemoria(demo.ciclos);}} {{rs db/auth-gateway.ts :: export class SupabaseAuthGateway implements AuthGateway}}</p>
+</div>
+@refs mobile/adapters/memoria/gateways-simulados.ts :: export class PdfGatewaySimulado :: PDF simulado ;; mobile/app/(app)/camera.tsx :: new CameraGatewayExpo( :: câmera na rota de fotos ;; mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: Roda o app de verdade :: o que o E2E cobre
+
+@@raw
+<section class="slide" data-sec="7 · Checklist e fecho">
+  <div class="head">
+    <h1>O que foi entregue</h1>
+    <p class="sub">A fase pedia domínio e interface primeiro, tudo em mock, com mais de 80% de cobertura.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <ul class="checks">
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Domínio puro: seis value objects, um agregado, duas entidades, três serviços e os contratos</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Sete telas em StyleSheet e Flexbox, com o design system do app</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>As duas invariantes protegidas no agregado e testadas pelo nome</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Rotas do Expo Router como fronteira, protegidas pela sessão</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Dez casos de uso, um arquivo cada, falando só com interfaces</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Modo mock sem SQLite e sem Supabase, comprovado por teste</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Context API na camada de adapters, com sessão global sem prop drilling</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>416 testes passando, na forma da pirâmide, com um único E2E</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Sessão segura no cofre do aparelho, mockada nos testes</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Cobertura de 93% no core e 99% nos adapters, com 80% como limite do Jest</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Hooks de ponte com os estados idle, salvando e salvo</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Cada afirmação deste deck apontando para arquivo e linha</li>
+    </ul>
+    <p class="note" style="margin-top:20px"><b>A ideia que sustenta a fase:</b> se a regra de negócio mora num lugar que não conhece tela nem banco, dá para provar que ela está certa antes de existir tela ou banco. O resto da arquitetura é consequência: interfaces declaradas no domínio, fakes em Map, use cases que só orquestram e telas que só desenham o que o domínio já calculou.</p>
+  </div></div>
+</section>
+@@end

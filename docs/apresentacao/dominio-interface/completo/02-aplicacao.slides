@@ -1,0 +1,321 @@
+=== 2 · Aplicação :: tight
+# Seção 2 — A camada de aplicação: dez casos de uso
+> Orquestração, sem regra de negócio e sem código de interface. Cada use case chama o agregado e conversa com o mundo só pelas interfaces do domínio.
+<div class="panel flush">
+  <table class="t micro">
+    <colgroup><col style="width:23%"><col style="width:17%"><col><col style="width:21%"></colgroup>
+    <thead><tr><th>Caso de uso</th><th>Quem executa</th><th>O que orquestra</th><th>core/application/use-cases/</th></tr></thead>
+    <tbody>
+      <tr><td>RegistrarAtividadesUseCase</td><td class="m">aluno do ciclo</td><td class="m">lote de treinos no agregado, tudo ou nada</td><td>{{rs core/application/use-cases/registrar-atividades.ts :: export class RegistrarAtividadesUseCase}}</td></tr>
+      <tr><td>AvaliarDesempenhoUseCase</td><td class="m">personal do ciclo</td><td class="m">notas viram Criterio; o agregado registra</td><td>{{rs core/application/use-cases/avaliar-desempenho.ts :: export class AvaliarDesempenhoUseCase}}</td></tr>
+      <tr><td>RealizarAutoAvaliacaoUseCase</td><td class="m">aluno do ciclo</td><td class="m">mesmo formato de critérios, outro papel</td><td>{{rs core/application/use-cases/realizar-auto-avaliacao.ts :: export class RealizarAutoAvaliacaoUseCase}}</td></tr>
+      <tr><td>AssinarRelatorioUseCase</td><td class="m">aluno ou personal</td><td class="m">o desenho vira Assinatura; o agregado decide a transição</td><td>{{rs core/application/use-cases/assinar-relatorio.ts :: export class AssinarRelatorioUseCase}}</td></tr>
+      <tr><td>AprovarRelatorioUseCase</td><td class="m">coordenação</td><td class="m">aguardando aprovação vira aprovado</td><td>{{rs core/application/use-cases/aprovar-relatorio.ts :: export class AprovarRelatorioUseCase}}</td></tr>
+      <tr><td>DevolverRelatorioUseCase</td><td class="m">coordenação</td><td class="m">RegraDevolucaoService e depois o agregado</td><td>{{rs core/application/use-cases/devolver-relatorio.ts :: export class DevolverRelatorioUseCase}}</td></tr>
+      <tr><td>GerarPdfUseCase</td><td class="m">quem participa</td><td class="m">RegraGeracaoPdfService e depois o PdfGateway</td><td>{{rs core/application/use-cases/gerar-pdf.ts :: export class GerarPdfUseCase}}</td></tr>
+      <tr><td>SincronizarFilaUseCase</td><td class="m">o próprio app</td><td class="m">SincronizacaoService monta a fila; o gateway envia</td><td>{{rs core/application/use-cases/sincronizar-fila.ts :: export class SincronizarFilaUseCase}}</td></tr>
+      <tr><td>AutenticarUsuarioUseCase</td><td class="m">quem tem conta</td><td class="m">AuthGateway confere; SessionStorage guarda</td><td>{{rs core/application/use-cases/autenticar-usuario.ts :: export class AutenticarUsuarioUseCase}}</td></tr>
+      <tr><td>AcessarViaTokenUseCase</td><td class="m">personal sem conta</td><td class="m">TokenPersonal e Acompanhamento viram sessão</td><td>{{rs core/application/use-cases/acessar-via-token.ts :: export class AcessarViaTokenUseCase}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>De apoio:</b> RestaurarSessaoUseCase e EncerrarSessaoUseCase {{rs core/application/use-cases/gerenciar-sessao.ts :: export class RestaurarSessaoUseCase}}, ListarRelatoriosUseCase e ConsultarRelatorioUseCase {{rs core/application/use-cases/consultar-relatorios.ts :: export class ListarRelatoriosUseCase}}.</p>
+</div>
+
+=== 2 · Aplicação :: tight
+# Anatomia de um use case: RegistrarAtividadesUseCase
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>1. Busca</b> <span>o agregado pelo repositório, que aqui é só uma interface.</span></li>
+      <li><b>2. Confere quem é:</b> <span>papel de aluno e dono do ciclo.</span></li>
+      <li><b>3. Entrega ao domínio.</b> <span>Quem valida data, horas e teto é o agregado.</span></li>
+      <li><b>4. Salva uma vez,</b> <span>no fim. Se um treino do lote falhar, nenhum é gravado.</span></li>
+      <li><b>5. Devolve Resultado:</b> <span>sucesso com o modelo de leitura, ou falha tipada.</span></li>
+    </ul>
+    <p class="note"><b>O que não tem aqui:</b> nenhum <code>if</code> de regra de negócio, nenhum import de React, nenhuma classe concreta.</p>
+  </div>
+  <div class="panel flush">{{code core/application/use-cases/registrar-atividades.ts :: const ciclo = await this.ciclos.porId(input.cicloId); :: return falhaDoErro(erro); :: input.usuario.papel !== "aluno" ;; ciclo.registrarAtividade({ ;; await this.ciclos.salvar(ciclo); :: small}}</div>
+</div>
+@refs core/application/use-cases/registrar-atividades.ts :: private readonly ciclos: CicloAvaliacaoRepository :: depende da interface ;; core/application/use-cases/registrar-atividades.ts :: Tudo ou nada :: tudo ou nada ;; core/application/__tests__/registrar-e-avaliar.test.ts :: caminho feliz: registra o lote
+
+=== 2 · Aplicação
+# Resultado: erro de domínio nunca vaza como exceção para a tela
+> Todo use case do relatório responde do mesmo jeito: sucesso com valor, ou falha com um tipo que a tela sabe tratar.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:43%"><col></colgroup>
+      <thead><tr><th>Tipo de falha</th><th>Quando acontece</th></tr></thead>
+      <tbody>
+        <tr><td><code>nao-encontrado</code></td><td class="m">ciclo ou acompanhamento não existe</td></tr>
+        <tr><td><code>sem-permissao</code></td><td class="m">papel errado ou ciclo de outra pessoa</td></tr>
+        <tr><td><code>regra-de-negocio</code></td><td class="m">o domínio lançou BusinessRuleError</td></tr>
+        <tr><td><code>dados-invalidos</code></td><td class="m">um value object recusou o valor</td></tr>
+        <tr><td><code>falha-externa</code></td><td class="m">um gateway falhou</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Na tela:</b> o hook lê <code>r.ok</code> e mostra <code>r.erro.mensagem</code>. Não existe <code>try/catch</code> em nenhuma tela.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/resultado.ts :: export type TipoErro :: | { ok: false; erro: ErroCasoDeUso }; ::  :: small}}
+    {{code core/application/use-cases/resultado.ts :: export function falhaDoErro :: +5 :: InvalidValueError ;; BusinessRuleError :: small}}
+  </div>
+</div>
+@refs core/application/use-cases/resultado.ts :: export function sucesso :: sucesso() e falha() ;; core/application/__tests__/sincronizar-e-token.test.ts :: erro desconhecido vira falha-externa ;; mobile/adapters/hooks/useAtividades.ts :: if (!r.ok) :: como o hook consome
+
+=== 2 · Aplicação :: tight
+# Quem pode o quê: a permissão é conferida em cada use case
+> Não basta o papel. Onde está escrito “do ciclo”, o use case também compara o id do usuário com o dono do relatório.
+<div class="panel flush">
+  <table class="t micro matrix">
+    <colgroup><col style="width:22%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col></colgroup>
+    <thead><tr><th>Ação</th><th class="c">Aluno</th><th class="c">Personal</th><th class="c">Coordenação</th><th>Linha que decide</th></tr></thead>
+    <tbody>
+      <tr><td>Registrar treinos</td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot off"></span></td><td>{{r core/application/use-cases/registrar-atividades.ts :: input.usuario.papel !== "aluno"}}</td></tr>
+      <tr><td>Avaliar desempenho</td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot off"></span></td><td>{{r core/application/use-cases/avaliar-desempenho.ts :: input.usuario.papel !== "personal"}}</td></tr>
+      <tr><td>Fazer autoavaliação</td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot off"></span></td><td>{{r core/application/use-cases/realizar-auto-avaliacao.ts :: input.usuario.papel !== "aluno"}}</td></tr>
+      <tr><td>Assinar o relatório</td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot off"></span></td><td>{{r core/application/use-cases/assinar-relatorio.ts :: Só o aluno e o personal do ciclo assinam}}</td></tr>
+      <tr><td>Aprovar</td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot"></span></td><td>{{r core/application/use-cases/aprovar-relatorio.ts :: input.usuario.papel !== "coordenacao"}}</td></tr>
+      <tr><td>Devolver com motivo</td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot off"></span></td><td class="c"><span class="dot"></span></td><td>{{r core/domain/services/regra-devolucao.ts :: if (input.papel !== "coordenacao")}}</td></tr>
+      <tr><td>Ver o relatório e gerar PDF</td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot"></span></td><td class="c"><span class="dot"></span></td><td>{{r core/application/use-cases/leitura-ciclo.ts :: export function podeVer}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Testado nos três sentidos:</b> personal, coordenação e outro aluno tentam registrar treino no ciclo alheio e recebem <code>sem-permissao</code>, sem nenhum salvamento no repositório.</p>
+</div>
+@refs core/application/__tests__/registrar-e-avaliar.test.ts :: não registra treino do aluno :: três papéis barrados ;; core/application/__tests__/fluxo-relatorio.test.ts :: aluno e personal não aprovam ;; core/application/__tests__/fluxo-relatorio.test.ts :: quem não participa não gera
+
+=== 2 · Aplicação
+# AvaliarDesempenho e RealizarAutoAvaliacao
+> Dois use cases com a mesma forma e papéis diferentes. As notas chegam como números soltos e só entram no agregado depois de virarem Criterio.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>AvaliarDesempenho:</b> <span>só o personal daquele ciclo.</span></li>
+      <li><b>RealizarAutoAvaliacao:</b> <span>só o aluno daquele ciclo.</span></li>
+      <li><b>Conversão na fronteira:</b> <span><code>Criterio.criar()</code> valida cada nota antes do agregado.</span></li>
+      <li><b>A invariante é do domínio:</b> <span>ciclo aprovado ou já assinado recusa, e o use case só traduz o erro.</span></li>
+    </ul>
+    <p class="note"><b>Critérios sugeridos</b> para a tela ficam aqui como constantes; o domínio aceita quaisquer outros.</p>
+  </div>
+  <div class="panel flush">{{code core/application/use-cases/avaliar-desempenho.ts :: const ciclo = await this.ciclos.porId(input.cicloId); :: return falhaDoErro(erro); :: input.usuario.papel !== "personal" ;; Criterio.criar(c.nome, c.nota)}}</div>
+</div>
+@refs core/application/use-cases/avaliar-desempenho.ts :: export const CRITERIOS_PERSONAL :: critérios sugeridos ;; core/application/use-cases/realizar-auto-avaliacao.ts :: ciclo.registrarAutoAvaliacao({ :: autoavaliação ;; core/application/__tests__/registrar-e-avaliar.test.ts :: aluno não avalia a si mesmo ;; core/application/__tests__/registrar-e-avaliar.test.ts :: personal não preenche a autoavaliação
+
+=== 2 · Aplicação :: tight
+# AssinarRelatorioUseCase
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Descobre o signatário</b> <span>cruzando papel e id: aluno do ciclo ou personal do ciclo. Coordenação não assina.</span></li>
+      <li><b>Cria o value object</b> <span>com o relógio injetado; quadro em branco vira dado inválido.</span></li>
+      <li><b>O agregado decide</b> <span>se há pendências e se as duas assinaturas já mandam o relatório para aprovação.</span></li>
+      <li><b>O relógio é uma interface:</b> <span>no teste, <code>FixedClock</code> fixa o instante da assinatura.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/application/use-cases/assinar-relatorio.ts :: let signatario: Signatario; :: return falhaDoErro(erro); :: Assinatura.criar(input.assinaturaBase64, this.clock.now()) :: small}}</div>
+</div>
+@refs core/application/__tests__/fluxo-relatorio.test.ts :: aluno e depois personal assinam :: caminho feliz ;; core/application/__tests__/fluxo-relatorio.test.ts :: com pendências, recusa e lista o que falta ;; core/application/__tests__/fluxo-relatorio.test.ts :: quadro em branco é dado inválido ;; core/testing/fakes.ts :: export class FixedClock :: relógio fixo
+
+=== 2 · Aplicação :: tight
+# AprovarRelatorioUseCase e DevolverRelatorioUseCase
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Aprovar:</b> <span>confere o papel e chama <code>ciclo.aprovar()</code>. O estado certo é conferido pelo agregado.</span></li>
+      <li><b>Devolver:</b> <span>pergunta primeiro ao RegraDevolucaoService e traduz cada recusa num tipo de erro.</span></li>
+      <li><b>Motivo curto</b> <span>vira <code>dados-invalidos</code>; papel errado vira <code>sem-permissao</code>.</span></li>
+      <li><b>Depois da devolução</b> <span>o ciclo volta a ser editável e as assinaturas somem.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/aprovar-relatorio.ts :: if (input.usuario.papel !== "coordenacao") :: +3 ::  :: small}}
+    {{code core/application/use-cases/aprovar-relatorio.ts :: ciclo.aprovar(this.clock.now()); :: +2 :: ciclo.aprovar(this.clock.now()) :: small}}
+    {{code core/application/use-cases/devolver-relatorio.ts :: const verificacao = this.regra.verificar({ :: if (!verificacao.permitido) { :: this.regra.verificar({ :: small}}
+  </div>
+</div>
+@refs core/application/__tests__/fluxo-relatorio.test.ts :: coordenação aprova ;; core/application/__tests__/fluxo-relatorio.test.ts :: coordenação devolve com motivo ;; core/application/__tests__/fluxo-relatorio.test.ts :: não devolve ciclo aprovado
+
+=== 2 · Aplicação
+# GerarPdfUseCase
+> A regra é do domínio. Aqui só se monta o documento com dados prontos e se chama o gateway, que nesta fase é simulado.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Acesso:</b> <span>só quem participa do ciclo, ou a coordenação.</span></li>
+      <li><b>Regra:</b> <span>o RegraGeracaoPdfService responde; se não pode, a mensagem lista as pendências.</span></li>
+      <li><b>Documento sem entidade:</b> <span><code>RelatorioParaPdf</code> leva só dados prontos para impressão.</span></li>
+      <li><b>Falha do gerador</b> <span>vira <code>falha-externa</code>, não exceção.</span></li>
+    </ul>
+    <p class="note"><b>Nesta fase:</b> o PdfGateway devolve um endereço em memória. O gerador real entra na fase de infraestrutura.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/gerar-pdf.ts :: if (!podeVer(input.usuario, ciclo)) :: return falha("regra-de-negocio" :: this.regra.verificar(ciclo)}}
+    {{code core/application/use-cases/gerar-pdf.ts :: try { :: return falha("falha-externa" :: await this.pdf.gerar(relatorio)}}
+  </div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: export type RelatorioParaPdf :: RelatorioParaPdf ;; core/application/__tests__/fluxo-relatorio.test.ts :: gera o PDF do relatório aprovado ;; core/application/__tests__/fluxo-relatorio.test.ts :: assinaturas ainda não sincronizadas ;; core/application/__tests__/fluxo-relatorio.test.ts :: falha do gerador vira falha-externa
+
+=== 2 · Aplicação
+# SincronizarFilaUseCase
+> Esvazia a fila offline-first. Cada item enviado é marcado no próprio agregado: o que chegou sai da fila, o que falhou volta na próxima rodada.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Sem conexão:</b> <span>não envia nada e devolve só o resumo da fila.</span></li>
+      <li><b>A ordem vem do domínio:</b> <span><code>montarFila()</code> põe as assinaturas na frente.</span></li>
+      <li><b>Uma falha não interrompe</b> <span>as outras: o item vira <code>error</code> e o laço continua.</span></li>
+      <li><b>Salva só o que mudou,</b> <span>uma vez por ciclo.</span></li>
+    </ul>
+    <p class="note"><b>Efeito no negócio:</b> depois de sincronizar, <code>podeGerarPdf()</code> passa a responder sim para o ciclo aprovado.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/sincronizar-fila.ts :: if (!(await this.conectividade.isOnline())) :: +3}}
+    {{code core/application/use-cases/sincronizar-fila.ts :: for (const item of this.servico.montarFila(ciclos)) :: alterados.add(ciclo.id); :: StatusSincronizacao.SYNCED ;; StatusSincronizacao.ERROR}}
+  </div>
+</div>
+@refs core/application/__tests__/sincronizar-e-token.test.ts :: offline: não envia nada ;; core/application/__tests__/sincronizar-e-token.test.ts :: online: envia tudo, grava synced :: libera o PDF ;; core/application/__tests__/sincronizar-e-token.test.ts :: uma falha não para a fila
+
+=== 2 · Aplicação :: tight
+# AutenticarUsuarioUseCase e a sessão guardada
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Valida antes da rede:</b> <span>e-mail malformado e senha vazia são recusados sem chamar o provedor.</span></li>
+      <li><b>O provedor é uma interface:</b> <span>stub nesta fase, Supabase depois.</span></li>
+      <li><b>Guarda a sessão</b> <span>no SessionStorage para sobreviver ao app fechado.</span></li>
+      <li><b>Ao abrir o app,</b> <span>RestaurarSessaoUseCase devolve a sessão se ainda valer; vencida, ela é apagada.</span></li>
+      <li><b>Sair</b> <span>apaga do aparelho mesmo se o provedor falhar.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/autenticar-usuario.ts :: if (!Email.isValid(input.email)) :: return { status: "autenticado" :: await this.sessoes.salvar(resposta.sessao) :: small}}
+    {{code core/application/use-cases/gerenciar-sessao.ts :: async execute(): Promise<Sessao | null> :: +7 :: sessaoValida(sessao, this.clock.now()) :: small}}
+  </div>
+</div>
+@refs core/application/use-cases/gerenciar-sessao.ts :: export class EncerrarSessaoUseCase :: sair ;; core/application/__tests__/auth.test.ts :: e-mail malformado é recusado sem ir à rede ;; core/application/__tests__/auth.test.ts :: sessão vencida é apagada do aparelho ;; core/application/__tests__/auth.test.ts :: sair apaga a sessão local mesmo se o provedor falhar
+
+=== 2 · Aplicação
+# AcessarViaTokenUseCase
+> O personal entra sem conta, com o código que o aluno gerou. A sessão criada morre junto com o token.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Quatro recusas distintas:</b> <span>código inexistente, expirado, revogado e acompanhamento encerrado.</span></li>
+      <li><b>Quem decide a situação</b> <span>é a entidade TokenPersonal; quem decide se o vínculo está ativo é o Acompanhamento.</span></li>
+      <li><b>A sessão nasce com papel personal</b> <span>e <code>expiraEm</code> igual à expiração do token.</span></li>
+      <li><b>Depois disso é um usuário comum:</b> <span>os outros use cases não sabem que ele veio de um token.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/application/use-cases/acessar-via-token.ts :: const codigo = input.token.trim().toUpperCase(); :: return { status: "recusado", motivo: "acompanhamento-encerrado" }; :: const situacao = token.situacao(agora); ;; acompanhamento.estaAtivo(hoje)}}</div>
+</div>
+@refs core/application/use-cases/acessar-via-token.ts :: expiraEm: token.expiraEm :: sessão expira com o token ;; core/application/use-cases/acessar-via-token.ts :: export type RecusaToken :: as quatro recusas ;; core/application/__tests__/sincronizar-e-token.test.ts :: token válido cria sessão de personal ;; core/application/__tests__/sincronizar-e-token.test.ts :: token revogado
+
+=== 2 · Aplicação
+# Modelo de leitura: a tela nunca segura o agregado
+> Os use cases devolvem um objeto de dados puros. Sem a instância do agregado na mão, a tela não tem como chamar uma regra por fora de um caso de uso.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>CicloLeitura</code></b> <span>é o que a tela recebe: textos, números e listas já prontos.</span></li>
+      <li><b>Já vem calculado:</b> <span>horas que faltam, progresso, média, faixa, pendências para assinar e se o PDF está liberado.</span></li>
+      <li><b>Acesso num lugar só:</b> <span><code>podeVer()</code> serve à consulta e ao PDF.</span></li>
+    </ul>
+    <p class="note"><b>Para a interface</b> isso significa zero cálculo de regra nos componentes: a tela só desenha o que chegou.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/application/use-cases/leitura-ciclo.ts :: Modelo de leitura do ciclo :: +3}}
+    {{code core/application/use-cases/leitura-ciclo.ts :: export function podeVer :: +10}}
+  </div>
+</div>
+@refs core/application/use-cases/leitura-ciclo.ts :: export type CicloLeitura :: CicloLeitura ;; core/application/use-cases/leitura-ciclo.ts :: export function paraLeitura :: paraLeitura() ;; core/application/use-cases/leitura-ciclo.ts :: pdf: regraPdf.verificar(ciclo) :: PDF já avaliado ;; core/application/use-cases/consultar-relatorios.ts :: export class ConsultarRelatorioUseCase
+
+=== 2 · Aplicação :: tight
+# Fakes em memória: o repositório é um Map
+> O CicloAvaliacaoRepositoryFake guarda o estado em memória. Guarda as props, não a instância: cada leitura devolve um agregado novo, como um banco faria.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:58%"><col></colgroup>
+      <thead><tr><th>Fake</th><th>core/testing/</th></tr></thead>
+      <tbody>
+        <tr><td>CicloAvaliacaoRepositoryFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class CicloAvaliacaoRepositoryFake}}</td></tr>
+        <tr><td>AcompanhamentoRepositoryFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class AcompanhamentoRepositoryFake}}</td></tr>
+        <tr><td>TokenPersonalRepositoryFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class TokenPersonalRepositoryFake}}</td></tr>
+        <tr><td>SessionStorageFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class SessionStorageFake}}</td></tr>
+        <tr><td>PdfGatewayFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class PdfGatewayFake}}</td></tr>
+        <tr><td>SincronizacaoGatewayFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class SincronizacaoGatewayFake}}</td></tr>
+        <tr><td>CameraGatewayFake</td><td>{{rs core/testing/fakes-ciclo.ts :: export class CameraGatewayFake}}</td></tr>
+        <tr><td>FakeLocation</td><td>{{rs core/testing/fakes.ts :: export class FakeLocation}}</td></tr>
+        <tr><td>FakeAuthGateway</td><td>{{rs core/testing/fakes.ts :: export class FakeAuthGateway}}</td></tr>
+        <tr><td>FixedClock · SequenceIds</td><td>{{rs core/testing/fakes.ts :: export class FixedClock}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel flush">{{code core/testing/fakes-ciclo.ts :: export class CicloAvaliacaoRepositoryFake :: return props ? CicloAvaliacao.restaurar(props) : null; :: readonly dados = new Map ;; CicloAvaliacao.restaurar(props) :: small}}</div>
+</div>
+@refs core/testing/fakes-ciclo.ts :: O repositório guarda PROPS :: por que guarda props ;; core/testing/fakes-ciclo.ts :: falhar = new Set<string>() :: gateway que falha sob comando ;; mobile/adapters/memoria/__tests__/memoria.test.ts :: cada leitura devolve um agregado novo
+
+=== 2 · Aplicação :: tight
+# Teste de use case: o caminho feliz
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Montagem em duas linhas:</b> <span>repositório fake com um ciclo novo e um gerador de ids previsível.</span></li>
+      <li><b>Sem mock de biblioteca:</b> <span>o fake é uma classe que implementa a interface.</span></li>
+      <li><b>Confere o retorno</b> <span>(3,5 horas, ordem das atividades, coordenada)…</span></li>
+      <li><b>…e o efeito:</b> <span>o repositório passou a ter dois treinos.</span></li>
+    </ul>
+    <p class="note"><b>Roda em Node puro,</b> sem emulador e sem rede: a suíte inteira do core leva segundos.</p>
+  </div>
+  <div class="panel flush">{{code core/application/__tests__/registrar-e-avaliar.test.ts :: const setup = (ciclo = cicloNovo()) :: expect((await repo.porId("ciclo-set"))!.atividades).toHaveLength(2); :: new CicloAvaliacaoRepositoryFake([ciclo]) ;; expect(r.valor.horas.totais).toBe(3.5) :: small cols=90}}</div>
+</div>
+@refs core/testing/fakes.ts :: export class SequenceIds :: ids previsíveis ;; core/testing/cenario-ciclo.ts :: export function cicloNovo :: cicloNovo() ;; raiz/packages/core/jest.config.cjs :: testEnvironment :: ambiente node
+
+=== 2 · Aplicação :: tight
+# Teste de use case: tratamento de erros
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Tudo ou nada:</b> <span>um treino fora do ciclo no meio do lote, e nenhum é salvo.</span></li>
+      <li><b>O erro tem tipo:</b> <span><code>regra-de-negocio</code>, com a mensagem que o domínio escreveu.</span></li>
+      <li><b>O fake conta os salvamentos,</b> <span>então o teste prova que o repositório nem foi tocado.</span></li>
+      <li><b>Outros erros cobertos:</b> <span>coordenada inválida, ciclo inexistente, lote vazio e ciclo aprovado.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/application/__tests__/registrar-e-avaliar.test.ts :: it("tudo ou nada :: +15 :: expect(repo.salvamentos).toBe(0) :: small cols=90}}</div>
+</div>
+@refs core/testing/fakes-ciclo.ts :: salvamentos = 0 :: contador do fake ;; core/application/__tests__/registrar-e-avaliar.test.ts :: coordenada inválida vira dados-invalidos ;; core/application/__tests__/registrar-e-avaliar.test.ts :: ciclo inexistente e lote vazio ;; core/application/__tests__/registrar-e-avaliar.test.ts :: ciclo aprovado recusa treino novo
+
+=== 2 · Aplicação :: tight
+# Teste de use case: falta de permissão
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Teste em tabela:</b> <span>personal, coordenação e outro aluno tentam registrar treino num ciclo que não é deles.</span></li>
+      <li><b>Os três recebem</b> <span><code>sem-permissao</code>, e nada é salvo.</span></li>
+      <li><b>“Outro aluno”</b> <span>prova que o use case confere o id, não só o papel.</span></li>
+      <li><b>O mesmo padrão</b> <span>se repete para avaliar, assinar, aprovar, devolver e gerar PDF.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code core/application/__tests__/registrar-e-avaliar.test.ts :: ["personal", PERSONAL], :: +9 :: tipo: "sem-permissao" :: small cols=90}}
+    {{code core/testing/cenario-ciclo.ts :: export const OUTRO_ALUNO :: +6 ::  :: small}}
+  </div>
+</div>
+@refs core/application/__tests__/fluxo-relatorio.test.ts :: aluno e personal não aprovam ;; core/application/__tests__/registrar-e-avaliar.test.ts :: personal não preenche a autoavaliação ;; core/application/__tests__/fluxo-relatorio.test.ts :: quem não participa não gera
+
+=== 2 · Aplicação
+# O cenário dos testes é montado pelo próprio domínio
+> Para ter um ciclo aprovado no teste, o construtor de cenário abre, registra, avalia, assina e aprova de verdade. Não existe estado escrito à mão.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Cada estado é uma função:</b> <span>novo, pronto para assinar, aguardando aprovação e aprovado.</span></li>
+      <li><b>Uma se apoia na outra,</b> <span>na mesma ordem do ciclo de vida.</span></li>
+      <li><b>Se uma regra mudar,</b> <span>o cenário quebra junto, em vez de continuar montando um estado impossível.</span></li>
+      <li><b>Os mesmos três usuários</b> <span>dos testes são as contas de demonstração do app.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/testing/cenario-ciclo.ts :: export function cicloAguardandoAprovacao :: return ciclo;#2 :: ciclo.aprovar(AGORA) ;; cicloProntoParaAssinar(id) :: small}}</div>
+</div>
+@refs core/testing/cenario-ciclo.ts :: export function cicloProntoParaAssinar :: 12h e as duas avaliações ;; core/testing/cenario-ciclo.ts :: export const ALUNO :: usuários do cenário ;; mobile/adapters/memoria/dados-demo.ts :: montados PELO DOMÍNIO :: mesma ideia na demo do app
