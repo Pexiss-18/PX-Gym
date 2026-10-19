@@ -7,6 +7,7 @@ Dois decks no mesmo design, cada um em arquivo único e sem internet:
 | `apresentacao-px-gym.html` | Proposta de especificação e arquitetura (32 slides) |
 | `apresentacao-dominio-interface.html` | Fase “Domínio e Interface Primeiro”, 100% mock: **o deck que se apresenta** (27 slides, com referência de código) |
 | `apresentacao-dominio-interface-completa.html` | A mesma fase em detalhe, para consulta e perguntas (87 slides, 105 trechos de código) |
+| `apresentacao-sintec.html` | II SINTEC 2026: o projeto na estrutura do template do simpósio (13 slides, 10 min) |
 
 ## Deck da proposta
 
@@ -98,3 +99,19 @@ de uma linha; em `até`, `+N` pega N linhas e `<trecho` para antes da linha.
 código-fonte. Se o arquivo mudar e o trecho sumir, o build falha dizendo qual
 slide ficou órfão; se a linha só mudou de lugar, o número é atualizado sozinho.
 Por isso, depois de mexer no código, rode o build de novo antes de apresentar.
+
+## Deck do II SINTEC 2026
+
+Segue a ordem obrigatória do template do simpósio (capa com área e autores, objetivo,
+justificativa, metodologia, descrição, prints, considerações finais e referências) e
+traz os logos de realização e apoio do template. Os arquivos ficam em [`sintec/`](sintec/):
+`slides.html` (conteúdo), `_extra.css`, `logos/`, `prints/` e o [`roteiro.md`](sintec/roteiro.md).
+
+```bash
+node docs/apresentacao/sintec/build.mjs            # gera apresentacao-sintec.html
+node docs/apresentacao/sintec/build.mjs --audit    # idem, com a checagem de transbordo
+```
+
+Os prints do app entram como `sintec/prints/01-inicio.png` … `06-academias.png`
+(png ou jpg, captura vertical do celular). Enquanto faltar algum, o celular do slide
+mostra o nome do arquivo esperado e o build avisa.
