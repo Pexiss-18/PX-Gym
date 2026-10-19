@@ -13,6 +13,10 @@ import { useAuth } from "@/adapters/hooks/useAuth";
 import { trySyncPhotos } from "@/lib/photos";
 import { usePendingSync } from "@/lib/use-local-data";
 import { trySyncSetLogs } from "@/lib/workout";
+import {
+  carregarDadosDeExemplo,
+  removerDadosDeExemplo,
+} from "@/lib/dados-exemplo";
 
 /**
  * Configurações: conta (e-mail + sair), estado da sincronização offline-first
@@ -161,6 +165,8 @@ export default function ConfiguracoesScreen() {
           </GlassCard>
         </View>
 
+        {__DEV__ && sessao ? <DadosDeExemplo userId={sessao.usuario.id} /> : null}
+
         <View>
           <Text className="mb-2 font-sans-medium text-xs text-fog">Sobre</Text>
           <GlassCard>
@@ -178,6 +184,71 @@ export default function ConfiguracoesScreen() {
         </View>
       </View>
     </Screen>
+  );
+}
+
+/** Só em desenvolvimento: popula a conta para demonstração e limpa depois. */
+function DadosDeExemplo({ userId }: { userId: string }) {
+  const [busy, setBusy] = useState<"carregar" | "remover" | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  async function carregar() {
+    setBusy("carregar");
+    setFeedback(null);
+    try {
+      const r = await carregarDadosDeExemplo(userId);
+      setFeedback(
+        r.nuvem === "ok"
+          ? `${r.series} séries no aparelho, 4 avaliações e 1 plano de dieta na nuvem.`
+          : `${r.series} séries no aparelho, mas a nuvem recusou as avaliações: ${r.mensagem}`,
+      );
+    } catch (e) {
+      setFeedback(`Não deu certo: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remover() {
+    setBusy("remover");
+    setFeedback(null);
+    try {
+      await removerDadosDeExemplo(userId);
+      setFeedback("Dados de exemplo removidos. O que você registrou de verdade continua aí.");
+    } catch (e) {
+      setFeedback(`Não deu certo: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <View>
+      <Text className="mb-2 font-sans-medium text-xs text-fog">
+        Dados de exemplo (desenvolvimento)
+      </Text>
+      <GlassCard>
+        <Text className="font-sans text-sm text-fog">
+          Oito semanas de treino, quatro avaliações e um plano de dieta, para
+          demonstrar o app. Tudo fica marcado e sai com o botão de remover.
+        </Text>
+        <View className="mt-4 gap-2">
+          <PillButton loading={busy === "carregar"} onPress={() => void carregar()}>
+            Carregar dados de exemplo
+          </PillButton>
+          <PillButton
+            variant="ghost"
+            loading={busy === "remover"}
+            onPress={() => void remover()}
+          >
+            Remover dados de exemplo
+          </PillButton>
+        </View>
+        {feedback ? (
+          <Text className="mt-3 font-sans text-xs text-fog">{feedback}</Text>
+        ) : null}
+      </GlassCard>
+    </View>
   );
 }
 
