@@ -1,18 +1,19 @@
+import type { LocationGateway } from "@px/core";
 import { SupabaseAuthGateway } from "@px/db";
 import { MODO_MOCK } from "@/lib/modo";
 import { supabase } from "@/lib/supabase";
 import { cryptoIds, systemClock } from "@/lib/system";
 import { SessionStorageSecureStore } from "./auth/SessionStorageSecureStore";
 import { criarComposicao } from "./composicao";
-import { SENHA_DEMO } from "./memoria/gateways-simulados";
+import { LocationGatewayExpo } from "./gateways/LocationGatewayExpo";
+import { LocationGatewaySimulado, SENHA_DEMO } from "./memoria/gateways-simulados";
 import type { ContaDemo } from "./screens/LoginScreen";
 
 export { MODO_MOCK };
 
 /*
- * No modo mock o login usa o AuthGatewayStub e os relatórios vivem em Map.
- * Com EXPO_PUBLIC_MODO_MOCK=0 entra o login real do Supabase (o relatório
- * continua em memória).
+ * O login é o real do Supabase; os relatórios do ciclo ainda vivem em Map.
+ * Com EXPO_PUBLIC_MODO_MOCK=1 o login passa a usar o AuthGatewayStub.
  */
 export const composicao = criarComposicao({
   clock: systemClock,
@@ -20,6 +21,11 @@ export const composicao = criarComposicao({
   sessoes: new SessionStorageSecureStore(),
   auth: MODO_MOCK ? undefined : new SupabaseAuthGateway(supabase),
 });
+
+/** GPS do check-in: simulado no modo mock, o do aparelho fora dele. */
+export const localizacao: LocationGateway = MODO_MOCK
+  ? new LocationGatewaySimulado()
+  : new LocationGatewayExpo();
 
 export const CONTAS_DEMO: ContaDemo[] = MODO_MOCK
   ? [

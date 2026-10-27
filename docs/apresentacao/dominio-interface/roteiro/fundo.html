@@ -1,0 +1,148 @@
+<h1 class="parte">Parte 3 — Perguntas difíceis</h1>
+<p class="lead">Além das perguntas listadas em cada slide, estas são as que testam se você entende o que apresentou. As respostas estão no tamanho certo para falar: duas ou três frases.</p>
+
+<h2>Regras para responder qualquer pergunta</h2>
+<ul>
+  <li><b>Responda primeiro, explique depois.</b> Comece por “sim”, “não” ou o dado pedido.</li>
+  <li><b>Mostre onde está.</b> Sempre que der, vá ao slide ou abra o arquivo. É o que o professor pediu.</li>
+  <li><b>Se não souber, diga.</b> “Não sei responder isso agora; posso verificar no código e trazer.” É muito melhor do que inventar.</li>
+  <li><b>Se a pergunta for sobre um limite, concorde.</b> Você já disse os limites no slide 26; a resposta é “sim, e está previsto para a próxima fase”.</li>
+</ul>
+
+<h2>Conceitos</h2>
+<div class="q2"><p class="qq">O que é uma invariante?</p><p>É uma condição que precisa ser verdadeira sempre, não importa a ordem das operações. Aqui: um ciclo aprovado nunca recebe uma segunda avaliação, e o PDF nunca é gerado sem todas as assinaturas sincronizadas. Quem garante é o agregado, porque é o único lugar por onde o estado muda.</p><p class="ver">Mostrar: slide 7.</p></div>
+<div class="q2"><p class="qq">O que é um aggregate root e por que tudo passa por ele?</p><p>É a entidade que serve de porta de entrada para um conjunto de objetos que precisam ser consistentes entre si. Atividades, avaliações e assinaturas só mudam por método do CicloAvaliacao. Se alguém pudesse alterar a lista de assinaturas por fora, a regra do PDF deixaria de valer.</p><p class="ver">Mostrar: slide 6.</p></div>
+<div class="q2"><p class="qq">Qual a diferença entre serviço de domínio e caso de uso?</p><p>O serviço de domínio guarda regra de negócio que não cabe em uma entidade só, e não fala com o mundo externo. O caso de uso não tem regra: ele busca no repositório, chama o domínio, salva e devolve o resultado. Um decide, o outro orquestra.</p><p class="ver">Mostrar: slides 9 e 11.</p></div>
+<div class="q2"><p class="qq">Por que as interfaces ficam no domínio e não junto das implementações?</p><p>É a inversão de dependência. Quem define o contrato é quem precisa dele. Assim o domínio não depende de SQLite nem de Expo; são eles que dependem do domínio, implementando a interface.</p><p class="ver">Mostrar: slide 9; completa, slide 23.</p></div>
+<div class="q2"><p class="qq">Fake, stub e mock são a mesma coisa?</p><p>Não. O fake é uma implementação simples que funciona de verdade, como o repositório em Map. O stub devolve respostas fixas, como a autenticação com três contas. O mock substitui um módulo e registra chamadas, e eu uso só para as bibliotecas nativas do Expo.</p><p class="ver">Mostrar: slides 13 e 21.</p></div>
+<div class="q2"><p class="qq">Por que um hook entre a tela e o caso de uso? A tela não podia chamar direto?</p><p>Poderia, mas a tela ficaria cuidando de Promise, estado de carregamento e mensagem de erro. O hook adapta o caso de uso ao ciclo de vida do React e entrega só o estado pronto. A tela fica só com o desenho, e isso também a deixa fácil de testar.</p><p class="ver">Mostrar: slide 17.</p></div>
+<div class="q2"><p class="qq">O que é prop drilling e como a Context API resolve?</p><p>É passar um dado por vários níveis de componentes que não o usam, só para chegar em quem precisa. Com o AuthProvider na raiz, qualquer tela lê o usuário com useAuth, sem que os componentes do meio saibam que ele existe.</p><p class="ver">Mostrar: slides 14 e 15.</p></div>
+
+<h2>Decisões do projeto</h2>
+<div class="q2"><p class="qq">O que acontece quando você trocar o Map por SQLite e Supabase?</p><p>Escrevo classes novas que implementam os mesmos contratos e troco a montagem no composition root. Domínio, casos de uso, hooks e telas não mudam, e os testes de caso de uso continuam usando os fakes.</p><p class="ver">Mostrar: slide 26; completa, slide 86.</p></div>
+<div class="q2"><p class="qq">Onde fica a validação: na tela ou no domínio?</p><p>A tela só confere o formulário: campo vazio e texto que não é número. Regra de negócio, como data fora do ciclo ou teto de horas, é do domínio e volta para a tela como mensagem de erro.</p><p class="ver">Mostrar: slide 20; completa, slide 61.</p></div>
+<div class="q2"><p class="qq">Como funciona a sincronização, se não tem backend?</p><p>Cada treino, avaliação e assinatura nasce com status pending. O caso de uso de sincronizar monta a fila na ordem que o domínio define e marca cada item como synced ou error. Nesta fase o envio é simulado; o que é real e testado é a fila, a ordem e a marcação.</p><p class="ver">Mostrar: slide 9; completa, slides 22 e 33.</p></div>
+<div class="q2"><p class="qq">O token do personal é seguro?</p><p>Ele tem no mínimo oito caracteres, validade de uma hora a trinta dias e pode ser revogado. A sessão criada expira junto com ele. Nesta fase os tokens vivem em memória; guardar e validar no servidor é da fase de infraestrutura.</p><p class="ver">Mostrar: slide 8; completa, slides 19 e 35.</p></div>
+<div class="q2"><p class="qq">Cobertura alta garante que o código está certo?</p><p>Não. Cobertura mostra o que foi executado, não o que foi verificado. Por isso os testes são escritos por regra, com o nome da regra, e não para “pintar” linhas. A cobertura é a consequência.</p><p class="ver">Mostrar: slide 23; completa, slide 80.</p></div>
+<div class="q2"><p class="qq">Quanto tempo a suíte leva?</p><p>O core roda em cerca de meio minuto e o mobile entre dez segundos e um minuto, sem emulador e sem rede. É rápido justamente porque nada depende de banco ou de hardware.</p><p class="ver">Mostrar: terminal.</p></div>
+
+<h2>Perguntas delicadas</h2>
+<div class="q2"><p class="qq">Você fez TDD de verdade?</p><p>Segui o ciclo de escrever o teste da regra e depois o código, mas a fase entrou no repositório em um commit só, então o histórico não prova isso. O que posso mostrar é que cada regra tem um teste com o nome dela. Na próxima fase vou registrar em commits menores.</p><p class="ver">Mostrar: slide 26.</p></div>
+<div class="q2"><p class="qq">Isso roda no celular?</p><p>O fluxo foi validado por testes automatizados, incluindo um de ponta a ponta. Não rodei em aparelho nesta fase, e não quero afirmar o que não verifiquei. É o primeiro passo da próxima.</p><p class="ver">Mostrar: slides 24 e 26.</p></div>
+<div class="q2"><p class="qq">Você usou inteligência artificial?</p><p>Responda a verdade, conforme a regra da disciplina. O histórico do git registra coautoria de assistente de IA nos commits, então negar não é uma opção. O que sustenta a sua nota é você conseguir explicar qualquer arquivo: por isso vale estudar os slides 6, 7 e 11 até conseguir reescrever aquela lógica de cabeça.</p><p class="ver">Preparação: abra os três arquivos e leia linha a linha antes do dia.</p></div>
+<div class="q2"><p class="qq">Pode mostrar um arquivo que não está em nenhum slide?</p><p>Sim. Abra o editor e vá ao arquivo. Se não lembrar onde fica, a versão completa tem dois slides de rastreabilidade, o 83 e o 84, que ligam cada requisito da fase ao arquivo e ao teste.</p><p class="ver">Mostrar: completa, slides 83 e 84.</p></div>
+
+<h1 class="parte">Parte 4 — Consulta rápida</h1>
+
+<h2>Mapa: onde está cada coisa</h2>
+<p>“Curto” é o deck de 27 slides que você apresenta. “Completa” é o de 87, na segunda aba, com o código de cada item.</p>
+<table>
+  <thead><tr><th>Se perguntarem sobre</th><th class="c">Curto</th><th class="c">Completa</th></tr></thead>
+  <tbody>
+    <tr><td>Criterio, Coordenada, Assinatura, CargaHoraria (código de cada um)</td><td class="c">5</td><td class="c">7–10</td></tr>
+    <tr><td>Enums de status e diagrama do ciclo de vida</td><td class="c">5, 6</td><td class="c">11</td></tr>
+    <tr><td>Imutabilidade e igualdade por valor</td><td class="c">5</td><td class="c">12</td></tr>
+    <tr><td>Agregado e suas invariantes</td><td class="c">6, 7</td><td class="c">13–17</td></tr>
+    <tr><td>Acompanhamento e TokenPersonal</td><td class="c">8</td><td class="c">18, 19</td></tr>
+    <tr><td>Os três serviços de domínio (código)</td><td class="c">9</td><td class="c">20–22</td></tr>
+    <tr><td>Contratos e papéis</td><td class="c">9</td><td class="c">23, 24</td></tr>
+    <tr><td>Lista dos casos de uso</td><td class="c">10</td><td class="c">25</td></tr>
+    <tr><td>Resultado e tipos de falha</td><td class="c">12</td><td class="c">27</td></tr>
+    <tr><td>Código de cada caso de uso</td><td class="c">11</td><td class="c">26, 29–35</td></tr>
+    <tr><td>Modelo de leitura</td><td class="c">11</td><td class="c">36</td></tr>
+    <tr><td>Fakes e testes de caso de uso</td><td class="c">13</td><td class="c">37–41</td></tr>
+    <tr><td>Composition root</td><td class="c">14</td><td class="c">43</td></tr>
+    <tr><td>AuthContext por dentro</td><td class="c">14, 15</td><td class="c">44–48</td></tr>
+    <tr><td>Sessão segura e o mock nos testes</td><td class="c">16</td><td class="c">49, 50</td></tr>
+    <tr><td>Hooks</td><td class="c">17</td><td class="c">51–54</td></tr>
+    <tr><td>Gateways de câmera e GPS</td><td class="c">18</td><td class="c">55, 56</td></tr>
+    <tr><td>Rotas, layout e kit visual</td><td class="c">19</td><td class="c">57–60</td></tr>
+    <tr><td>Cada tela, com código</td><td class="c">20</td><td class="c">61–64</td></tr>
+    <tr><td>Modo mock em detalhe</td><td class="c">21</td><td class="c">65–70</td></tr>
+    <tr><td>Pirâmide e cobertura</td><td class="c">22, 23</td><td class="c">71, 72</td></tr>
+    <tr><td>Testes por nível, com código</td><td class="c">24</td><td class="c">73–79</td></tr>
+    <tr><td>TDD: regra, teste e código lado a lado</td><td class="c">—</td><td class="c">80</td></tr>
+    <tr><td>Como rodar os testes</td><td class="c">—</td><td class="c">81</td></tr>
+    <tr><td>Rastreabilidade item a item</td><td class="c">25</td><td class="c">83, 84</td></tr>
+    <tr><td>Limites e próxima fase</td><td class="c">26</td><td class="c">85, 86</td></tr>
+  </tbody>
+</table>
+
+<h2>Os números, para ter na ponta da língua</h2>
+<table>
+  <thead><tr><th>Número</th><th>O que é</th></tr></thead>
+  <tbody>
+    <tr><td class="k">416</td><td>testes passando no total: 281 no core, 115 no mobile, 20 no pacote de banco</td></tr>
+    <tr><td class="k">248</td><td>testes só do que esta fase construiu (soma dos oito passos do checklist)</td></tr>
+    <tr><td class="k">176 · 105 · 67 · 32 · 1</td><td>pirâmide: domínio, casos de uso, Context/hooks/adaptadores, telas, ponta a ponta</td></tr>
+    <tr><td class="k">115 e 69</td><td>testes de domínio e de casos de uso só do ciclo de avaliação</td></tr>
+    <tr><td class="k">93%</td><td>cobertura de linhas do core; a menor métrica é funções, com 87%</td></tr>
+    <tr><td class="k">99%</td><td>cobertura dos adapters (100% de linhas, 91% de ramos)</td></tr>
+    <tr><td class="k">80%</td><td>limite configurado no Jest para as quatro métricas</td></tr>
+    <tr><td class="k">6 · 1 · 2 · 3</td><td>value objects, agregado, entidades, serviços de domínio</td></tr>
+    <tr><td class="k">10</td><td>casos de uso (mais 4 de apoio)</td></tr>
+    <tr><td class="k">7</td><td>telas em StyleSheet e Flexbox</td></tr>
+  </tbody>
+</table>
+
+<h2>Contas de demonstração</h2>
+<p>Só servem se você abrir o app. No modo mock: <code>aluno@pxgym.dev</code>, <code>personal@pxgym.dev</code> e <code>coordenacao@pxgym.dev</code>, todas com a senha <code>pxgym123</code>. O personal sem conta entra com o código <code>CARLA-2026</code>.</p>
+
+<h2>Glossário de bolso</h2>
+<div class="cols2">
+  <p><b>Value object.</b> Tipo imutável, sem identidade, validado na criação. Dois com os mesmos valores são iguais.</p>
+  <p><b>Entidade.</b> Objeto com identidade própria, que continua sendo o mesmo ainda que os dados mudem.</p>
+  <p><b>Aggregate root.</b> Entidade que é a única porta de entrada para um conjunto de objetos que precisam ficar consistentes.</p>
+  <p><b>Invariante.</b> Regra que tem de ser verdadeira sempre, em qualquer ordem de operações.</p>
+  <p><b>Serviço de domínio.</b> Regra de negócio que cruza entidades e não cabe em nenhuma delas.</p>
+  <p><b>Caso de uso.</b> Orquestra uma ação do usuário: busca, chama o domínio, salva, responde.</p>
+  <p><b>Contrato ou port.</b> Interface que o domínio declara para algo externo: repositório, câmera, GPS, autenticação.</p>
+  <p><b>Adapter.</b> Implementação de um contrato com uma tecnologia concreta, ou código que liga o React ao core.</p>
+  <p><b>Gateway.</b> Adapter para um recurso externo, como hardware ou serviço de rede.</p>
+  <p><b>Repositório.</b> Contrato para guardar e recuperar agregados.</p>
+  <p><b>Composition root.</b> O único lugar que instancia classes concretas e monta as dependências.</p>
+  <p><b>Context API.</b> Mecanismo do React para disponibilizar um valor a toda a árvore de componentes.</p>
+  <p><b>Prop drilling.</b> Passar um dado por vários níveis de componentes que não o usam.</p>
+  <p><b>Fake.</b> Implementação simples e funcional de um contrato, em memória.</p>
+  <p><b>Stub.</b> Substituto que devolve respostas fixas.</p>
+  <p><b>Mock.</b> Substituto de um módulo que registra como foi chamado.</p>
+  <p><b>RNTL.</b> React Native Testing Library: renderiza a tela e simula toques e digitação.</p>
+  <p><b>E2E.</b> Teste de ponta a ponta, que percorre um fluxo completo do usuário.</p>
+  <p><b>Modelo de leitura.</b> Objeto só de dados que o caso de uso entrega à tela, no lugar do agregado.</p>
+  <p><b>Offline-first.</b> O dado nasce no aparelho e é enviado depois; daí os status pending, synced e error.</p>
+</div>
+
+<h2>O que não dizer</h2>
+<table>
+  <thead><tr><th>Evite</th><th>Diga</th></tr></thead>
+  <tbody>
+    <tr><td>“Cem por cento de cobertura.”</td><td>“93% de linhas no core e 99% nos adapters.”</td></tr>
+    <tr><td>“Testei no celular.”</td><td>“Validei por testes automatizados, incluindo um de ponta a ponta.”</td></tr>
+    <tr><td>“O histórico do git mostra o TDD.”</td><td>“Cada regra tem um teste com o nome dela; o histórico tem um commit só.”</td></tr>
+    <tr><td>“Não tem nenhum código de banco no projeto.”</td><td>“O código de banco da fase anterior existe e está desligado no modo mock.”</td></tr>
+    <tr><td>“O PDF é gerado.”</td><td>“A regra de quando gerar é real; o gerador é simulado nesta fase.”</td></tr>
+    <tr><td>“Isso aqui é complicado de explicar.”</td><td>Explique com o exemplo do slide; todos foram escolhidos para isso.</td></tr>
+    <tr><td>“Como vocês podem ver…” e ler o slide</td><td>Diga o que o slide prova e aponte uma linha.</td></tr>
+  </tbody>
+</table>
+
+<h2>Se algo der errado</h2>
+<ul>
+  <li><b>O deck não abre ou aparece sem fonte:</b> abra o PDF de reserva que você gerou na véspera.</li>
+  <li><b>O projetor corta as bordas:</b> saia da tela cheia (<kbd>F</kbd>) e reduza a janela; o deck se reajusta.</li>
+  <li><b>Trocou de slide sem querer ao clicar:</b> <kbd>←</kbd> volta. A partir daí, aponte sem clicar.</li>
+  <li><b>Perdeu o fio:</b> diga a frase de passagem do slide em que está, que está na Parte 2, e siga.</li>
+  <li><b>Deu branco numa pergunta:</b> “vou mostrar no código”. Abrir o arquivo dá tempo de pensar e é exatamente o que foi pedido.</li>
+</ul>
+
+<h2>Checklist final</h2>
+<ul class="chk">
+  <li>Li este roteiro inteiro e ensaiei em voz alta com cronômetro duas vezes.</li>
+  <li>Sei de cor a frase de abertura, as duas invariantes e a frase final.</li>
+  <li>Consigo explicar, sem olhar, os slides 6, 7 e 11.</li>
+  <li>Abri os arquivos <code>ciclo-avaliacao.ts</code>, <code>registrar-atividades.ts</code> e <code>AuthContext.tsx</code> e li cada um.</li>
+  <li>Rodei os testes hoje e estão verdes.</li>
+  <li>Os dois decks estão abertos, a partir de <code>C:\dev\Px GYM</code>, e o PDF de reserva está salvo.</li>
+  <li>Editor e terminal estão abertos na pasta do projeto, com fonte grande.</li>
+  <li>Notificações desligadas, notebook na tomada, cronômetro à vista.</li>
+</ul>

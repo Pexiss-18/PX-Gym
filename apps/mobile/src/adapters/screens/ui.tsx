@@ -1,4 +1,4 @@
-import { useContext, type PropsWithChildren, type ReactNode } from "react";
+import { useContext, useState, type PropsWithChildren, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -96,20 +96,25 @@ export function Botao({
   desabilitado?: boolean;
 }) {
   const inativo = desabilitado || carregando;
+  // Estilo em array, não em função: o NativeWind do app descarta o
+  // style={({ pressed }) => ...} do Pressable e o botão ficava sem fundo.
+  const [pressionado, setPressionado] = useState(false);
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={() => setPressionado(true)}
+      onPressOut={() => setPressionado(false)}
       disabled={inativo}
       accessibilityRole="button"
       accessibilityLabel={titulo}
       accessibilityState={{ disabled: inativo, busy: carregando }}
-      style={({ pressed }) => [
+      style={[
         styles.botao,
         variante === "primario" && styles.botaoPrimario,
         variante === "secundario" && styles.botaoSecundario,
         variante === "perigo" && styles.botaoPerigo,
         inativo && styles.inativo,
-        pressed && styles.pressionado,
+        pressionado && styles.pressionado,
       ]}
     >
       {carregando ? (

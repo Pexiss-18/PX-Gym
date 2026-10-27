@@ -33,8 +33,8 @@ describe("modo mock", () => {
     delete process.env.EXPO_PUBLIC_MODO_MOCK;
   });
 
-  it("é o padrão: não abre o SQLite nem cria o cliente do Supabase", () => {
-    const { modo } = carregar(undefined);
+  it("EXPO_PUBLIC_MODO_MOCK=1 não abre o SQLite nem cria o cliente do Supabase", () => {
+    const { modo } = carregar("1");
 
     expect(modo.MODO_MOCK).toBe(true);
     expect(openDatabaseSync).not.toHaveBeenCalled();
@@ -43,14 +43,14 @@ describe("modo mock", () => {
   });
 
   it("usar o banco ou a nuvem no modo mock falha na hora, dizendo qual", () => {
-    const { banco, nuvem } = carregar(undefined);
+    const { banco, nuvem } = carregar("1");
 
     expect(() => banco.db.select).toThrow(/SQLite está desligado.*select/);
     expect(() => nuvem.supabase.auth).toThrow(/Supabase está desligado.*auth/);
   });
 
-  it("EXPO_PUBLIC_MODO_MOCK=0 religa SQLite e Supabase", () => {
-    const { modo } = carregar("0");
+  it("o padrão é o app real: abre o SQLite e cria o cliente do Supabase", () => {
+    const { modo } = carregar(undefined);
 
     expect(modo.MODO_MOCK).toBe(false);
     expect(openDatabaseSync).toHaveBeenCalledWith("pxgym.db", { enableChangeListener: true });

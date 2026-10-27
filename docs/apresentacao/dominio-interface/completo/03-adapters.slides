@@ -1,0 +1,276 @@
+=== 3 · Adapters e Context :: tight
+# Seção 3 — Adaptadores, estado global e Context API
+> A camada que liga o ciclo de vida do React Native aos casos de uso. Tudo o que conhece React, Expo ou hardware mora aqui, e só aqui.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:15%"><col style="width:41%"><col></colgroup>
+    <thead><tr><th>Pasta</th><th>Papel</th><th>mobile/adapters/</th></tr></thead>
+    <tbody>
+      <tr><td><code>context/</code></td><td class="m">Context API: sessão global e injeção dos use cases pela árvore</td><td>{{rs mobile/adapters/context/AuthContext.tsx :: export function AuthProvider}} {{rs mobile/adapters/context/CasosDeUsoContext.tsx :: export function CasosDeUsoProvider}}</td></tr>
+      <tr><td><code>auth/</code></td><td class="m">Sessão segura sobre o expo-secure-store</td><td>{{rs mobile/adapters/auth/SessionStorageSecureStore.ts :: export class SessionStorageSecureStore}}</td></tr>
+      <tr><td><code>hooks/</code></td><td class="m">Ponte entre as telas e os use cases</td><td>{{rs mobile/adapters/hooks/useAuth.ts :: export function useAuth}} {{rs mobile/adapters/hooks/useAtividades.ts :: export function useAtividades}} {{rs mobile/adapters/hooks/useRelatorios.ts :: export function useAcoesRelatorio}}</td></tr>
+      <tr><td><code>gateways/</code></td><td class="m">Câmera e GPS embrulhados atrás das interfaces do domínio</td><td>{{rs mobile/adapters/gateways/CameraGatewayExpo.ts :: export class CameraGatewayExpo}} {{rs mobile/adapters/gateways/LocationGatewayExpo.ts :: export class LocationGatewayExpo}}</td></tr>
+      <tr><td><code>memoria/</code></td><td class="m">Repositórios em Map, stubs e dados de demonstração desta fase</td><td>{{rs mobile/adapters/memoria/repositorios.ts :: export class CicloAvaliacaoRepositoryMemoria}} {{rs mobile/adapters/memoria/gateways-simulados.ts :: export class AuthGatewayStub}}</td></tr>
+      <tr><td><code>screens/</code></td><td class="m">Sete telas e o kit visual, em StyleSheet e Flexbox</td><td>{{rs mobile/adapters/screens/ui.tsx :: export function Tela}} {{rs mobile/adapters/screens/AtividadesFormScreen.tsx :: export function AtividadesFormScreen}}</td></tr>
+      <tr><td>raiz da pasta</td><td class="m">Composition root e a instância que o app usa</td><td>{{rs mobile/adapters/composicao.ts :: export function criarComposicao}} {{rs mobile/adapters/instancia.ts :: export const composicao}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Regra de localização:</b> o domínio e a aplicação nunca importam nada daqui. A dependência só aponta para dentro.</p>
+</div>
+
+=== 3 · Adapters e Context
+# Composition root: o único lugar que conhece as classes concretas
+> Monta cada use case com suas dependências e entrega tudo pronto para os Providers. Trocar Map por banco, na próxima fase, é mexer neste arquivo e em nenhum use case.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Nesta fase</b> <span>os repositórios são Map em memória e os gateways são simulados.</span></li>
+      <li><b>Autenticação opcional:</b> <span>sem um AuthGateway informado, entra o stub.</span></li>
+      <li><b>As telas recebem</b> <span>só o método <code>execute</code> de cada use case, nunca a classe.</span></li>
+      <li><b>Mesma função no app e no teste:</b> <span>o teste chama <code>criarComposicao</code> com relógio fixo e latência zero.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/composicao.ts :: const demo = criarDadosDemo(deps.clock.now()); :: +6 :: new CicloAvaliacaoRepositoryMemoria(demo.ciclos) ;; deps.auth ?? new AuthGatewayStub(lat) :: small}}
+    {{code mobile/adapters/composicao.ts :: casos: { :: +8 ::  :: small}}
+  </div>
+</div>
+@refs mobile/adapters/composicao.ts :: export type CasosDeUso :: o que as telas enxergam ;; mobile/adapters/instancia.ts :: export const composicao = criarComposicao :: instância do app ;; mobile/adapters/memoria/__tests__/memoria.test.ts :: monta todos os use cases prontos pra usar
+
+=== 3 · Adapters e Context
+# Context API: o AuthProvider envolve a raiz do aplicativo
+> Fica na camada de adapters. A sessão e os use cases ficam disponíveis para qualquer tela, sem passar o usuário de componente em componente.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>&lt;AuthProvider&gt;</code></b> <span>é o primeiro provider da árvore, logo abaixo do tratador de gestos.</span></li>
+      <li><b>Recebe os serviços prontos</b> <span>do composition root; não cria use case nenhum.</span></li>
+      <li><b><code>&lt;CasosDeUsoProvider&gt;</code></b> <span>entrega os demais use cases do mesmo jeito.</span></li>
+      <li><b>A navegação lê a sessão</b> <span>para decidir entre a área logada e a de login.</span></li>
+    </ul>
+    <p class="note"><b>Usuários cobertos:</b> aluno, personal e coordenação, todos pelo mesmo contexto.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/app/_layout.tsx :: Context API: a sessão e os use cases :: +8 :: <AuthProvider servicos={composicao.auth}> ;; <CasosDeUsoProvider casos={composicao.casos}> :: small}}
+    {{code mobile/app/_layout.tsx :: <Stack.Protected guard={!!sessao}> :: +6 :: guard={!!sessao} ;; guard={!sessao} :: small}}
+  </div>
+</div>
+@refs mobile/adapters/context/AuthContext.tsx :: Context API da sessão :: comentário do arquivo ;; mobile/app/_layout.tsx :: const { sessao, carregando } = useAuth(); :: navegação lê a sessão ;; mobile/adapters/instancia.ts :: sessoes: new SessionStorageSecureStore() :: sessão segura injetada
+
+=== 3 · Adapters e Context
+# O que o contexto disponibiliza
+> Um estado e quatro ações. Cada ação devolve uma mensagem pronta para a tela, então nenhum componente precisa conhecer os motivos de recusa do domínio.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>sessao</code></b> <span>traz o usuário e o papel, ou nulo quando ninguém entrou.</span></li>
+      <li><b><code>carregando</code></b> <span>fica verdadeiro enquanto a sessão salva no aparelho está sendo lida.</span></li>
+      <li><b><code>entrar</code>, <code>entrarComToken</code>, <code>cadastrar</code>, <code>sair</code></b> <span>chamam os use cases de autenticação.</span></li>
+      <li><b>Tradução de erro:</b> <span>cada motivo de recusa vira um texto em português.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/context/AuthContext.tsx :: export type EstadoAuth = { :: sair(): Promise<void>; :: sessao: Sessao | null; ;; carregando: boolean; :: small}}
+    {{code mobile/adapters/context/AuthContext.tsx :: export const AuthContext = createContext :: +1 ::  :: small}}
+  </div>
+</div>
+@refs mobile/adapters/context/AuthContext.tsx :: export const MENSAGENS_RECUSA :: mensagens de login ;; mobile/adapters/context/AuthContext.tsx :: export const MENSAGENS_TOKEN :: mensagens do token ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: recusa vira mensagem pronta pra tela
+
+=== 3 · Adapters e Context :: tight
+# AuthProvider: carregar a sessão salva ao abrir o app
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Começa em <code>carregando</code>,</b> <span>para o app não piscar a tela de login antes de saber se há sessão.</span></li>
+      <li><b>O efeito chama</b> <span>o RestaurarSessaoUseCase, que lê o SecureStore e descarta sessão vencida.</span></li>
+      <li><b>Falha de leitura não trava:</b> <span>o <code>catch</code> transforma erro em “sem sessão”.</span></li>
+      <li><b>Componente desmontado</b> <span>não recebe atualização: a flag <code>ativo</code> evita o aviso do React.</span></li>
+    </ul>
+    <p class="note"><b>Três testes cobrem este trecho:</b> com sessão salva, sem sessão e com o SecureStore falhando.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/context/AuthContext.tsx :: export function AuthProvider({ :: }, [servicos]); :: useState(true) ;; servicos.restaurar ;; .catch(() => null) :: small}}</div>
+</div>
+@refs mobile/adapters/context/__tests__/AuthContext.test.tsx :: carrega a sessão salva no aparelho ao abrir o app ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: falha ao ler o SecureStore não trava ;; core/application/use-cases/gerenciar-sessao.ts :: export class RestaurarSessaoUseCase
+
+=== 3 · Adapters e Context
+# AuthProvider: entrar e sair
+> O provider traduz o resultado do use case em estado React. É a única responsabilidade dele: não há regra de autenticação aqui.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Entrar:</b> <span>chama o AutenticarUsuarioUseCase; recusado vira mensagem, autenticado vira <code>setSessao</code>.</span></li>
+      <li><b>A árvore toda reage:</b> <span>qualquer tela que use <code>useAuth()</code> redesenha com o novo usuário.</span></li>
+      <li><b>Sair:</b> <span>o use case apaga a sessão do aparelho; se o provedor estiver sem rede, a saída local vale do mesmo jeito.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/context/AuthContext.tsx :: const entrar = useCallback( :: +7 :: servicos.autenticar.execute ;; setSessao(r.sessao) :: small}}
+    {{code mobile/adapters/context/AuthContext.tsx :: const sair = useCallback(async () => { :: +9 :: setSessao(null) :: small}}
+  </div>
+</div>
+@refs mobile/adapters/context/AuthContext.tsx :: const entrarComToken = useCallback :: acesso por token ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: entrar chama o use case de login ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: sair limpa a sessão da árvore e do aparelho
+
+=== 3 · Adapters e Context
+# Sem prop drilling: qualquer tela lê o usuário com um hook
+> O componente do teste abaixo é um “neto” qualquer da árvore. Ele mostra o nome e o papel de quem está logado sem receber nenhuma prop.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>useAuth()</code></b> <span>é o <code>useContext</code> com uma checagem: fora do provider é erro de programação.</span></li>
+      <li><b><code>useUsuario()</code></b> <span>é o atalho das telas da área logada, onde a sessão é garantida.</span></li>
+      <li><b>Uso real:</b> <span>a tela de histórico lê a sessão e o <code>sair</code> direto do contexto.</span></li>
+    </ul>
+    <p class="note"><b>Nenhuma tela recebe “usuario” por prop.</b> As props das telas são só o id do ciclo e as funções de navegação.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/hooks/useAuth.ts :: export function useAuth(): EstadoAuth :: +5 :: useContext(AuthContext)}}
+    {{code mobile/adapters/context/__tests__/AuthContext.test.tsx :: function Saudacao() :: +12 :: const { sessao, carregando, sair } = useAuth(); :: small}}
+  </div>
+</div>
+@refs mobile/adapters/hooks/useAuth.ts :: export function useUsuario :: useUsuario() ;; mobile/adapters/screens/HistoricoRelatoriosScreen.tsx :: const { sessao, sair } = useAuth(); :: uso numa tela ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: fora do provider (ou da área logada)
+
+=== 3 · Adapters e Context :: tight
+# Sessão segura: SessionStorageSecureStore
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Implementa a interface</b> <span><code>SessionStorage</code> declarada no domínio.</span></li>
+      <li><b>Wrapper do expo-secure-store:</b> <span>Keychain no iOS, Keystore no Android. O token nunca passa por armazenamento não seguro.</span></li>
+      <li><b>Só neste aparelho:</b> <span><code>WHEN_UNLOCKED_THIS_DEVICE_ONLY</code> impede que a sessão vá para backup.</span></li>
+      <li><b>O SecureStore só guarda texto,</b> <span>então a data de expiração vira ISO e volta como <code>Date</code>.</span></li>
+      <li><b>Conteúdo corrompido</b> <span>é apagado: é melhor pedir login de novo.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/auth/SessionStorageSecureStore.ts :: async salvar(sessao: Sessao) :: await SecureStore.deleteItemAsync(this.chave); :: SecureStore.setItemAsync ;; keychainAccessible :: small}}</div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: export interface SessionStorage :: contrato no domínio ;; mobile/adapters/auth/SessionStorageSecureStore.ts :: nunca em AsyncStorage :: comentário da classe ;; mobile/adapters/instancia.ts :: sessoes: new SessionStorageSecureStore() :: onde entra no app
+
+=== 3 · Adapters e Context
+# Sessão segura: mockada nos testes
+> O expo-secure-store é nativo. No teste, um Map faz o papel do cofre e a classe é exercitada de verdade: salvar, carregar, limpar e conteúdo corrompido.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b><code>jest.mock</code> do módulo nativo:</b> <span>as três funções do SecureStore passam a ler e gravar num Map.</span></li>
+      <li><b>O teste confere a chamada:</b> <span>a chave usada e a opção de só neste aparelho.</span></li>
+      <li><b>Ida e volta:</b> <span>a sessão carregada é igual à salva, com a data como <code>Date</code>.</span></li>
+      <li><b>Casos ruins em tabela:</b> <span>JSON quebrado, papel desconhecido e data inválida devolvem nulo e limpam o cofre.</span></li>
+    </ul>
+    <p class="note"><b>11 testes</b> para uma classe de 70 linhas, com 100% de cobertura.</p>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/auth/__tests__/SessionStorageSecureStore.test.ts :: jest.mock("expo-secure-store", () => { :: +10 :: const cofre = new Map<string, string>(); :: small}}
+    {{code mobile/adapters/auth/__tests__/SessionStorageSecureStore.test.ts :: it("salva cifrado no SecureStore :: +5 :: keychainAccessible :: small}}
+  </div>
+</div>
+@refs mobile/adapters/auth/SessionStorageSecureStore.ts :: function ler(texto: string) :: leitura defensiva ;; mobile/adapters/auth/__tests__/SessionStorageSecureStore.test.ts :: carrega de volta com as datas como Date ;; mobile/adapters/auth/__tests__/SessionStorageSecureStore.test.ts :: limpar apaga do cofre
+
+=== 3 · Adapters e Context
+# Custom hooks de ponte
+> A fronteira entre as telas e os use cases. O hook adapta uma Promise ao ciclo de vida do componente, e a tela não sabe que use case existe.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:21%"><col style="width:33%"><col style="width:21%"><col></colgroup>
+    <thead><tr><th>Hook</th><th>Use cases por trás</th><th>O que a tela recebe</th><th>mobile/adapters/hooks/</th></tr></thead>
+    <tbody>
+      <tr><td><code>useAuth</code></td><td class="m">Autenticar, AcessarViaToken, Restaurar e Encerrar sessão</td><td class="m">sessão, carregando e ações</td><td>{{rs mobile/adapters/hooks/useAuth.ts :: export function useAuth}}</td></tr>
+      <tr><td><code>useUsuario</code></td><td class="m">nenhum: lê o contexto</td><td class="m">o usuário logado</td><td>{{rs mobile/adapters/hooks/useAuth.ts :: export function useUsuario}}</td></tr>
+      <tr><td><code>useAtividades</code></td><td class="m">RegistrarAtividades</td><td class="m">estado, erro, registrar, resetar</td><td>{{rs mobile/adapters/hooks/useAtividades.ts :: export function useAtividades}}</td></tr>
+      <tr><td><code>useHistoricoRelatorios</code></td><td class="m">ListarRelatorios</td><td class="m">carregando, pronto ou erro</td><td>{{rs mobile/adapters/hooks/useRelatorios.ts :: export function useHistoricoRelatorios}}</td></tr>
+      <tr><td><code>useRelatorio</code></td><td class="m">ConsultarRelatorio</td><td class="m">carregando, pronto ou erro</td><td>{{rs mobile/adapters/hooks/useRelatorios.ts :: export function useRelatorio}}</td></tr>
+      <tr><td><code>useAcoesRelatorio</code></td><td class="m">Assinar, Avaliar, Autoavaliar, Aprovar, Devolver, GerarPdf, SincronizarFila</td><td class="m">estado, erro, mensagem e seis ações</td><td>{{rs mobile/adapters/hooks/useRelatorios.ts :: export function useAcoesRelatorio}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Todos os dez use cases</b> chegam à interface por um destes hooks. Nenhuma tela importa um use case ou dá <code>new</code> em alguma classe.</p>
+</div>
+@refs mobile/adapters/context/CasosDeUsoContext.tsx :: nunca dão `new` em use case nenhum :: de onde os hooks pegam os use cases ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: avaliar usa o use case certo pro papel
+
+=== 3 · Adapters e Context
+# useAtividades: idle, salvando, salvo
+> O hook transforma a Promise do RegistrarAtividadesUseCase nos estados que o formulário mostra.
+<div class="cols c64">
+  <div class="stack">
+    <div class="panel fit">
+      <div class="flow v">
+        <div class="st"><h3>idle</h3><p>formulário aberto, nada enviado</p></div>
+        <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+        <div class="st"><h3>salvando</h3><p>botão com indicador de carregamento</p></div>
+        <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+        <div class="st on"><h3>salvo <span style="color:var(--fog);font-weight:400">ou</span> erro</h3><p>aviso de sucesso, ou a mensagem que o domínio escreveu</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/hooks/useAtividades.ts :: export type EstadoEnvio :: +1}}
+    {{code mobile/adapters/hooks/useAtividades.ts :: const registrar = useCallback( :: [casos, usuario, cicloId, notificarMudanca], :: setEstado("salvando") ;; setEstado("erro") ;; setEstado("salvo") :: small}}
+  </div>
+</div>
+@refs mobile/adapters/hooks/useAtividades.ts :: A tela não sabe que use case existe :: comentário do hook ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: idle → salvando → salvo :: teste dos três estados ;; mobile/adapters/screens/AtividadesFormScreen.tsx :: useAtividades(cicloId) :: uso na tela
+
+=== 3 · Adapters e Context :: tight
+# useAcoesRelatorio: o mesmo ciclo de vida para todas as ações
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Uma função, <code>rodar</code>,</b> <span>aplica idle, salvando, salvo ou erro a qualquer use case que devolva Resultado.</span></li>
+      <li><b>Seis ações em cima dela:</b> <span>assinar, avaliar, aprovar, devolver, gerar PDF e sincronizar.</span></li>
+      <li><b>Avaliar escolhe o use case</b> <span>pelo papel: personal avalia o desempenho, aluno se autoavalia.</span></li>
+      <li><b>Depois de cada escrita</b> <span>o hook avisa o contexto, e as outras telas recarregam sozinhas.</span></li>
+    </ul>
+    <p class="note"><b>Mensagem de sucesso</b> depende do resultado: assinar diz se falta a outra assinatura ou se o relatório já foi para a coordenação.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/hooks/useRelatorios.ts :: const rodar = useCallback( :: [notificarMudanca], :: setEstado("salvando") ;; notificarMudanca(); :: small}}</div>
+</div>
+@refs mobile/adapters/hooks/useRelatorios.ts :: usuario.papel === "personal" :: escolha por papel ;; mobile/adapters/hooks/useRelatorios.ts :: assinar: (assinaturaBase64: string) :: assinar ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: coordenação aprova, sincroniza e gera PDF
+
+=== 3 · Adapters e Context
+# CasosDeUsoContext: injeção de dependência pela árvore React
+> O segundo contexto. O app entrega os use cases montados no composition root; o teste entrega fakes. É assim que as telas rodam em teste com use cases fakes injetados.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Hooks e telas pedem daqui</b> <span>e nunca instanciam use case.</span></li>
+      <li><b>Trocar o use case é trocar a prop <code>casos</code></b> <span>do provider. Nenhum mock de módulo é necessário.</span></li>
+      <li><b><code>versao</code></b> <span>sobe a cada escrita bem-sucedida.</span></li>
+      <li><b>Efeito:</b> <span>a tela de histórico refaz a consulta quando o formulário de outra tela salva um treino.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/context/CasosDeUsoContext.tsx :: export function CasosDeUsoProvider({ :: return valor; :: const notificarMudanca = useCallback ;; useContext(CasosDeUsoContext) :: small}}</div>
+</div>
+@refs mobile/adapters/hooks/useRelatorios.ts :: }, [casos, usuario, versao]); :: histórico refaz a consulta ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: lista e se atualiza sozinho quando outra tela escreve ;; mobile/adapters/__tests__/utils/montar.tsx :: const casos = { ...composicao.casos, ...opcoes.casos }; :: fakes no teste
+
+=== 3 · Adapters e Context :: tight
+# Gateway de hardware: CameraGatewayExpo
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Implementa <code>CameraGateway</code>,</b> <span>a interface declarada no domínio.</span></li>
+      <li><b>Embrulha o expo-camera:</b> <span>permissão, pedido de permissão e captura.</span></li>
+      <li><b>Traduz o vocabulário:</b> <span>a resposta do Expo vira <code>concedida</code>, <code>negada</code> ou <code>bloqueada</code>.</span></li>
+      <li><b>Devolve só o que o domínio usa:</b> <span>uri, largura e altura.</span></li>
+      <li><b>A tela só desenha o preview;</b> <span>quem fala com a câmera é o gateway.</span></li>
+    </ul>
+    <p class="note"><b>No teste</b> o módulo expo-camera é mockado e a ref do preview é um objeto simples.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/gateways/CameraGatewayExpo.ts :: export class CameraGatewayExpo implements CameraGateway :: return { uri: foto.uri, largura: foto.width, altura: foto.height }; :: implements CameraGateway ;; Camera.requestCameraPermissionsAsync() ;; view.takePictureAsync :: small}}</div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: export interface CameraGateway :: contrato ;; mobile/adapters/gateways/__tests__/CameraGatewayExpo.test.ts :: jest.mock("expo-camera" :: mock do módulo nativo ;; mobile/app/(app)/camera.tsx :: new CameraGatewayExpo(() => cameraRef.current) :: uso na rota ;; core/testing/fakes-ciclo.ts :: export class CameraGatewayFake :: fake
+
+=== 3 · Adapters e Context
+# Gateway de hardware: LocationGatewayExpo, injetado na tela
+> O mesmo padrão para o GPS. A tela recebe o gateway por prop: a rota entrega o do Expo, o teste entrega um fake.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Implementa <code>LocationGateway</code></b> <span>sobre o expo-location: só primeiro plano, posição pontual.</span></li>
+      <li><b>A rota cria o gateway real</b> <span>e passa para a tela.</span></li>
+      <li><b>A tela só conhece a interface,</b> <span>então o teste passa <code>FakeLocation</code> sem mockar módulo nenhum.</span></li>
+      <li><b>O que veio do sensor</b> <span>ainda vira Coordenada no use case; valor absurdo não entra no domínio.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code mobile/adapters/gateways/LocationGatewayExpo.ts :: export class LocationGatewayExpo implements LocationGateway :: +8 :: implements LocationGateway}}
+    {{code mobile/app/(app)/relatorios/[cicloId]/atividades.tsx :: const localizacao = new LocationGatewayExpo(); :: +6 :: localizacao={localizacao} :: small cols=90}}
+  </div>
+</div>
+@refs core/domain/contracts/index.ts :: export interface LocationGateway :: contrato ;; mobile/adapters/screens/AtividadesFormScreen.tsx :: localizacao: LocationGateway; :: prop da tela ;; core/testing/fakes.ts :: export class FakeLocation :: fake ;; mobile/adapters/gateways/__tests__/LocationGatewayExpo.test.ts :: coordenada absurda do sensor não entra no domínio

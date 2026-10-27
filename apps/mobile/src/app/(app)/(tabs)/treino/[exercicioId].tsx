@@ -9,6 +9,8 @@ import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { LoadProgressionCard } from "@/components/load-progression-card";
+import { ExerciseGuideCard } from "@/components/exercise-guide-card";
+import { guiaDoExercicio } from "@/lib/guia-exercicios";
 import { todayWorkout } from "@/lib/mock-data";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { useLoadProgression } from "@/lib/use-workout-data";
@@ -48,6 +50,7 @@ export default function ExercicioScreen() {
   const { exercicioId } = useLocalSearchParams<{ exercicioId: string }>();
   const { sessao } = useAuth();
   const exercise = todayWorkout.exercises.find((e) => e.id === exercicioId);
+  const guia = exercise ? guiaDoExercicio(exercise.id) : null;
 
   // Ao vivo: marcar uma série já move a curva de progressão logo acima.
   const progression = useLoadProgression(exercicioId ?? "");
@@ -307,6 +310,12 @@ export default function ExercicioScreen() {
           );
         })}
       </View>
+
+      {guia ? (
+        <View className="mt-4">
+          <ExerciseGuideCard nomeDoExercicio={exercise.name} guia={guia} />
+        </View>
+      ) : null}
     </Screen>
   );
 }

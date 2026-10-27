@@ -1,0 +1,227 @@
+=== 6 · Testes e cobertura
+# Seção 6 — A pirâmide de testes, com os números reais
+> Os cinco níveis da pirâmide, de baixo para cima. As barras estão em escala linear: o maior volume está no domínio e existe um único teste de ponta a ponta.
+<div class="cols c46">
+  <div class="panel">
+    <div class="pyr">
+      <div class="row"><div class="lbl">Ponta a ponta<small>fluxo crítico completo</small></div><div class="bar"><i style="width:0.6%"></i></div><div class="cnt">1</div></div>
+      <div class="row"><div class="lbl">Telas e componentes<small>RNTL + jest-expo</small></div><div class="bar"><i style="width:18.2%"></i></div><div class="cnt">32</div></div>
+      <div class="row"><div class="lbl">Context, hooks e adaptadores<small>20 de Context e hooks + 47 de borda</small></div><div class="bar"><i style="width:38.1%"></i></div><div class="cnt">67</div></div>
+      <div class="row"><div class="lbl">Use cases<small>fakes em memória</small></div><div class="bar"><i style="width:59.7%"></i></div><div class="cnt">105</div></div>
+      <div class="row"><div class="lbl">Domínio<small>puro, sem mock</small></div><div class="bar"><i style="width:100%"></i></div><div class="cnt">176</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>416 testes no total,</b> <span>todos passando: 281 no core, 115 no mobile e 20 no pacote de banco.</span></li>
+      <li><b>Só do ciclo de avaliação:</b> <span>115 de domínio e 69 de use cases. O restante desses dois níveis é do app que já existia.</span></li>
+      <li><b>Os 47 de borda</b> <span>são sessão segura (11), gateways de câmera e GPS (17), repositórios em memória (15) e modo mock (4).</span></li>
+      <li><b>Fora da pirâmide:</b> <span>35 testes de repositórios SQLite e Supabase da fase anterior, que continuam passando.</span></li>
+    </ul>
+  </div>
+</div>
+@refs core/domain/__tests__/ciclo-avaliacao.test.ts :: describe("CicloAvaliacao — abertura" :: domínio ;; core/application/__tests__/fluxo-relatorio.test.ts :: describe("AssinarRelatorioUseCase" :: use cases ;; mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: E2E: do primeiro treino ao PDF aprovado :: ponta a ponta
+
+=== 6 · Testes e cobertura
+# Cobertura: a meta de 80% está no próprio Jest
+> O limite é configuração, não promessa: se qualquer uma das quatro métricas cair abaixo de 80%, o comando de cobertura falha. O traço branco marca os 80%.
+<div class="cols two">
+  <div class="panel">
+    <h2>Core: domínio + aplicação</h2>
+    <div class="stack" style="gap:11px">
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Linhas</span><span class="tr"><i style="transform:scaleX(.931)"></i></span><b>93,1%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Instruções</span><span class="tr"><i style="transform:scaleX(.9329)"></i></span><b>93,3%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Ramos</span><span class="tr"><i style="transform:scaleX(.9276)"></i></span><b>92,8%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Funções</span><span class="tr"><i style="transform:scaleX(.8697)"></i></span><b>87,0%</b></div>
+    </div>
+    <p class="note"><b>Nos arquivos do ciclo:</b> 11 dos 12 arquivos de domínio têm 100% de linhas; o outro tem 93%. O que puxa a média são entidades antigas do app que esta fase não tocou.</p>
+    {{code raiz/packages/core/jest.config.cjs :: coverageThreshold: { :: +3 :: statements: 80, branches: 80, functions: 80, lines: 80 :: small cols=68}}
+  </div>
+  <div class="panel">
+    <h2>Mobile: camada de adapters</h2>
+    <div class="stack" style="gap:11px">
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Linhas</span><span class="tr"><i style="transform:scaleX(1)"></i></span><b>100%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Instruções</span><span class="tr"><i style="transform:scaleX(.9948)"></i></span><b>99,5%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Ramos</span><span class="tr"><i style="transform:scaleX(.9139)"></i></span><b>91,4%</b></div>
+      <div class="cov"><span style="width:92px;font-size:13px;color:var(--fog)">Funções</span><span class="tr"><i style="transform:scaleX(1)"></i></span><b>100%</b></div>
+    </div>
+    <p class="note"><b>O que é medido:</b> Context, sessão segura, hooks, gateways, memória e telas. Fica de fora só o arquivo que liga o app real, que não roda em teste.</p>
+    {{code raiz/apps/mobile/jest.config.js :: collectCoverageFrom: [ :: +5 :: "!src/adapters/instancia.ts" :: small cols=68}}
+  </div>
+</div>
+@refs raiz/packages/core/jest.config.cjs :: collectCoverageFrom :: o que o core mede ;; raiz/apps/mobile/jest.config.js :: coverageThreshold :: limite no mobile ;; raiz/packages/core/package.json :: test:coverage :: comando
+
+=== 6 · Testes e cobertura
+# Testes de domínio: o maior volume, sem nenhum mock
+> Entidades e value objects são TypeScript puro, então o teste cria o objeto e confere o resultado. Não há nada para simular.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col><col style="width:16%"></colgroup>
+      <thead><tr><th>core/domain/__tests__/</th><th class="c">Testes</th></tr></thead>
+      <tbody>
+        <tr><td>{{rs core/domain/__tests__/ciclo-avaliacao.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">36</span></td></tr>
+        <tr><td>{{rs core/domain/__tests__/criterio.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">19</span></td></tr>
+        <tr><td>{{rs core/domain/__tests__/carga-horaria-status.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">19</span></td></tr>
+        <tr><td>{{rs core/domain/__tests__/coordenada-assinatura.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">16</span></td></tr>
+        <tr><td>{{rs core/domain/__tests__/acompanhamento-token.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">14</span></td></tr>
+        <tr><td>{{rs core/domain/__tests__/servicos-ciclo.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">11</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>115 testes</b> do ciclo de avaliação. Com os do app anterior, o domínio soma 176.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/__tests__/criterio.test.ts :: it.each([ :: +12 :: expect(Criterio.criar("Frequência", nota).faixa).toBe(faixa) :: small}}
+    {{code core/domain/__tests__/ciclo-avaliacao.test.ts :: it("uma assinatura mantém em andamento :: +7 :: StatusCiclo.AGUARDANDO_APROVACAO :: small}}
+  </div>
+</div>
+@refs core/testing/cenario-ciclo.ts :: export function cicloProntoParaAssinar :: cenário usado ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: toProps/restaurar preserva o estado ;; raiz/packages/core/jest.config.cjs :: testEnvironment :: Node puro
+
+=== 6 · Testes e cobertura
+# Testes de use cases: orquestração e fluxos alternativos
+> Repositórios e gateways fakes são injetados pelo construtor. O teste abaixo mostra um fluxo alternativo: uma falha de envio no meio da fila.
+<div class="cols c37">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col><col style="width:16%"></colgroup>
+      <thead><tr><th>core/application/__tests__/</th><th class="c">Testes</th></tr></thead>
+      <tbody>
+        <tr><td>{{rs core/application/__tests__/fluxo-relatorio.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">22</span></td></tr>
+        <tr><td>{{rs core/application/__tests__/auth.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">21</span></td></tr>
+        <tr><td>{{rs core/application/__tests__/registrar-e-avaliar.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">16</span></td></tr>
+        <tr><td>{{rs core/application/__tests__/sincronizar-e-token.test.ts}}</td><td class="c"><span class="mono" style="color:var(--paper)">10</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>69 testes</b> para os dez use cases e os quatro de apoio: caminho feliz, erro de domínio, falta de permissão e recurso inexistente.</p>
+  </div>
+  <div class="panel flush">{{code core/application/__tests__/sincronizar-e-token.test.ts :: it("uma falha não para a fila :: +13 :: gateway.falhar.add("assinatura:personal") ;; enviados: 7, falhas: 1 ;; enviados: 1, falhas: 0 :: small cols=105}}</div>
+</div>
+@refs core/testing/fakes-ciclo.ts :: export class SincronizacaoGatewayFake :: gateway fake ;; core/testing/fakes.ts :: export class FakeConnectivity :: conectividade fake ;; core/application/__tests__/sincronizar-e-token.test.ts :: offline: não envia nada
+
+=== 6 · Testes e cobertura
+# Testes do Context API: sessão salva e integração com o login
+> O objetivo deste nível: garantir que o AuthProvider carrega a sessão guardada e que o useAuth conversa com o use case de login.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Sessão salva:</b> <span>o provider é montado com uma sessão no storage fake e um componente neto mostra o nome do usuário.</span></li>
+      <li><b>Login:</b> <span>o hook é renderizado dentro dos providers e <code>entrar</code> é chamado com uma conta de demonstração.</span></li>
+      <li><b>Duas verificações:</b> <span>a sessão apareceu no contexto e também foi gravada no storage.</span></li>
+      <li><b>Nada é mockado por módulo:</b> <span>os use cases de verdade rodam com o stub de autenticação.</span></li>
+    </ul>
+    <p class="note"><b>10 testes</b> neste arquivo, incluindo token, cadastro, saída e uso fora do provider.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/context/__tests__/AuthContext.test.tsx :: it("entrar chama o use case de login :: +14 :: renderHook(() => useAuth(), { wrapper: Providers }) ;; expect(sessoes.sessao?.usuario.papel).toBe("personal") :: small cols=90}}</div>
+</div>
+@refs mobile/adapters/context/__tests__/AuthContext.test.tsx :: carrega a sessão salva no aparelho ao abrir o app ;; mobile/adapters/context/__tests__/AuthContext.test.tsx :: acesso do personal por token ;; mobile/adapters/__tests__/utils/montar.tsx :: export function montar :: montagem dos providers
+
+=== 6 · Testes e cobertura :: tight
+# Teste de hook: enxergando o estado intermediário
+<div class="cols c37">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Um use case fake é injetado</b> <span>pelo contexto: uma Promise que o teste resolve na mão.</span></li>
+      <li><b>Antes de resolver,</b> <span>o hook está em <code>salvando</code>, e o teste confere com que dados o use case foi chamado.</span></li>
+      <li><b>Depois de resolver,</b> <span>o estado vira <code>salvo</code>.</span></li>
+    </ul>
+    <p class="note"><b>Mais 9 testes de hooks:</b> erro do domínio, permissão, histórico e ações.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/hooks/__tests__/hooks.test.tsx :: it("idle → salvando → salvo :: +22 :: casos: { registrarAtividades: { execute } } ;; expect(result.current.estado).toBe("salvando") ;; expect(result.current.estado).toBe("salvo") :: small cols=105}}</div>
+</div>
+@refs mobile/adapters/hooks/__tests__/hooks.test.tsx :: erro do domínio vira estado 'erro' ;; mobile/adapters/hooks/__tests__/hooks.test.tsx :: personal não registra treino do aluno ;; mobile/adapters/hooks/useAtividades.ts :: setEstado("salvando") :: linha exercitada
+
+=== 6 · Testes e cobertura :: tight
+# Testes de tela com RNTL: render, press e changeText
+<div class="cols c37">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b><code>render</code></b> <span>dentro do AuthProvider, com um aluno logado.</span></li>
+      <li><b><code>fireEvent.changeText</code></b> <span>preenche os campos, encontrados pelo rótulo.</span></li>
+      <li><b><code>fireEvent.press</code></b> <span>toca nos botões, encontrados por papel e nome.</span></li>
+      <li><b>GPS fake</b> <span>injetado por prop.</span></li>
+      <li><b>O que se confere</b> <span>é o que o usuário vê: textos, contadores e botão desabilitado.</span></li>
+    </ul>
+    <p class="note"><b>32 testes de tela</b> em quatro arquivos, usados 55 vezes <code>press</code> e 21 vezes <code>changeText</code>.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/screens/__tests__/AtividadesFormScreen.test.tsx :: it("monta um lote com GPS :: +22 :: montar({ logado: ALUNO }) ;; fireEvent.press(screen.getByLabelText("Marcar check-in por GPS")) ;; fireEvent.press(screen.getByRole("button", { name: "Salvar 2 treinos" })) :: small cols=105}}</div>
+</div>
+@refs mobile/adapters/screens/__tests__/AtividadesFormScreen.test.tsx :: fireEvent.changeText(screen.getByLabelText("O que você treinou") :: changeText ;; raiz/apps/mobile/jest.config.js :: preset: "jest-expo" :: jest-expo ;; raiz/apps/mobile/package.json :: @testing-library/react-native :: RNTL
+
+=== 6 · Testes e cobertura :: tight
+# Como as telas recebem use cases fakes
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Um auxiliar, <code>montar</code>,</b> <span>cria a mesma árvore de providers do app.</span></li>
+      <li><b>Usa o composition root real,</b> <span>com relógio fixo, ids previsíveis, latência zero e sessão em memória.</span></li>
+      <li><b>Qualquer use case pode ser trocado</b> <span>por um fake passando <code>casos</code>.</span></li>
+      <li><b>O SecureStore é um stub:</b> <span><code>SessionStorageFake</code> guarda na memória o que o cofre guardaria.</span></li>
+    </ul>
+    <p class="note"><b>Mesma data em todos os testes de tela:</b> 29 de setembro de 2026, fixada pelo relógio fake.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/__tests__/utils/montar.tsx :: const sessoes = new SessionStorageFake( :: </AuthProvider> :: new SessionStorageFake( ;; ...opcoes.casos ;; <AuthProvider servicos={servicos}> :: small cols=90}}</div>
+</div>
+@refs mobile/adapters/__tests__/utils/montar.tsx :: export const HOJE :: data fixa ;; core/testing/fakes-ciclo.ts :: export class SessionStorageFake :: stub da sessão ;; mobile/adapters/__tests__/utils/setup-telas.ts :: asyncUtilTimeout :: configuração do RNTL
+
+=== 6 · Testes e cobertura
+# Teste de ponta a ponta: um só, para o fluxo crítico
+> Do primeiro treino ao PDF aprovado, passando pelos três papéis. Roda o app de verdade: Context, hooks, use cases, domínio e repositórios em memória.
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Aluno</b> <span>entra, registra dois treinos com check-in, bate as 12 horas e faz a autoavaliação.</span></li>
+      <li><b>Assinatura bloqueada:</b> <span>o personal ainda não avaliou.</span></li>
+      <li><b>Personal</b> <span>entra pelo código, sem conta, avalia e assina.</span></li>
+      <li><b>Aluno</b> <span>assina; o relatório vai para a coordenação.</span></li>
+      <li><b>Coordenação</b> <span>aprova. O PDF fica bloqueado até sincronizar, e só então é gerado.</span></li>
+    </ul>
+    <p class="note"><b>As duas invariantes do agregado</b> aparecem aqui pela interface, não por chamada direta ao domínio.</p>
+  </div>
+  <div class="panel flush">{{code mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: await entrar("coordenacao@pxgym.dev"); :: +13 :: PDF ainda bloqueado ;; expect(botao("Gerar PDF")).toBeDisabled() ;; PDF gerado: memoria :: small cols=90}}</div>
+</div>
+@refs mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: E2E do fluxo crítico :: por que um só ;; mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: Sou personal, tenho um código :: personal por token ;; mobile/adapters/__tests__/e2e/fluxo-relatorio.e2e.test.tsx :: O personal ainda não avaliou o ciclo :: assinatura bloqueada
+
+=== 6 · Testes e cobertura
+# TDD: cada regra tem um teste com o nome dela
+> O ciclo foi vermelho, verde e refatoração: primeiro o teste que descreve a regra, depois o mínimo de código para passar. O resultado é que cada regra do negócio pode ser encontrada pelo nome do teste.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:30%"><col><col style="width:25%"></colgroup>
+    <thead><tr><th>Regra de negócio</th><th>Teste que a descreve</th><th>Código que a cumpre</th></tr></thead>
+    <tbody>
+      <tr><td>Ciclo aprovado não aceita 2ª avaliação</td><td>{{r core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: ciclo aprovado bloqueia}}</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: Ciclo aprovado: não aceita uma segunda avaliação}}</td></tr>
+      <tr><td>PDF só com assinaturas sincronizadas</td><td>{{r core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: podeGerarPdf}}</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: podeGerarPdf(): boolean}}</td></tr>
+      <tr><td>Só assina quem cumpriu as horas e tem as duas avaliações</td><td>{{r core/domain/__tests__/ciclo-avaliacao.test.ts :: não assina com pendências}}</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: pendenciasParaAssinar(): string[]}}</td></tr>
+      <tr><td>Devolver apaga as assinaturas</td><td>{{r core/domain/__tests__/ciclo-avaliacao.test.ts :: devolver apaga as assinaturas}}</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: this.props.assinaturas = [];}}</td></tr>
+      <tr><td>Token revogado nunca volta a valer</td><td>{{r core/domain/__tests__/acompanhamento-token.test.ts :: revogado nunca volta a valer}}</td><td>{{rs core/domain/entities/token-personal.ts :: situacao(agora: Date)}}</td></tr>
+      <tr><td>Só a coordenação devolve</td><td>{{r core/domain/__tests__/servicos-ciclo.test.ts :: não devolve", (papel)}}</td><td>{{rs core/domain/services/regra-devolucao.ts :: if (input.papel !== "coordenacao")}}</td></tr>
+      <tr><td>Treino inválido no lote não salva nenhum</td><td>{{r core/application/__tests__/registrar-e-avaliar.test.ts :: tudo ou nada}}</td><td>{{rs core/application/use-cases/registrar-atividades.ts :: await this.ciclos.salvar(ciclo);}}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+=== 6 · Testes e cobertura
+# Como rodar
+> Dois projetos Jest no mobile, um no core e um no pacote de banco. Nenhum deles precisa de emulador, aparelho ou rede.
+<div class="cols c64">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:32%"><col></colgroup>
+      <thead><tr><th>Projeto</th><th>Ambiente e o que roda</th></tr></thead>
+      <tbody>
+        <tr><td>core</td><td class="m">ts-jest em Node: domínio e use cases</td></tr>
+        <tr><td>mobile · adapters</td><td class="m">ts-jest em Node: sessão segura, gateways, memória, modo mock</td></tr>
+        <tr><td>mobile · telas</td><td class="m">jest-expo + RNTL: Context, hooks, telas e o E2E</td></tr>
+      </tbody>
+    </table>
+<pre class="tree" style="margin-top:16px"><u># dentro de packages/core ou apps/mobile</u>
+<b>npm test</b>
+<b>npm run test:coverage</b>   <u># falha abaixo de 80%</u></pre>
+  </div>
+  <div class="panel flush">
+    {{code raiz/apps/mobile/jest.config.js :: displayName: "adapters", :: +4 :: testEnvironment: "node" :: small}}
+    {{code raiz/apps/mobile/jest.config.js :: displayName: "telas", :: +5 :: preset: "jest-expo" :: small cols=90}}
+    {{code raiz/apps/mobile/jest.config.js :: coverageThreshold: { :: +2 ::  :: small}}
+  </div>
+</div>
+@refs raiz/apps/mobile/package.json :: "test:coverage" :: script do mobile ;; raiz/packages/core/package.json :: "test:coverage" :: script do core ;; raiz/apps/mobile/jest.config.js :: Dois projetos Jest :: comentário da configuração

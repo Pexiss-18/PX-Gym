@@ -1,9 +1,10 @@
 /**
- * Fase atual: domínio e interface primeiro, 100% mock. Neste modo o app não
- * abre o SQLite nem cria o cliente do Supabase — login por stub, relatórios
- * em Map. EXPO_PUBLIC_MODO_MOCK=0 religa a infraestrutura real.
+ * O padrão é o app real: SQLite local e Supabase. EXPO_PUBLIC_MODO_MOCK=1
+ * liga o modo mock da fase "domínio e interface primeiro" — o app não abre o
+ * SQLite nem cria o cliente do Supabase, o login é por stub e o GPS e as
+ * fotos são simulados.
  */
-export const MODO_MOCK = process.env.EXPO_PUBLIC_MODO_MOCK !== "0";
+export const MODO_MOCK = process.env.EXPO_PUBLIC_MODO_MOCK === "1";
 
 /**
  * Ocupa o lugar de um recurso de infraestrutura no modo mock: quem guarda a

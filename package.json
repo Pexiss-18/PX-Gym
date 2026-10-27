@@ -10,6 +10,13 @@
     "dev": "npm run dev -w web",
     "dev:web": "npm run dev -w web",
     "build:web": "npm run build -w web",
-    "lint:web": "npm run lint -w web"
+    "lint:web": "npm run lint -w web",
+    "test:functions": "deno test --config supabase/functions/generate-plan/deno.json supabase/functions/_shared",
+    "check:functions": "deno check --config supabase/functions/generate-plan/deno.json supabase/functions/generate-plan/index.ts",
+    "try:plan": "deno run --config supabase/functions/generate-plan/deno.json --env-file=supabase/functions/.env --allow-net=generativelanguage.googleapis.com --allow-env supabase/functions/_shared/plano/experimentar.ts"
+  },
+  "devDependencies": {
+    "deno": "^2.9.6",
+    "supabase": "^2.120.0"
   }
 }

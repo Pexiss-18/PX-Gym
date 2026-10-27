@@ -1,0 +1,221 @@
+@@raw
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.73 0.014 264 / 80%)"/></marker>
+  <marker id="arwv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.87 0.23 126 / 85%)"/></marker>
+  <marker id="arwa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.82 0.15 78 / 85%)"/></marker>
+</defs></svg>
+
+<section class="slide cover" data-sec="Capa">
+  <div class="mark">
+    <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="oklch(0.2 0.008 264)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg></span>
+    <span class="wm">Px GYM</span>
+  </div>
+  <div class="head" style="margin:0">
+    <h1 class="two">Domínio e Interface Primeiro</h1>
+    <div class="rule"></div>
+    <p class="kicker">Fase <b>100% mock</b>, com <b>mais de 80% de cobertura</b>. A ordem de construção foi Domínio, Use Cases, Context API com sessão segura e, por último, telas com fakes. Tudo testado antes de qualquer dado tocar em SQLite ou Supabase.</p>
+  </div>
+  <div class="who">
+    <b>Paulo Rogério</b><em>·</em><span>Sistemas de Informação</span><em>·</em><span>CEFET-MG</span><em>·</em><span class="mono">2026</span>
+  </div>
+</section>
+
+<section class="slide" data-sec="Agenda">
+  <div class="head tight">
+    <h1>Agenda</h1>
+    <p class="sub">As sete seções da fase. Cada slide traz o arquivo e a linha do código que sustenta o que está escrito.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <nav class="agenda">
+      <a data-go="Abertura"><span class="n">00</span><span class="l">Abertura<small>o que a fase pede e as quatro camadas</small></span></a>
+      <a data-go="4 · Interface e rotas"><span class="n">04</span><span class="l">Interface do usuário e rotas<small>Expo Router, StyleSheet e Flexbox, telas</small></span></a>
+      <a data-go="1 · Domínio puro"><span class="n">01</span><span class="l">Camada de domínio puro<small>value objects, agregado, serviços, contratos</small></span></a>
+      <a data-go="5 · O que fica em mock"><span class="n">05</span><span class="l">O que fica em mock ou fake<small>sem banco, sem sensor, repositórios em Map</small></span></a>
+      <a data-go="2 · Aplicação"><span class="n">02</span><span class="l">Camada de aplicação<small>dez casos de uso e fakes em memória</small></span></a>
+      <a data-go="6 · Testes e cobertura"><span class="n">06</span><span class="l">Estratégia de testes e cobertura<small>pirâmide com números reais, meta de 80%</small></span></a>
+      <a data-go="3 · Adapters e Context"><span class="n">03</span><span class="l">Adaptadores, estado global e Context API<small>AuthContext, sessão segura, hooks, gateways</small></span></a>
+      <a data-go="7 · Checklist e fecho"><span class="n">07</span><span class="l">Checklist sequencial e fechamento<small>os oito passos, limites, o que foi entregue</small></span></a>
+    </nav>
+  </div></div>
+</section>
+@@end
+
+=== Abertura
+# O que esta fase pede
+> Um fluxo incremental e desacoplado, de dentro para fora. Cada etapa só começa quando a anterior já tem teste passando, e nenhuma delas conhece banco de dados.
+<div class="flow">
+  <div class="st on"><h3>Domínio</h3><p>Value objects, agregado, entidades, serviços e contratos. TypeScript puro.</p><span class="mono">core/domain/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Use Cases</h3><p>Orquestração. Fala com o domínio e com interfaces, nunca com classes concretas.</p><span class="mono">core/application/use-cases/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Context API e sessão segura</h3><p>AuthProvider, SecureStore, hooks de ponte e gateways de hardware.</p><span class="mono">mobile/adapters/</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>Telas com fakes</h3><p>Componentes nativos, StyleSheet e Flexbox, testados com use cases fakes injetados.</p><span class="mono">mobile/adapters/screens/</span></div>
+</div>
+<dl class="strip five" style="margin-top:18px">
+  <div><dt>Testes passando</dt><dd><span class="num">416</span>281 no core, 115 no mobile, 20 no pacote de banco</dd></div>
+  <div><dt>Cobertura do core</dt><dd><span class="num">93<small>%</small></span>linhas de domínio + aplicação; a menor métrica é 87%</dd></div>
+  <div><dt>Cobertura dos adapters</dt><dd><span class="num">99<small>%</small></span>Context, sessão, hooks, gateways e telas</dd></div>
+  <div><dt>Casos de uso</dt><dd><span class="num">10</span>um arquivo para cada caso de uso</dd></div>
+  <div><dt>Banco no modo mock</dt><dd><span class="num">0</span>SQLite não abre e o cliente Supabase não é criado</dd></div>
+</dl>
+@refs raiz/packages/core/jest.config.cjs :: coverageThreshold :: meta de 80% ;; raiz/apps/mobile/jest.config.js :: coverageThreshold ;; mobile/lib/modo.ts :: export const MODO_MOCK
+
+=== Abertura
+# Quatro camadas, uma direção de dependência
+> Cada camada só importa a que está à sua direita. O domínio não importa ninguém, e é isso que permite testá-lo em Node puro, sem emulador.
+<div class="layers">
+  <div class="ly"><h3>Rotas</h3><p class="where">mobile/app/</p><ul><li><b>Fronteira de entrada:</b> o toque entra aqui</li><li>Traduz navegação em props da tela</li><li>Injeta o gateway de hardware real</li></ul></div>
+  <div class="ly"><h3>Adapters</h3><p class="where">mobile/adapters/</p><ul><li><b>Context API</b>, sessão segura, hooks</li><li>Telas e gateways Expo</li><li>Repositórios em Map desta fase</li></ul></div>
+  <div class="ly"><h3>Aplicação</h3><p class="where">core/application/</p><ul><li><b>Use cases:</b> orquestram, não decidem regra</li><li>Enxergam só interfaces</li><li>Devolvem um Resultado tipado</li></ul></div>
+  <div class="ly"><h3>Domínio</h3><p class="where">core/domain/</p><ul><li><b>Regras de negócio</b> e invariantes</li><li>Declara os contratos</li><li>Zero import de framework</li></ul></div>
+</div>
+<div class="cols c64" style="margin-top:18px">
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Como ler as referências:</b> <span><code>core/</code> é <code>packages/core/src/</code>, <code>mobile/</code> é <code>apps/mobile/src/</code>, e o número em verde é a linha.</span></li>
+      <li><b>Domínio e aplicação nunca importam</b> <span><code>react</code>, <code>expo-*</code>, <code>@supabase/*</code> ou <code>drizzle-*</code>: zero ocorrências nas duas pastas.</span></li>
+      <li><b>Um único lugar conhece classes concretas:</b> <span>o composition root.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">{{code core/domain/entities/ciclo-avaliacao.ts :: import { BusinessRuleError :: +6 ::  :: small}}</div>
+</div>
+@refs core/domain/contracts/ciclo.ts :: Só declaração :: contratos ;; mobile/adapters/composicao.ts :: Composition root :: composition root ;; mobile/adapters/context/AuthContext.tsx :: domínio e aplicação :: Context fica fora do core
+
+=== 1 · Domínio puro :: tight
+# Seção 1 — Domínio puro: os value objects
+> Tipos imutáveis, sem identidade própria e validados na criação. Nenhum arquivo do domínio importa React, Expo ou biblioteca de UI.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:13%"><col style="width:18%"><col><col style="width:15%"><col style="width:24%"></colgroup>
+    <thead><tr><th>Value object</th><th>Guarda</th><th>Garante na criação</th><th>value-objects/</th><th>Teste</th></tr></thead>
+    <tbody>
+      <tr><td>Criterio</td><td class="m">nome e nota</td><td class="m">nota de 0 a 10 em passos de 0,5; a faixa MB, B, R ou F é calculada, nunca informada</td><td>{{rs core/domain/value-objects/criterio.ts :: get faixa(): Faixa}}</td><td>{{rs core/domain/__tests__/criterio.test.ts :: cai na faixa}}</td></tr>
+      <tr><td>Coordenada</td><td class="m">latitude, longitude e marca temporal</td><td class="m">faixas válidas de latitude e longitude; cópia defensiva da data</td><td>{{rs core/domain/value-objects/coordenada.ts :: static criar(latitude}}</td><td>{{rs core/domain/__tests__/coordenada-assinatura.test.ts :: não é afetada se o Date original mudar}}</td></tr>
+      <tr><td>Assinatura</td><td class="m">base64 e marca temporal</td><td class="m">mínimo de 24 caracteres e alfabeto base64: toque acidental não vira assinatura</td><td>{{rs core/domain/value-objects/assinatura.ts :: static criar(conteudo}}</td><td>{{rs core/domain/__tests__/coordenada-assinatura.test.ts :: rejeita quadro vazio}}</td></tr>
+      <tr><td>CargaHoraria</td><td class="m">horas totais, mínimas e do período</td><td class="m">mínimo maior que zero; nem o mínimo nem o total passam do período</td><td>{{rs core/domain/value-objects/carga-horaria.ts :: static criar(input}}</td><td>{{rs core/domain/__tests__/carga-horaria-status.test.ts :: não deixa passar do teto}}</td></tr>
+      <tr><td>StatusSincronizacao</td><td class="m">pending, synced ou error</td><td class="m">enum em objeto constante + tipo</td><td>{{rs core/domain/value-objects/status.ts :: export const StatusSincronizacao}}</td><td>{{rs core/domain/__tests__/carga-horaria-status.test.ts :: StatusSincronizacao é pending}}</td></tr>
+      <tr><td>StatusCiclo</td><td class="m">o estado do relatório do ciclo</td><td class="m">em andamento, aguardando aprovação, aprovado ou devolvido</td><td>{{rs core/domain/value-objects/status.ts :: export const StatusCiclo}}</td><td>{{rs core/domain/__tests__/carga-horaria-status.test.ts :: StatusCiclo cobre o ciclo de vida}}</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>Em todos:</b> construtor privado, <code>Object.freeze(this)</code> e igualdade por valor. Valor inválido lança <code>InvalidValueError</code>. {{rs core/domain/value-objects/criterio.ts :: Object.freeze(this)}} {{rs core/domain/__tests__/criterio.test.ts :: é imutável}} {{rs core/domain/errors.ts :: export class InvalidValueError}}</p>
+</div>
+
+=== 1 · Domínio puro
+# Aggregate Root: CicloAvaliacao
+> O relatório de um ciclo de treino. Agrupa atividades, avaliações e assinaturas e controla o ciclo de vida do relatório. Toda mudança passa por ele.
+<div class="cols two">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col><col style="width:38%"></colgroup>
+      <thead><tr><th>O que o agregado guarda</th><th>ciclo-avaliacao.ts</th></tr></thead>
+      <tbody>
+        <tr><td>Atividades desenvolvidas <span class="m">(treinos)</span></td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type AtividadeDesenvolvida}}</td></tr>
+        <tr><td>Avaliação do personal e autoavaliação</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type Avaliacao}}</td></tr>
+        <tr><td>Assinaturas do aluno e do personal</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type RegistroAssinatura}}</td></tr>
+        <tr><td>Devoluções, com motivo e data</td><td>{{rs core/domain/entities/ciclo-avaliacao.ts :: export type Devolucao}}</td></tr>
+      </tbody>
+    </table>
+    <ul class="marks tiny" style="margin-top:14px">
+      <li><b>Estado privado:</b> <span>as props só mudam por método do agregado.</span></li>
+      <li><b>Regras de um treino:</b> <span>data dentro do ciclo, até 4 horas, teto do período, e só enquanto ninguém assinou.</span></li>
+      <li><b>Devolver apaga as assinaturas:</b> <span>o conteúdo vai mudar.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    <svg class="dg" viewBox="0 0 520 320" role="img" aria-label="Ciclo de vida do relatório">
+      <rect class="nd" x="20" y="34" width="168" height="50" rx="16"/>
+      <text x="104" y="64" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">em_andamento</text>
+      <rect class="nd" x="320" y="34" width="190" height="50" rx="16"/>
+      <text x="415" y="64" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">aguardando_aprovacao</text>
+      <rect class="nd-v" x="320" y="236" width="190" height="50" rx="16"/>
+      <text x="415" y="266" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">aprovado</text>
+      <rect class="nd-a" x="20" y="236" width="168" height="50" rx="16"/>
+      <text x="104" y="266" text-anchor="middle" style="font-family:var(--mono);font-size:12.5px;font-weight:600">devolvido</text>
+      <path class="ln" d="M188,59 L318,59" marker-end="url(#arw)"/>
+      <text x="253" y="46" text-anchor="middle" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">os dois assinam</text>
+      <path class="ln-v" d="M468,84 L468,234" marker-end="url(#arwv)"/>
+      <text x="458" y="150" text-anchor="end" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">coordenação aprova</text>
+      <path class="ln" d="M338,84 L166,232" marker-end="url(#arwa)" style="stroke:oklch(0.82 0.15 78 / 60%)"/>
+      <text x="222" y="132" text-anchor="end" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">coordenação devolve</text>
+      <path class="ln" d="M188,250 L360,88" marker-end="url(#arw)"/>
+      <text x="270" y="206" text-anchor="start" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">corrige e assina de novo</text>
+      <text x="415" y="306" text-anchor="middle" style="font-size:11.5px;fill:oklch(0.73 0.014 264)">PDF só com assinaturas synced</text>
+    </svg>
+  </div>
+</div>
+@refs core/domain/entities/ciclo-avaliacao.ts :: export class CicloAvaliacao :: classe ;; core/domain/entities/ciclo-avaliacao.ts :: registrarAtividade(input: { :: regras do treino ;; core/domain/entities/ciclo-avaliacao.ts :: assinar(signatario: Signatario, assinatura: Assinatura) :: assinar ;; core/domain/entities/ciclo-avaliacao.ts :: devolver(motivo: string, agora: Date) :: devolver
+
+=== 1 · Domínio puro :: tight
+# As duas invariantes do agregado
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Ciclo aprovado bloqueia a 2ª avaliação.</b> <span>Avaliação do personal e autoavaliação passam pelo mesmo método privado, que lança a mensagem destacada.</span></li>
+      <li><b>PDF só com tudo sincronizado.</b> <span>Três condições juntas: aprovado, os dois signatários presentes e todas as assinaturas com status <code>synced</code>.</span></li>
+      <li><b>Também protegido:</b> <span>só assina quem cumpriu as horas mínimas e tem as duas avaliações.</span></li>
+    </ul>
+    <p class="note"><b>Os testes levam o nome da regra:</b> “INVARIANTE: ciclo aprovado bloqueia uma 2ª avaliação” e “INVARIANTE: podeGerarPdf só com aprovado + assinaturas sincronizadas”.</p>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/entities/ciclo-avaliacao.ts :: private novaAvaliacao(input :: this.exigirEditavel("mudar a avaliação") :: Ciclo aprovado: não aceita uma segunda avaliação :: small}}
+    {{code core/domain/entities/ciclo-avaliacao.ts :: podeGerarPdf(): boolean :: +9 :: a.statusSincronizacao === StatusSincronizacao.SYNCED :: small}}
+  </div>
+</div>
+@refs core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: ciclo aprovado bloqueia :: teste 1 ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: INVARIANTE: podeGerarPdf :: teste 2 ;; core/domain/entities/ciclo-avaliacao.ts :: pendenciasParaAssinar(): string[] :: pendências ;; core/domain/__tests__/ciclo-avaliacao.test.ts :: não assina com pendências
+
+=== 1 · Domínio puro :: tight
+# Entidades com ciclo de vida próprio: Acompanhamento e TokenPersonal
+<div class="cols c64">
+  <div class="panel">
+    <ul class="marks dense">
+      <li><b>Acompanhamento</b> <span>é o vínculo entre aluno e personal. Ativo significa dentro das datas e não encerrado.</span></li>
+      <li><b>TokenPersonal</b> <span>é o acesso do personal: ele entra por um código, sem conta de autenticação.</span></li>
+      <li><b>Expira sozinho</b> <span>(de 1 hora a 30 dias) e pode ser revogado antes.</span></li>
+      <li><b>Revogação vence expiração:</b> <span>token revogado nunca volta a valer.</span></li>
+      <li><b>O relógio vem de fora,</b> <span>então o teste controla o tempo.</span></li>
+    </ul>
+  </div>
+  <div class="panel flush">
+    {{code core/domain/entities/acompanhamento.ts :: Ativo = dentro das datas :: +4 :: if (this.props.encerradoEm !== null) return false :: small}}
+    {{code core/domain/entities/token-personal.ts :: Revogação vence expiração :: <revogar(agora: Date) :: if (this.props.revogadoEm !== null) return "revogado" ;; return "expirado" :: small}}
+  </div>
+</div>
+@refs core/domain/entities/token-personal.ts :: static emitir(input :: emitir() ;; core/domain/__tests__/acompanhamento-token.test.ts :: revogado nunca volta a valer ;; core/domain/__tests__/acompanhamento-token.test.ts :: encerrado antes da hora ;; core/application/use-cases/acessar-via-token.ts :: acompanhamento.estaAtivo(hoje) :: uso
+
+=== 1 · Domínio puro
+# Serviços de domínio e contratos
+> Os serviços guardam regras que cruzam entidades. Os contratos são interfaces puramente declarativas: quem implementa é a borda.
+<div class="cols two">
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:33%"><col><col style="width:37%"></colgroup>
+      <thead><tr><th>Serviço</th><th>O que decide</th><th>services/</th></tr></thead>
+      <tbody>
+        <tr><td>RegraGeracaoPdfService</td><td class="m">se o PDF pode sair e, se não, o que falta</td><td>{{rs core/domain/services/regra-geracao-pdf.ts :: export class RegraGeracaoPdfService}}</td></tr>
+        <tr><td>RegraDevolucaoService</td><td class="m">só a coordenação, só aguardando aprovação, motivo com 10 caracteres</td><td>{{rs core/domain/services/regra-devolucao.ts :: export class RegraDevolucaoService}}</td></tr>
+        <tr><td>SincronizacaoService</td><td class="m">a ordem da fila: assinatura, avaliação, atividade; erro na frente</td><td>{{rs core/domain/services/sincronizacao.ts :: export class SincronizacaoService}}</td></tr>
+      </tbody>
+    </table>
+    <p class="note"><b>Sem estado e sem I/O:</b> recebem o agregado e devolvem uma resposta. 11 testes. {{rs core/domain/__tests__/servicos-ciclo.test.ts :: fila: assinaturas primeiro}}</p>
+  </div>
+  <div class="panel flush">
+    <table class="t micro">
+      <colgroup><col style="width:58%"><col></colgroup>
+      <thead><tr><th>Contrato</th><th>contracts/</th></tr></thead>
+      <tbody>
+        <tr><td>CicloAvaliacaoRepository</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CicloAvaliacaoRepository}}</td></tr>
+        <tr><td>TokenPersonalRepository</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface TokenPersonalRepository}}</td></tr>
+        <tr><td>SessionStorage</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface SessionStorage}}</td></tr>
+        <tr><td>CameraGateway</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CameraGateway}}</td></tr>
+        <tr><td>LocationGateway</td><td>{{rs core/domain/contracts/index.ts :: export interface LocationGateway}}</td></tr>
+        <tr><td>AuthGateway</td><td>{{rs core/domain/contracts/index.ts :: export interface AuthGateway}}</td></tr>
+        <tr><td>PdfGateway · SincronizacaoGateway</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface PdfGateway}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+@refs core/domain/services/sincronizacao.ts :: const PRIORIDADE :: ordem da fila ;; core/domain/services/regra-devolucao.ts :: if (input.papel !== "coordenacao") :: só a coordenação ;; core/domain/contracts/ciclo.ts :: Só declaração: quem implementa é a borda

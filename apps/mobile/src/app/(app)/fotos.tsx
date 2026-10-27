@@ -2,14 +2,28 @@ import { Pressable, Text, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import { Image } from "expo-image";
-import { Camera, ImageIcon, Menu } from "lucide-react-native";
+import { Camera, ImageIcon, Menu, User } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/adapters/hooks/useAuth";
-import { useProgressPhotos } from "@/lib/use-local-data";
+import { MODO_MOCK } from "@/lib/modo";
+import { useFotosMock } from "@/lib/fotos-mock";
+
+type FotoDaGaleria = {
+  id: string;
+  localUri?: string;
+  demo?: boolean;
+  takenAt: Date;
+  syncStatus: string;
+};
+
+// No modo mock a galeria vive em memória; o módulo do SQLite nem é carregado.
+const useFotos: (userId: string) => FotoDaGaleria[] = MODO_MOCK
+  ? useFotosMock
+  : require("@/lib/use-local-data").useProgressPhotos;
 
 function formatDay(ms: Date): string {
   return ms.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -19,7 +33,7 @@ function formatDay(ms: Date): string {
 export default function FotosScreen() {
   const navigation = useNavigation();
   const { sessao } = useAuth();
-  const photos = useProgressPhotos(sessao?.usuario.id ?? "");
+  const photos = useFotos(sessao?.usuario.id ?? "");
 
   return (
     <Screen bottomInset={24}>
@@ -40,7 +54,7 @@ export default function FotosScreen() {
       </View>
 
       <View className="mb-5">
-        <PillButton onPress={() => router.push("/camera")}>
+        <PillButton onPress={() => router.push((MODO_MOCK ? "/camera-demo" : "/camera") as never)}>
           Tirar foto de hoje
         </PillButton>
       </View>
@@ -63,12 +77,18 @@ export default function FotosScreen() {
           {photos.map((photo) => (
             <View key={photo.id} className="w-[31.5%]">
               <View className="aspect-square overflow-hidden rounded-px-md border border-hairline">
-                <Image
-                  source={{ uri: photo.localUri }}
-                  style={{ width: "100%", height: "100%" }}
-                  contentFit="cover"
-                  transition={150}
-                />
+                {photo.demo ? (
+                  <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#262a32" }}>
+                    <User size={44} color={colors.fogMuted} strokeWidth={1.4} />
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: photo.localUri }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                    transition={150}
+                  />
+                )}
                 <View
                   className="absolute bottom-1.5 right-1.5 h-2 w-2 rounded-full"
                   style={{

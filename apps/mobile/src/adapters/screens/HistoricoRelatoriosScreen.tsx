@@ -52,7 +52,7 @@ export function HistoricoRelatoriosScreen({
                 onPress={() => onAbrir(c.id)}
                 accessibilityRole="button"
                 accessibilityLabel={`Abrir ${c.titulo}`}
-                style={({ pressed }) => [ui.cartao, pressed && ui.pressionado]}
+                style={ui.cartao}
               >
                 <Linha>
                   <Text style={[ui.textoForte, styles.flex]} numberOfLines={2}>
