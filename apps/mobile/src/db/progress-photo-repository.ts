@@ -12,6 +12,10 @@ export function rowToProgressPhoto(row: ProgressPhotoLocalRow): ProgressPhoto {
     remotePath: row.remotePath,
     takenAt: row.takenAt,
     note: row.note,
+    location:
+      row.latitude !== null && row.longitude !== null
+        ? { latitude: row.latitude, longitude: row.longitude }
+        : null,
     syncStatus: row.syncStatus,
   });
 }
@@ -28,6 +32,8 @@ export class DrizzleProgressPhotoRepository implements ProgressPhotoRepository {
       remotePath: photo.remotePath,
       takenAt: photo.takenAt,
       note: photo.note,
+      latitude: photo.location?.latitude ?? null,
+      longitude: photo.location?.longitude ?? null,
       syncStatus: photo.syncStatus,
     });
   }

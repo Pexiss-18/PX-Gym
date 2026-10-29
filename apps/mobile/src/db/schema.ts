@@ -51,6 +51,9 @@ export const progressPhotos = sqliteTable(
     remotePath: text("remote_path"),
     takenAt: integer("taken_at", { mode: "timestamp_ms" }).notNull(),
     note: text("note"),
+    /** Onde a foto foi tirada; fica só no aparelho (não sobe pro Supabase). */
+    latitude: real("latitude"),
+    longitude: real("longitude"),
     syncStatus: text("sync_status")
       .$type<"pending" | "synced">()
       .notNull()

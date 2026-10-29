@@ -10,6 +10,7 @@ import {
 import { BUCKETS } from "@px/db";
 import { db } from "@/db";
 import { DrizzleProgressPhotoRepository } from "@/db/progress-photo-repository";
+import { LocationGatewayExpo } from "@/adapters/gateways/LocationGatewayExpo";
 import { supabase } from "./supabase";
 import { cryptoIds, netInfoConnectivity, systemClock } from "./system";
 
@@ -18,7 +19,10 @@ import { cryptoIds, netInfoConnectivity, systemClock } from "./system";
  * do app, registro no SQLite (pending) e upload pro bucket quando há rede.
  */
 
-/** Sobe o binário pro bucket e espelha a linha na tabela remota (idempotente). */
+/**
+ * Sobe o binário pro bucket e espelha a linha na tabela remota (idempotente).
+ * A posição da foto (latitude/longitude) não vai junto: fica só no aparelho.
+ */
 class SupabaseProgressPhotoUploader implements ProgressPhotoUploader {
   async upload(photo: ProgressPhoto): Promise<string> {
     const path = `${photo.userId}/${photo.id}.jpg`;
@@ -55,6 +59,7 @@ export const saveProgressPhotoUseCase = new SaveProgressPhotoUseCase(
   netInfoConnectivity,
   systemClock,
   cryptoIds,
+  new LocationGatewayExpo(),
 );
 
 const syncPendingPhotosUseCase = new SyncPendingPhotosUseCase(

@@ -52,4 +52,28 @@ describe("DrizzleProgressPhotoRepository (SQLite real)", () => {
 
     expect((await repo.listByUser("u1")).map((p) => p.id)).toEqual(["c", "a"]);
   });
+
+  it("guarda e devolve a posição de onde a foto foi tirada", async () => {
+    await repo.save(
+      ProgressPhoto.capture({
+        id: "p9",
+        userId: "u1",
+        localUri: "file:///docs/progress-photos/p9.jpg",
+        takenAt: new Date("2026-10-29T10:00:00Z"),
+        location: { latitude: -23.5614, longitude: -46.6559 },
+      }),
+    );
+
+    const [foto] = await repo.listByUser("u1");
+
+    expect(foto!.location).toEqual({ latitude: -23.5614, longitude: -46.6559 });
+  });
+
+  it("foto sem posição continua sem posição", async () => {
+    await repo.save(capture("p1", "u1", "2026-09-01T10:00:00Z"));
+
+    const [foto] = await repo.listByUser("u1");
+
+    expect(foto!.location).toBeNull();
+  });
 });
