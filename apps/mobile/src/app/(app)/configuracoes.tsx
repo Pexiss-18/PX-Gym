@@ -37,7 +37,7 @@ export default function ConfiguracoesScreen() {
     setFeedback(null);
     try {
       const result = await trySyncSetLogs(sessao.usuario.id);
-      const photos = await trySyncPhotos();
+      const photos = await trySyncPhotos(sessao.usuario.id);
 
       if (result.status === "offline" && photos?.status === "offline") {
         setFeedback(
@@ -51,6 +51,10 @@ export default function ConfiguracoesScreen() {
         parts.push(`${result.removed} remoção(ões) aplicada(s)`);
       if (photos && photos.uploaded > 0)
         parts.push(`${photos.uploaded} foto(s) enviada(s)`);
+      if (photos && photos.removed > 0)
+        parts.push(`${photos.removed} foto(s) apagada(s) da nuvem`);
+      if (photos && photos.restored > 0)
+        parts.push(`${photos.restored} foto(s) recuperada(s) da nuvem`);
 
       // Havia rede, mas o servidor recusou ou não respondeu: não é "sem conexão".
       const failed =

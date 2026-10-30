@@ -40,7 +40,7 @@ export type SetLogRow = typeof setLogs.$inferSelect;
 
 /**
  * Fotos de progresso — o arquivo mora no diretório de documentos do app
- * (local_uri); remote_path aponta pro bucket depois do upload.
+ * (local_uri); remote_path é a chave no Cloudflare R2 depois do upload.
  */
 export const progressPhotos = sqliteTable(
   "progress_photos",
@@ -54,8 +54,9 @@ export const progressPhotos = sqliteTable(
     /** Onde a foto foi tirada; fica só no aparelho (não sobe pro Supabase). */
     latitude: real("latitude"),
     longitude: real("longitude"),
+    /** "deleted" = tombstone: apagada aqui, falta remover na nuvem. */
     syncStatus: text("sync_status")
-      .$type<"pending" | "synced">()
+      .$type<"pending" | "synced" | "deleted">()
       .notNull()
       .default("pending"),
   },

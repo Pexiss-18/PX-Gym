@@ -45,6 +45,12 @@ export function tirarFotoMock(): FotoMock {
   return foto;
 }
 
+/** Apaga da galeria em memória (no mock não há nuvem pra esperar). */
+export function apagarFotoMock(id: string) {
+  fotos = fotos.filter((f) => f.id !== id);
+  ouvintes.forEach((o) => o());
+}
+
 /** Galeria em memória, mais recente primeiro. */
 export function useFotosMock(): FotoMock[] {
   return useSyncExternalStore(assinar, () => fotos);

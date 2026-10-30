@@ -8,7 +8,7 @@ import { trySyncPhotos } from "./photos";
 
 /**
  * Mantém o SQLite e o Supabase em dia: tenta sincronizar os registros e as
- * fotos pendentes ao entrar no app, quando a conexão volta (NetInfo) e quando
+ * fotos pendentes (e baixar as que só estão na nuvem) ao entrar no app, quando a conexão volta (NetInfo) e quando
  * o app volta pro foreground. Falhas são silenciosas — tudo continua pending
  * e a próxima janela tenta de novo. No modo mock não há o que sincronizar.
  */
@@ -25,7 +25,7 @@ export function useWorkoutSync() {
       running = true;
       try {
         await trySyncSetLogs(userId);
-        await trySyncPhotos();
+        await trySyncPhotos(userId);
       } finally {
         running = false;
       }

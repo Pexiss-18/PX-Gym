@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import type { ProgressPhoto } from "@px/core";
 import { db } from "@/db";
@@ -14,7 +14,7 @@ import { progressPhotos, setLogs } from "@/db/schema";
 export type PendingSync = {
   /** Séries registradas que ainda não subiram. */
   sets: number;
-  /** Séries desmarcadas (tombstones) aguardando remoção no backend. */
+  /** Séries desmarcadas e fotos apagadas (tombstones) aguardando remoção no backend. */
   removals: number;
   /** Fotos aguardando upload. */
   photos: number;
@@ -29,21 +29,23 @@ export function usePendingSync(): PendingSync {
       .from(setLogs)
       .where(ne(setLogs.syncStatus, "synced")),
   );
-  const { data: pendingPhotos } = useLiveQuery(
+  const { data: unsyncedPhotos } = useLiveQuery(
     db
-      .select({ id: progressPhotos.id })
+      .select({ status: progressPhotos.syncStatus })
       .from(progressPhotos)
-      .where(eq(progressPhotos.syncStatus, "pending")),
+      .where(ne(progressPhotos.syncStatus, "synced")),
   );
 
   return useMemo(() => {
     const sets =
       unsyncedSets?.filter((r) => r.status === "pending").length ?? 0;
     const removals =
-      unsyncedSets?.filter((r) => r.status === "deleted").length ?? 0;
-    const photos = pendingPhotos?.length ?? 0;
+      (unsyncedSets?.filter((r) => r.status === "deleted").length ?? 0) +
+      (unsyncedPhotos?.filter((r) => r.status === "deleted").length ?? 0);
+    const photos =
+      unsyncedPhotos?.filter((r) => r.status === "pending").length ?? 0;
     return { sets, removals, photos, allSynced: sets + removals + photos === 0 };
-  }, [unsyncedSets, pendingPhotos]);
+  }, [unsyncedSets, unsyncedPhotos]);
 }
 
 /** Galeria do usuário, da foto mais nova pra mais velha, direto do aparelho. */
@@ -52,7 +54,12 @@ export function useProgressPhotos(userId: string): ProgressPhoto[] {
     db
       .select()
       .from(progressPhotos)
-      .where(eq(progressPhotos.userId, userId))
+      .where(
+        and(
+          eq(progressPhotos.userId, userId),
+          ne(progressPhotos.syncStatus, "deleted"),
+        ),
+      )
       .orderBy(desc(progressPhotos.takenAt)),
     [userId],
   );

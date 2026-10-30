@@ -85,14 +85,50 @@ export interface NutritionPlanGenerator {
 
 export interface ProgressPhotoRepository {
   save(photo: ProgressPhoto): Promise<void>;
+  byId(id: string): Promise<ProgressPhoto | null>;
   pendingUpload(): Promise<ProgressPhoto[]>;
   markUploaded(id: string, remotePath: string): Promise<void>;
+  /** Galeria: as fotos apagadas (tombstones) ficam de fora. */
   listByUser(userId: string): Promise<ProgressPhoto[]>;
+  /**
+   * Todos os ids que o aparelho conhece, tombstones inclusive — é o que
+   * impede a restauração de trazer de volta uma foto recém-apagada.
+   */
+  knownIds(userId: string): Promise<string[]>;
+  markDeleted(id: string): Promise<void>;
+  pendingDeletion(): Promise<ProgressPhoto[]>;
+  /** Apaga a linha de vez (depois que a nuvem confirmou a remoção). */
+  remove(id: string): Promise<void>;
 }
 
 /** Upload da foto pro storage remoto; retorna o caminho no bucket. */
 export interface ProgressPhotoUploader {
   upload(photo: ProgressPhoto): Promise<string>;
+}
+
+/** Foto que existe na nuvem: linha da tabela + arquivo no bucket. */
+export type RemoteProgressPhoto = {
+  id: string;
+  userId: string;
+  remotePath: string;
+  takenAt: Date;
+  note: string | null;
+};
+
+/**
+ * O resto do ciclo de vida da foto na nuvem. Remover é idempotente:
+ * apagar o que já não existe não é erro (o retry do tombstone depende disso).
+ */
+export interface ProgressPhotoCloud {
+  list(userId: string): Promise<RemoteProgressPhoto[]>;
+  /** Baixa o arquivo pro aparelho e devolve a URI local. */
+  download(photo: RemoteProgressPhoto): Promise<string>;
+  remove(photo: ProgressPhoto): Promise<void>;
+}
+
+/** Arquivos de foto no aparelho. Apagar o que não existe não é erro. */
+export interface LocalPhotoFiles {
+  remove(localUri: string): void;
 }
 
 /** Fonte de academias próximas (Overpass/OSM no mobile; trocável por Places). */

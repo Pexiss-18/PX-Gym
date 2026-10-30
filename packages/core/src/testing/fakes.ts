@@ -14,9 +14,12 @@ import type {
   LocationGateway,
   LocationPermission,
   NearbyGymsFinder,
+  LocalPhotoFiles,
   NutritionPlanRepository,
+  ProgressPhotoCloud,
   ProgressPhotoRepository,
   ProgressPhotoUploader,
+  RemoteProgressPhoto,
   SetLogRepository,
   SignInOutcome,
   SignUpOutcome,
@@ -130,15 +133,74 @@ export class InMemoryPhotos implements ProgressPhotoRepository {
     );
   }
   async listByUser(userId: string) {
-    return this.photos.filter((p) => p.userId === userId);
+    return this.photos.filter(
+      (p) => p.userId === userId && p.syncStatus !== "deleted",
+    );
+  }
+  async byId(id: string) {
+    return this.photos.find((p) => p.id === id) ?? null;
+  }
+  async knownIds(userId: string) {
+    return this.photos.filter((p) => p.userId === userId).map((p) => p.id);
+  }
+  async markDeleted(id: string) {
+    this.photos = this.photos.map((p) => (p.id === id ? p.markDeleted() : p));
+  }
+  async pendingDeletion() {
+    return this.photos.filter((p) => p.syncStatus === "deleted");
+  }
+  async remove(id: string) {
+    this.photos = this.photos.filter((p) => p.id !== id);
+  }
+}
+
+/** Nuvem falsa: `remote` é o que está no bucket; `failNext` derruba uma chamada. */
+export class FakePhotoCloud implements ProgressPhotoCloud {
+  removed: string[] = [];
+  downloads = 0;
+  failNext = false;
+
+  constructor(public remote: RemoteProgressPhoto[] = []) {}
+
+  private maybeFail() {
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error("network down");
+    }
+  }
+
+  async list(userId: string) {
+    return this.remote.filter((r) => r.userId === userId);
+  }
+  async download(photo: RemoteProgressPhoto) {
+    this.maybeFail();
+    this.downloads++;
+    return `file:///docs/progress-photos/${photo.id}.jpg`;
+  }
+  async remove(photo: ProgressPhoto) {
+    this.maybeFail();
+    this.removed.push(photo.id);
+    this.remote = this.remote.filter((r) => r.id !== photo.id);
+  }
+}
+
+export class FakePhotoFiles implements LocalPhotoFiles {
+  removed: string[] = [];
+  remove(localUri: string) {
+    this.removed.push(localUri);
   }
 }
 
 export class FakeUploader implements ProgressPhotoUploader {
   uploads = 0;
+  attempts = 0;
   failNext = false;
+  /** Erro devolvido em todas as tentativas (ex.: nuvem cheia). */
+  failWith: Error | null = null;
 
   async upload(photo: ProgressPhoto) {
+    this.attempts++;
+    if (this.failWith) throw this.failWith;
     if (this.failNext) {
       this.failNext = false;
       throw new Error("upload failed");

@@ -1,4 +1,4 @@
-import type { UploadSyncStatus } from "./set-log";
+import type { SyncStatus } from "./set-log";
 
 /**
  * Onde a foto foi tirada. Fica só no aparelho: não sobe pra nuvem junto com
@@ -11,13 +11,17 @@ export type ProgressPhotoProps = {
   userId: string;
   /** URI do arquivo no dispositivo (sempre presente — é a origem). */
   localUri: string;
-  /** Caminho no bucket do Supabase após o upload; null enquanto pendente. */
+  /** Chave no Cloudflare R2 após o upload; null enquanto pendente. */
   remotePath: string | null;
   takenAt: Date;
   note: string | null;
   /** null quando não houve permissão ou sinal de GPS. */
   location: PhotoLocation | null;
-  syncStatus: UploadSyncStatus;
+  /**
+   * "deleted" é um tombstone: a pessoa apagou a foto, o arquivo local já
+   * foi embora, mas a cópia da nuvem ainda precisa ser removida.
+   */
+  syncStatus: SyncStatus;
 };
 
 /**
@@ -63,5 +67,9 @@ export class ProgressPhoto {
       remotePath,
       syncStatus: "synced",
     });
+  }
+
+  markDeleted(): ProgressPhoto {
+    return new ProgressPhoto({ ...this.props, syncStatus: "deleted" });
   }
 }

@@ -6,10 +6,13 @@ import type {
   Clock,
   ConnectivityStatus,
   IdGenerator,
+  LocalPhotoFiles,
   LocationGateway,
+  ProgressPhotoCloud,
   ProgressPhotoRepository,
   ProgressPhotoUploader,
 } from "../../domain/contracts";
+import { CloudStorageFullError, type CloudFullScope } from "../../domain/errors";
 
 export type SaveProgressPhotoInput = {
   userId: string;
@@ -85,34 +88,162 @@ export class SaveProgressPhotoUseCase {
 }
 
 export type PhotoSyncResult =
-  | { status: "offline"; uploaded: 0; failed: 0 }
-  /** failed > 0: essas fotos continuam pending pra próxima rodada. */
-  | { status: "done"; uploaded: number; failed: number };
+  | { status: "offline"; uploaded: 0; removed: 0; failed: 0; cloudFull: null }
+  | {
+      status: "done";
+      uploaded: number;
+      removed: number;
+      /** failed > 0: essas fotos (envio ou remoção) ficam pra próxima rodada. */
+      failed: number;
+      /** A nuvem recusou por falta de espaço: os envios pararam ali. */
+      cloudFull: CloudFullScope | null;
+    };
 
-/** Reenvia fotos pendentes quando a conexão volta. */
+/**
+ * Quando a conexão volta: resolve os tombstones (apaga na nuvem e só então
+ * a linha local) e reenvia as fotos pendentes.
+ */
 export class SyncPendingPhotosUseCase {
   constructor(
     private readonly photos: ProgressPhotoRepository,
     private readonly uploader: ProgressPhotoUploader,
     private readonly connectivity: ConnectivityStatus,
+    private readonly cloud: ProgressPhotoCloud,
   ) {}
 
   async execute(): Promise<PhotoSyncResult> {
     if (!(await this.connectivity.isOnline())) {
-      return { status: "offline", uploaded: 0, failed: 0 };
+      return { status: "offline", uploaded: 0, removed: 0, failed: 0, cloudFull: null };
     }
 
+    let failed = 0;
+    let cloudFull: CloudFullScope | null = null;
+
+    const deleted = await this.photos.pendingDeletion();
+    let removed = 0;
+    for (const photo of deleted) {
+      try {
+        await this.cloud.remove(photo);
+        await this.photos.remove(photo.id);
+        removed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    // Remoções vêm antes dos envios: liberam espaço na nuvem.
     const pending = await this.photos.pendingUpload();
     let uploaded = 0;
-    for (const photo of pending) {
+    for (const [i, photo] of pending.entries()) {
       try {
         const remotePath = await this.uploader.upload(photo);
         await this.photos.markUploaded(photo.id, remotePath);
         uploaded++;
-      } catch {
+      } catch (error) {
+        if (error instanceof CloudStorageFullError) {
+          // sem espaço, as próximas também seriam recusadas
+          cloudFull = error.scope;
+          failed += pending.length - i;
+          break;
+        }
         // tenta as demais; esta fica pra próxima rodada
+        failed++;
       }
     }
-    return { status: "done", uploaded, failed: pending.length - uploaded };
+    return { status: "done", uploaded, removed, failed, cloudFull };
+  }
+}
+
+export type DeletePhotoResult =
+  | { status: "not-found" }
+  /** Sumiu do aparelho e da nuvem. */
+  | { status: "removed" }
+  /** Sumiu do aparelho; a cópia da nuvem sai no próximo sync. */
+  | { status: "pending-removal" };
+
+/**
+ * Apaga a foto. Do ponto de vista da pessoa é na hora: o arquivo local sai
+ * e a linha vira tombstone (some da galeria). A nuvem é tentada em seguida
+ * se houver rede; sem rede, o SyncPendingPhotosUseCase termina o serviço.
+ *
+ * Até foto "pending" vira tombstone: o upload pode ter chegado ao servidor
+ * sem a confirmação voltar, e aí a restauração a traria de volta.
+ */
+export class DeleteProgressPhotoUseCase {
+  constructor(
+    private readonly photos: ProgressPhotoRepository,
+    private readonly cloud: ProgressPhotoCloud,
+    private readonly connectivity: ConnectivityStatus,
+    private readonly files: LocalPhotoFiles,
+  ) {}
+
+  async execute(id: string): Promise<DeletePhotoResult> {
+    const photo = await this.photos.byId(id);
+    if (!photo || photo.syncStatus === "deleted") return { status: "not-found" };
+
+    await this.photos.markDeleted(id);
+    try {
+      this.files.remove(photo.localUri);
+    } catch {
+      // arquivo órfão no aparelho não pode travar a exclusão
+    }
+
+    if (await this.connectivity.isOnline()) {
+      try {
+        await this.cloud.remove(photo);
+        await this.photos.remove(id);
+        return { status: "removed" };
+      } catch {
+        // continua tombstone; sync posterior cuida disso
+      }
+    }
+    return { status: "pending-removal" };
+  }
+}
+
+export type PhotoRestoreResult =
+  | { status: "offline"; restored: 0; failed: 0 }
+  | { status: "done"; restored: number; failed: number };
+
+/**
+ * Traz pro aparelho as fotos que estão na nuvem e não estão aqui —
+ * reinstalação ou celular novo. A posição de onde foram tiradas não volta:
+ * ela nunca saiu do aparelho original.
+ */
+export class RestoreProgressPhotosUseCase {
+  constructor(
+    private readonly photos: ProgressPhotoRepository,
+    private readonly cloud: ProgressPhotoCloud,
+    private readonly connectivity: ConnectivityStatus,
+  ) {}
+
+  async execute(userId: string): Promise<PhotoRestoreResult> {
+    if (!(await this.connectivity.isOnline())) {
+      return { status: "offline", restored: 0, failed: 0 };
+    }
+
+    const known = new Set(await this.photos.knownIds(userId));
+    const missing = (await this.cloud.list(userId)).filter(
+      (remote) => !known.has(remote.id),
+    );
+
+    let restored = 0;
+    for (const remote of missing) {
+      try {
+        const localUri = await this.cloud.download(remote);
+        await this.photos.save(
+          ProgressPhoto.restore({
+            ...remote,
+            localUri,
+            location: null,
+            syncStatus: "synced",
+          }),
+        );
+        restored++;
+      } catch {
+        // tenta as demais; esta volta na próxima rodada
+      }
+    }
+    return { status: "done", restored, failed: missing.length - restored };
   }
 }

@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { ProgressPhoto, type ProgressPhotoRepository } from "@px/core";
 import type { Db } from "./index";
 import { progressPhotos, type ProgressPhotoLocalRow } from "./schema";
@@ -54,12 +54,52 @@ export class DrizzleProgressPhotoRepository implements ProgressPhotoRepository {
       .where(eq(progressPhotos.id, id));
   }
 
+  async byId(id: string): Promise<ProgressPhoto | null> {
+    const [row] = await this.db
+      .select()
+      .from(progressPhotos)
+      .where(eq(progressPhotos.id, id));
+    return row ? rowToProgressPhoto(row) : null;
+  }
+
   async listByUser(userId: string): Promise<ProgressPhoto[]> {
     const rows = await this.db
       .select()
       .from(progressPhotos)
-      .where(eq(progressPhotos.userId, userId))
+      .where(
+        and(
+          eq(progressPhotos.userId, userId),
+          ne(progressPhotos.syncStatus, "deleted"),
+        ),
+      )
       .orderBy(desc(progressPhotos.takenAt));
     return rows.map(rowToProgressPhoto);
+  }
+
+  async knownIds(userId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: progressPhotos.id })
+      .from(progressPhotos)
+      .where(eq(progressPhotos.userId, userId));
+    return rows.map((r) => r.id);
+  }
+
+  async markDeleted(id: string): Promise<void> {
+    await this.db
+      .update(progressPhotos)
+      .set({ syncStatus: "deleted" })
+      .where(eq(progressPhotos.id, id));
+  }
+
+  async pendingDeletion(): Promise<ProgressPhoto[]> {
+    const rows = await this.db
+      .select()
+      .from(progressPhotos)
+      .where(eq(progressPhotos.syncStatus, "deleted"));
+    return rows.map(rowToProgressPhoto);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.db.delete(progressPhotos).where(eq(progressPhotos.id, id));
   }
 }

@@ -54,5 +54,4 @@ export type ProgressPhotoRow = {
 
 export const BUCKETS = {
   assessments: "assessments",
-  progressPhotos: "progress-photos",
 } as const;

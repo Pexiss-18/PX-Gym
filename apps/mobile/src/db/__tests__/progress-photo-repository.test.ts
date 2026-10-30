@@ -76,4 +76,27 @@ describe("DrizzleProgressPhotoRepository (SQLite real)", () => {
 
     expect(foto!.location).toBeNull();
   });
+
+  it("apagada vira tombstone: sai da galeria, mas o id continua conhecido", async () => {
+    await repo.save(capture("p1", "u1", "2026-09-01T10:00:00Z"));
+    await repo.save(capture("p2", "u1", "2026-09-02T10:00:00Z"));
+
+    await repo.markDeleted("p1");
+
+    expect((await repo.listByUser("u1")).map((p) => p.id)).toEqual(["p2"]);
+    expect((await repo.knownIds("u1")).sort()).toEqual(["p1", "p2"]);
+    expect((await repo.pendingDeletion()).map((p) => p.id)).toEqual(["p1"]);
+    expect((await repo.pendingUpload()).map((p) => p.id)).toEqual(["p2"]);
+    expect((await repo.byId("p1"))!.syncStatus).toBe("deleted");
+  });
+
+  it("remove apaga a linha de vez", async () => {
+    await repo.save(capture("p1", "u1", "2026-09-01T10:00:00Z"));
+    await repo.markDeleted("p1");
+
+    await repo.remove("p1");
+
+    expect(await repo.byId("p1")).toBeNull();
+    expect(await repo.knownIds("u1")).toEqual([]);
+  });
 });

@@ -11,8 +11,8 @@
     "dev:web": "npm run dev -w web",
     "build:web": "npm run build -w web",
     "lint:web": "npm run lint -w web",
-    "test:functions": "deno test --config supabase/functions/generate-plan/deno.json supabase/functions/_shared",
-    "check:functions": "deno check --config supabase/functions/generate-plan/deno.json supabase/functions/generate-plan/index.ts",
+    "test:functions": "deno test --config supabase/functions/generate-plan/deno.json supabase/functions/_shared/ia supabase/functions/_shared/plano && deno test --config supabase/functions/photo-storage/deno.json supabase/functions/_shared/fotos",
+    "check:functions": "deno check --config supabase/functions/generate-plan/deno.json supabase/functions/generate-plan/index.ts && deno check --config supabase/functions/photo-storage/deno.json supabase/functions/photo-storage/index.ts",
     "try:plan": "deno run --config supabase/functions/generate-plan/deno.json --env-file=supabase/functions/.env --allow-net=generativelanguage.googleapis.com --allow-env supabase/functions/_shared/plano/experimentar.ts"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import { Image } from "expo-image";
@@ -10,7 +10,7 @@ import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { MODO_MOCK } from "@/lib/modo";
-import { useFotosMock } from "@/lib/fotos-mock";
+import { apagarFotoMock, useFotosMock } from "@/lib/fotos-mock";
 
 type FotoDaGaleria = {
   id: string;
@@ -24,6 +24,30 @@ type FotoDaGaleria = {
 const useFotos: (userId: string) => FotoDaGaleria[] = MODO_MOCK
   ? useFotosMock
   : require("@/lib/use-local-data").useProgressPhotos;
+
+const apagarFoto: (id: string) => Promise<unknown> = MODO_MOCK
+  ? async (id) => apagarFotoMock(id)
+  : require("@/lib/photos").deleteProgressPhoto;
+
+/** Confirmação antes de apagar: a foto sai do aparelho e da nuvem. */
+function confirmarExclusao(foto: FotoDaGaleria) {
+  Alert.alert(
+    "Apagar esta foto?",
+    `Foto de ${formatDay(foto.takenAt)}. Ela sai do aparelho e da nuvem — não dá pra desfazer.`,
+    [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Apagar",
+        style: "destructive",
+        onPress: () => {
+          apagarFoto(foto.id).catch(() =>
+            Alert.alert("Não deu pra apagar", "Tente de novo em instantes."),
+          );
+        },
+      },
+    ],
+  );
+}
 
 function formatDay(ms: Date): string {
   return ms.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -75,7 +99,12 @@ export default function FotosScreen() {
       ) : (
         <View className="flex-row flex-wrap justify-between gap-y-3">
           {photos.map((photo) => (
-            <View key={photo.id} className="w-[31.5%]">
+            <Pressable
+              key={photo.id}
+              className="w-[31.5%]"
+              onLongPress={() => confirmarExclusao(photo)}
+              accessibilityHint="Segure para apagar"
+            >
               <View className="aspect-square overflow-hidden rounded-px-md border border-hairline">
                 {photo.demo ? (
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#262a32" }}>
@@ -102,7 +131,7 @@ export default function FotosScreen() {
               <Text className="mt-1 text-center font-sans text-[11px] text-fog">
                 {formatDay(photo.takenAt)}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       )}
@@ -126,6 +155,11 @@ export default function FotosScreen() {
             </Text>
           </View>
         </View>
+      ) : null}
+      {photos.length > 0 ? (
+        <Text className="mt-2 text-center font-sans text-[11px] text-fog">
+          Segure uma foto para apagar.
+        </Text>
       ) : null}
     </Screen>
   );

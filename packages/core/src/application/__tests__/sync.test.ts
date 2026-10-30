@@ -8,6 +8,7 @@ import {
 import {
   FakeConnectivity,
   FakeLocation,
+  FakePhotoCloud,
   FakeSyncGateway,
   FakeUploader,
   FixedClock,
@@ -301,12 +302,15 @@ describe("SaveProgressPhotoUseCase", () => {
       photos,
       uploader,
       new FakeConnectivity(true),
+      new FakePhotoCloud(),
     );
 
     expect(await sync.execute()).toEqual({
       status: "done",
       uploaded: 1,
+      removed: 0,
       failed: 1,
+      cloudFull: null,
     });
     expect(await photos.pendingUpload()).toHaveLength(1);
   });
@@ -319,12 +323,15 @@ describe("SaveProgressPhotoUseCase", () => {
       photos,
       uploader,
       new FakeConnectivity(false),
+      new FakePhotoCloud(),
     );
 
     expect(await sync.execute()).toEqual({
       status: "offline",
       uploaded: 0,
+      removed: 0,
       failed: 0,
+      cloudFull: null,
     });
     expect(uploader.uploads).toBe(0);
   });

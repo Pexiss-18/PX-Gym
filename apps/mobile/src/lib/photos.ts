@@ -1,13 +1,19 @@
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
 import {
+  DeleteProgressPhotoUseCase,
+  RestoreProgressPhotosUseCase,
   SaveProgressPhotoUseCase,
   SyncPendingPhotosUseCase,
+  type DeletePhotoResult,
+  type LocalPhotoFiles,
   type PhotoSyncResult,
   type ProgressPhoto,
+  type ProgressPhotoCloud,
   type ProgressPhotoUploader,
+  type RemoteProgressPhoto,
 } from "@px/core";
-import { BUCKETS } from "@px/db";
+import { SupabaseProgressPhotoStore } from "@px/db";
 import { db } from "@/db";
 import { DrizzleProgressPhotoRepository } from "@/db/progress-photo-repository";
 import { LocationGatewayExpo } from "@/adapters/gateways/LocationGatewayExpo";
@@ -16,46 +22,76 @@ import { cryptoIds, netInfoConnectivity, systemClock } from "./system";
 
 /*
  * Composition root das fotos de progresso: arquivo no diretório de documentos
- * do app, registro no SQLite (pending) e upload pro bucket quando há rede.
+ * do app, registro no SQLite (pending) e upload pro Cloudflare R2 quando há
+ * rede.
+ * Apagar vira tombstone até a nuvem confirmar; o que está na nuvem e não está
+ * no aparelho (reinstalação, celular novo) é baixado de volta.
  */
+
+function photosDir(): Directory {
+  const dir = new Directory(Paths.document, "progress-photos");
+  if (!dir.exists) dir.create();
+  return dir;
+}
 
 /**
- * Sobe o binário pro bucket e espelha a linha na tabela remota (idempotente).
- * A posição da foto (latitude/longitude) não vai junto: fica só no aparelho.
+ * Junta o lado nuvem (@px/db: linha no Postgres + URLs assinadas do R2) com
+ * os arquivos do aparelho. Os bytes vão e voltam direto entre o aparelho e
+ * o R2. A posição da foto não sobe: fica só no aparelho.
  */
-class SupabaseProgressPhotoUploader implements ProgressPhotoUploader {
+class R2ProgressPhotoCloud implements ProgressPhotoUploader, ProgressPhotoCloud {
+  private readonly store = new SupabaseProgressPhotoStore(supabase);
+
   async upload(photo: ProgressPhoto): Promise<string> {
-    const path = `${photo.userId}/${photo.id}.jpg`;
+    const file = new File(photo.localUri);
+    const target = await this.store.uploadTarget(photo.id, file.size);
+    // Mesmos headers que entraram na assinatura (tipo e tamanho), senão o
+    // R2 recusa. Arquivo lido do disco pelo nativo, sem passar pelo JS.
+    const res = await file.upload(target.url, {
+      httpMethod: "PUT",
+      headers: target.headers,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(`R2 respondeu ${res.status} ao envio`);
+    }
+    await this.store.saveRow(photo, target.path);
+    return target.path;
+  }
 
-    const bytes = await new File(photo.localUri).bytes();
-    const { error } = await supabase.storage
-      .from(BUCKETS.progressPhotos)
-      .upload(path, bytes, { contentType: "image/jpeg", upsert: true });
-    if (error) throw error;
+  list(userId: string): Promise<RemoteProgressPhoto[]> {
+    return this.store.list(userId);
+  }
 
-    const { error: rowError } = await supabase.from("progress_photos").upsert(
-      {
-        id: photo.id,
-        user_id: photo.userId,
-        storage_path: path,
-        taken_at: photo.takenAt.toISOString(),
-        note: photo.note,
-      },
-      { onConflict: "id" },
+  async download(photo: RemoteProgressPhoto): Promise<string> {
+    const url = await this.store.downloadUrl(photo.id);
+    // idempotent: um download interrompido antes deixa o arquivo pela metade
+    const file = await File.downloadFileAsync(
+      url,
+      new File(photosDir(), `${photo.id}.jpg`),
+      { idempotent: true },
     );
-    if (rowError) throw rowError;
+    return file.uri;
+  }
 
-    return path;
+  remove(photo: ProgressPhoto): Promise<void> {
+    return this.store.remove(photo);
   }
 }
 
+const expoPhotoFiles: LocalPhotoFiles = {
+  remove(localUri) {
+    const file = new File(localUri);
+    if (file.exists) file.delete();
+  },
+};
+
 export const progressPhotoRepository = new DrizzleProgressPhotoRepository(db);
 
-const uploader = new SupabaseProgressPhotoUploader();
+const cloud = new R2ProgressPhotoCloud();
 
 export const saveProgressPhotoUseCase = new SaveProgressPhotoUseCase(
   progressPhotoRepository,
-  uploader,
+  cloud,
   netInfoConnectivity,
   systemClock,
   cryptoIds,
@@ -64,20 +100,62 @@ export const saveProgressPhotoUseCase = new SaveProgressPhotoUseCase(
 
 const syncPendingPhotosUseCase = new SyncPendingPhotosUseCase(
   progressPhotoRepository,
-  uploader,
+  cloud,
+  netInfoConnectivity,
+  cloud,
+);
+
+const restoreProgressPhotosUseCase = new RestoreProgressPhotosUseCase(
+  progressPhotoRepository,
+  cloud,
   netInfoConnectivity,
 );
 
+const deleteProgressPhotoUseCase = new DeleteProgressPhotoUseCase(
+  progressPhotoRepository,
+  cloud,
+  netInfoConnectivity,
+  expoPhotoFiles,
+);
+
+export type PhotoRoundResult = {
+  status: PhotoSyncResult["status"];
+  uploaded: number;
+  removed: number;
+  restored: number;
+  failed: number;
+};
+
+let inFlight: Promise<PhotoRoundResult | null> | null = null;
+
 /**
- * Reenvia fotos pendentes sem propagar falha (mesmo contrato do sync de
- * séries). null = a rodada nem começou (erro inesperado, ex.: SQLite).
+ * Uma rodada completa: remoções pendentes, envios pendentes e, por último,
+ * o que falta baixar da nuvem. Não propaga falha (mesmo contrato do sync de
+ * séries); null = a rodada nem terminou (erro inesperado, ex.: SQLite ou a
+ * listagem remota). Chamadas simultâneas (sync automático + botão) dividem a
+ * mesma rodada, senão a restauração baixaria a mesma foto duas vezes.
  */
-export async function trySyncPhotos(): Promise<PhotoSyncResult | null> {
-  try {
-    return await syncPendingPhotosUseCase.execute();
-  } catch {
-    return null;
-  }
+export function trySyncPhotos(userId: string): Promise<PhotoRoundResult | null> {
+  inFlight ??= (async () => {
+    try {
+      const sync = await syncPendingPhotosUseCase.execute();
+      const restore = await restoreProgressPhotosUseCase.execute(userId);
+      return {
+        ...sync,
+        failed: sync.failed + restore.failed,
+        restored: restore.restored,
+      };
+    } catch {
+      return null;
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
+}
+
+export function deleteProgressPhoto(id: string): Promise<DeletePhotoResult> {
+  return deleteProgressPhotoUseCase.execute(id);
 }
 
 /**
@@ -85,9 +163,7 @@ export async function trySyncPhotos(): Promise<PhotoSyncResult | null> {
  * O cache pode ser limpo pelo sistema; o documento não.
  */
 export function persistCapture(cacheUri: string): string {
-  const dir = new Directory(Paths.document, "progress-photos");
-  if (!dir.exists) dir.create();
-  const dest = new File(dir, `${Crypto.randomUUID()}.jpg`);
+  const dest = new File(photosDir(), `${Crypto.randomUUID()}.jpg`);
   new File(cacheUri).move(dest);
   return dest.uri;
 }
