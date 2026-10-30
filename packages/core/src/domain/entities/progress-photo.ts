@@ -1,5 +1,11 @@
 import type { UploadSyncStatus } from "./set-log";
 
+/**
+ * Onde a foto foi tirada. Fica só no aparelho: não sobe pra nuvem junto com
+ * a imagem, pra não expor onde a pessoa mora ou treina.
+ */
+export type PhotoLocation = { latitude: number; longitude: number };
+
 export type ProgressPhotoProps = {
   id: string;
   userId: string;
@@ -9,6 +15,8 @@ export type ProgressPhotoProps = {
   remotePath: string | null;
   takenAt: Date;
   note: string | null;
+  /** null quando não houve permissão ou sinal de GPS. */
+  location: PhotoLocation | null;
   syncStatus: UploadSyncStatus;
 };
 
@@ -25,10 +33,12 @@ export class ProgressPhoto {
     localUri: string;
     takenAt: Date;
     note?: string;
+    location?: PhotoLocation | null;
   }): ProgressPhoto {
     return new ProgressPhoto({
       ...props,
       note: props.note ?? null,
+      location: props.location ?? null,
       remotePath: null,
       syncStatus: "pending",
     });
@@ -44,6 +54,7 @@ export class ProgressPhoto {
   get remotePath() { return this.props.remotePath; }
   get takenAt() { return this.props.takenAt; }
   get note() { return this.props.note; }
+  get location() { return this.props.location; }
   get syncStatus() { return this.props.syncStatus; }
 
   markUploaded(remotePath: string): ProgressPhoto {

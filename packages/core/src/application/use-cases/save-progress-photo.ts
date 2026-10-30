@@ -1,8 +1,12 @@
-import { ProgressPhoto } from "../../domain/entities/progress-photo";
+import {
+  ProgressPhoto,
+  type PhotoLocation,
+} from "../../domain/entities/progress-photo";
 import type {
   Clock,
   ConnectivityStatus,
   IdGenerator,
+  LocationGateway,
   ProgressPhotoRepository,
   ProgressPhotoUploader,
 } from "../../domain/contracts";
@@ -11,6 +15,11 @@ export type SaveProgressPhotoInput = {
   userId: string;
   localUri: string;
   note?: string;
+  /**
+   * true quando o salvamento nasce de um gesto do usuário (o disparo da
+   * câmera): aí, e só aí, o diálogo de permissão de localização pode abrir.
+   */
+  askLocation?: boolean;
 };
 
 /**
@@ -25,7 +34,29 @@ export class SaveProgressPhotoUseCase {
     private readonly connectivity: ConnectivityStatus,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
+    /** Opcional: sem GPS, a foto é salva sem posição. */
+    private readonly location?: LocationGateway,
   ) {}
+
+  /**
+   * Posição de onde a foto foi tirada, ou null. Nunca lança: a foto é o que
+   * importa, a posição é um extra — falta de permissão ou de sinal não pode
+   * impedir o salvamento.
+   */
+  private async whereTaken(ask: boolean): Promise<PhotoLocation | null> {
+    if (!this.location) return null;
+    try {
+      let permission = await this.location.permission();
+      if (permission !== "granted" && ask && permission !== "blocked") {
+        permission = await this.location.requestPermission();
+      }
+      if (permission !== "granted") return null;
+      const { latitude, longitude } = await this.location.currentPosition();
+      return { latitude, longitude };
+    } catch {
+      return null;
+    }
+  }
 
   async execute(input: SaveProgressPhotoInput): Promise<ProgressPhoto> {
     let photo = ProgressPhoto.capture({
@@ -34,6 +65,7 @@ export class SaveProgressPhotoUseCase {
       localUri: input.localUri,
       takenAt: this.clock.now(),
       note: input.note,
+      location: await this.whereTaken(input.askLocation ?? false),
     });
 
     await this.photos.save(photo);

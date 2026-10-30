@@ -1,4 +1,6 @@
 import { Camera, type CameraView } from "expo-camera";
+import { File } from "expo-file-system";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { CameraGatewayExpo } from "../CameraGatewayExpo";
 
 jest.mock("expo-camera", () => ({
@@ -7,6 +9,29 @@ jest.mock("expo-camera", () => ({
     requestCameraPermissionsAsync: jest.fn(),
   },
 }));
+
+jest.mock("expo-file-system", () => {
+  const remover = jest.fn();
+  return { File: jest.fn(() => ({ delete: remover })), __remover: remover };
+});
+
+jest.mock("expo-image-manipulator", () => {
+  const salvar = jest.fn(async () => ({ uri: "file:///ajustada.jpg", width: 1080, height: 1920 }));
+  const contexto = {
+    crop: jest.fn(() => contexto),
+    resize: jest.fn(() => contexto),
+    renderAsync: jest.fn(async () => ({ saveAsync: salvar })),
+  };
+  return {
+    ImageManipulator: { manipulate: jest.fn(() => contexto) },
+    SaveFormat: { JPEG: "jpeg" },
+    __contexto: contexto,
+    __salvar: salvar,
+  };
+});
+
+const { __contexto: contexto, __salvar: salvar } = jest.requireMock("expo-image-manipulator");
+const { __remover: remover } = jest.requireMock("expo-file-system");
 
 const getPerm = Camera.getCameraPermissionsAsync as jest.Mock;
 const requestPerm = Camera.requestCameraPermissionsAsync as jest.Mock;
@@ -40,11 +65,41 @@ describe("CameraGatewayExpo", () => {
     expect(requestPerm).toHaveBeenCalledTimes(1);
   });
 
-  it("captura pela ref do <CameraView> e devolve só o que o domínio usa", async () => {
-    const view = viewFalsa({ uri: "file:///foto.jpg", width: 1080, height: 1440, base64: "xyz" });
-    const foto = await new CameraGatewayExpo(() => view, 0.7).capturar();
-    expect(foto).toEqual({ uri: "file:///foto.jpg", largura: 1080, altura: 1440 });
-    expect(view.takePictureAsync).toHaveBeenCalledWith({ quality: 0.7 });
+  it("captura sem perda e devolve só o que o domínio usa", async () => {
+    const view = viewFalsa({ uri: "file:///original.jpg", width: 3024, height: 4032, base64: "xyz" });
+    const foto = await new CameraGatewayExpo(() => view).capturar();
+    expect(view.takePictureAsync).toHaveBeenCalledWith({ quality: 1 });
+    expect(foto).toEqual({ uri: "file:///ajustada.jpg", largura: 1080, altura: 1920 });
+  });
+
+  it("recorta o 9:16 centralizado calculado pelo domínio", async () => {
+    const view = viewFalsa({ uri: "file:///original.jpg", width: 3024, height: 4032 });
+    await new CameraGatewayExpo(() => view).capturar();
+    expect(ImageManipulator.manipulate).toHaveBeenCalledWith("file:///original.jpg");
+    expect(contexto.crop).toHaveBeenCalledWith({ originX: 378, originY: 0, width: 2268, height: 4032 });
+  });
+
+  it("redimensiona pra 1080×1920 e salva em JPEG 92% uma única vez", async () => {
+    const view = viewFalsa({ uri: "file:///original.jpg", width: 3024, height: 4032 });
+    await new CameraGatewayExpo(() => view).capturar();
+    expect(contexto.resize).toHaveBeenCalledWith({ width: 1080, height: 1920 });
+    expect(salvar).toHaveBeenCalledTimes(1);
+    expect(salvar).toHaveBeenCalledWith({ format: SaveFormat.JPEG, compress: 0.92 });
+  });
+
+  it("apaga o original do cache depois do ajuste", async () => {
+    const view = viewFalsa({ uri: "file:///original.jpg", width: 3024, height: 4032 });
+    await new CameraGatewayExpo(() => view).capturar();
+    expect(File).toHaveBeenCalledWith("file:///original.jpg");
+    expect(remover).toHaveBeenCalledTimes(1);
+  });
+
+  it("falha ao apagar o original não derruba a captura", async () => {
+    remover.mockImplementationOnce(() => {
+      throw new Error("sem permissão");
+    });
+    const view = viewFalsa({ uri: "file:///original.jpg", width: 3024, height: 4032 });
+    await expect(new CameraGatewayExpo(() => view).capturar()).resolves.toMatchObject({ largura: 1080 });
   });
 
   it("câmera ainda não montada", async () => {

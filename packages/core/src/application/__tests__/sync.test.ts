@@ -7,6 +7,7 @@ import {
 } from "../use-cases/save-progress-photo";
 import {
   FakeConnectivity,
+  FakeLocation,
   FakeSyncGateway,
   FakeUploader,
   FixedClock,
@@ -326,5 +327,91 @@ describe("SaveProgressPhotoUseCase", () => {
       failed: 0,
     });
     expect(uploader.uploads).toBe(0);
+  });
+});
+
+describe("SaveProgressPhotoUseCase: onde a foto foi tirada", () => {
+  const ACADEMIA = { latitude: -23.5614, longitude: -46.6559, timestamp: 1 };
+
+  const deps = (location?: FakeLocation) => {
+    const photos = new InMemoryPhotos();
+    const useCase = new SaveProgressPhotoUseCase(
+      photos,
+      new FakeUploader(),
+      new FakeConnectivity(false),
+      new FixedClock(NOW),
+      new SequenceIds(),
+      location,
+    );
+    return { photos, useCase };
+  };
+
+  const salvar = (useCase: SaveProgressPhotoUseCase, askLocation = false) =>
+    useCase.execute({ userId: "user-1", localUri: "file:///photos/1.jpg", askLocation });
+
+  it("com permissão: grava latitude e longitude junto da foto", async () => {
+    const { photos, useCase } = deps(new FakeLocation("granted", ACADEMIA));
+
+    const photo = await salvar(useCase);
+
+    expect(photo.location).toEqual({ latitude: -23.5614, longitude: -46.6559 });
+    const [salva] = await photos.listByUser("user-1");
+    expect(salva!.location).toEqual({ latitude: -23.5614, longitude: -46.6559 });
+  });
+
+  it("com gesto do usuário: pede a permissão e grava se concedida", async () => {
+    const gps = new FakeLocation("undetermined", ACADEMIA, "granted");
+    const { useCase } = deps(gps);
+
+    const photo = await salvar(useCase, true);
+
+    expect(gps.requests).toBe(1);
+    expect(photo.location).not.toBeNull();
+  });
+
+  it("sem gesto do usuário: não abre o diálogo e salva sem posição", async () => {
+    const gps = new FakeLocation("undetermined", ACADEMIA, "granted");
+    const { useCase } = deps(gps);
+
+    const photo = await salvar(useCase);
+
+    expect(gps.requests).toBe(0);
+    expect(photo.location).toBeNull();
+  });
+
+  it("permissão negada: a foto é salva do mesmo jeito, sem posição", async () => {
+    const { photos, useCase } = deps(new FakeLocation("denied", ACADEMIA, "denied"));
+
+    const photo = await salvar(useCase, true);
+
+    expect(photo.location).toBeNull();
+    expect(await photos.pendingUpload()).toHaveLength(1);
+  });
+
+  it("GPS sem sinal: a foto é salva sem posição", async () => {
+    const { photos, useCase } = deps(new FakeLocation("granted", null));
+
+    const photo = await salvar(useCase);
+
+    expect(photo.location).toBeNull();
+    expect(await photos.pendingUpload()).toHaveLength(1);
+  });
+
+  it("módulo de localização estourando não impede salvar a foto", async () => {
+    const gps = new FakeLocation("granted", ACADEMIA);
+    gps.permission = async () => {
+      throw new Error("serviço de localização desligado");
+    };
+    const { useCase } = deps(gps);
+
+    const photo = await salvar(useCase);
+
+    expect(photo.location).toBeNull();
+  });
+
+  it("sem GPS ligado ao caso de uso: salva sem posição", async () => {
+    const { useCase } = deps();
+
+    expect((await salvar(useCase)).location).toBeNull();
   });
 });

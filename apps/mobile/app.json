@@ -52,7 +52,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "O Px GYM usa sua localização pra mostrar academias perto de você."
+          "locationWhenInUsePermission": "O Px GYM usa sua localização pra mostrar academias perto de você e registrar onde suas fotos de progresso foram tiradas — essa posição fica só no seu aparelho."
         }
       ],
       "@maplibre/maplibre-react-native"

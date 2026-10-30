@@ -34,6 +34,7 @@ export * from "./domain/services/week-activity";
 export * from "./domain/services/regra-geracao-pdf";
 export * from "./domain/services/regra-devolucao";
 export * from "./domain/services/sincronizacao";
+export * from "./domain/services/enquadramento-foto";
 
 export * from "./application/use-cases/register-set";
 export * from "./application/use-cases/unregister-set";

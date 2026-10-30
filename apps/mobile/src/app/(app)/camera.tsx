@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { CameraView } from "expo-camera";
 import type { PermissaoCamera } from "@px/core";
@@ -17,11 +17,13 @@ import { CameraGatewayExpo } from "@/adapters/gateways/CameraGatewayExpo";
  * Captura de foto de progresso. A tela só desenha o preview: permissão e
  * captura passam pelo CameraGateway (expo-camera embrulhado), então a
  * câmera fica atrás da interface do domínio. A foto é gravada no app e no
- * SQLite na hora (pending) — o upload acontece em background quando há rede.
+ * SQLite na hora (pending), com a posição do GPS quando houver permissão —
+ * o upload acontece em background quando há rede (a posição não sobe).
  */
 export default function CameraScreen() {
   const { sessao } = useAuth();
   const insets = useSafeAreaInsets();
+  const { width: larguraTela } = useWindowDimensions();
   const cameraRef = useRef<CameraView>(null);
   const camera = useMemo(() => new CameraGatewayExpo(() => cameraRef.current), []);
   const [permissao, setPermissao] = useState<PermissaoCamera | null>(null);
@@ -79,6 +81,8 @@ export default function CameraScreen() {
       await saveProgressPhotoUseCase.execute({
         userId: sessao.usuario.id,
         localUri,
+        // o disparo é um gesto do usuário: pode pedir a permissão de GPS
+        askLocation: true,
       });
       router.back();
     } finally {
@@ -88,7 +92,26 @@ export default function CameraScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      <CameraView ref={cameraRef} facing={facing} style={{ flex: 1 }} />
+      {/*
+        Preview na proporção do sensor (3:4 em pé), pra mostrar a foto
+        inteira; as faixas escuras nas laterais são o que o recorte 9:16 tira.
+      */}
+      <View className="flex-1 justify-center">
+        <View style={{ width: larguraTela, height: (larguraTela * 4) / 3 }}>
+          <CameraView ref={cameraRef} facing={facing} style={{ flex: 1 }} />
+          <View
+            pointerEvents="none"
+            className="absolute inset-0 flex-row"
+          >
+            <View className="flex-1 bg-black/60" />
+            <View
+              className="h-full border border-white/40"
+              style={{ aspectRatio: 9 / 16 }}
+            />
+            <View className="flex-1 bg-black/60" />
+          </View>
+        </View>
+      </View>
 
       {/* controles sobre o preview */}
       <View
