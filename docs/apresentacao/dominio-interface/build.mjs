@@ -185,8 +185,7 @@ function compile(text) {
 
 // ---------- montagem ----------
 const font = (...p) => readFileSync(join(root, 'node_modules', 'geist', 'dist', 'fonts', ...p)).toString('base64');
-const head = readFileSync(join(here, '..', '_part1.html'), 'utf8')
-  .replace(/<title>[\s\S]*?<\/title>/, '<title>Px GYM — Domínio e Interface Primeiro</title>')
+const baseHead = readFileSync(join(here, '..', '_part1.html'), 'utf8')
   .replace('</style>', readFileSync(join(here, '_extra.css'), 'utf8') + '\n</style>')
   .replace('__GEIST_SANS__', font('geist-sans', 'Geist-Variable.woff2'))
   .replace('__GEIST_MONO__', font('geist-mono', 'GeistMono-Variable.woff2'));
@@ -195,8 +194,13 @@ let tail = readFileSync(join(here, '_tail.html'), 'utf8');
 if (flag('--audit')) tail = tail.replace('</body>', `<script>${readFileSync(join(here, '_audit.js'), 'utf8')}</script>
 </body>`);
 
-// Dois decks: resumo/ (o que se apresenta) e completo/ (tudo, para consulta).
-const SETS = { resumo: 'apresentacao-dominio-interface.html', completo: 'apresentacao-dominio-interface-completa.html' };
+// Decks: resumo/ (o que se apresenta), completo/ (tudo, para consulta) e
+// camera-gps/ (câmera e geolocalização salvando os dados).
+const SETS = {
+  resumo: { arquivo: 'apresentacao-dominio-interface.html', titulo: 'Px GYM — Domínio e Interface Primeiro' },
+  completo: { arquivo: 'apresentacao-dominio-interface-completa.html', titulo: 'Px GYM — Domínio e Interface Primeiro' },
+  'camera-gps': { arquivo: 'apresentacao-camera-gps.html', titulo: 'PX Gym — Câmera e Geolocalização', rodape: 'PX Gym &nbsp;·&nbsp; Câmera e Geolocalização' },
+};
 const only = typeof flag('--set') === 'string' ? [flag('--set')] : Object.keys(SETS);
 for (const set of only) {
   currentSlide = 0;
@@ -204,10 +208,12 @@ for (const set of only) {
   const dir = join(here, set);
   const slides = readdirSync(dir).filter((f) => f.endsWith('.slides')).sort()
     .map((f) => compile(readFileSync(join(dir, f), 'utf8'))).join('\n\n');
+  const head = baseHead.replace(/<title>[\s\S]*?<\/title>/, `<title>${SETS[set].titulo}</title>`);
+  const rodape = SETS[set].rodape ?? 'Px GYM &nbsp;·&nbsp; Domínio e Interface Primeiro';
   const html = `${head}
 ${slides}
-${tail}`;
-  const out = typeof flag('--out') === 'string' ? flag('--out') : join(here, '..', SETS[set]);
+${tail.replace('Px GYM &nbsp;·&nbsp; Domínio e Interface Primeiro', rodape)}`;
+  const out = typeof flag('--out') === 'string' ? flag('--out') : join(here, '..', SETS[set].arquivo);
   writeFileSync(out, html, 'utf8');
   console.log(`${set}: ${html.match(/<section class="slide/g).length} slides · ${report.length - before} trechos de código · ${(statSync(out).size / 1024).toFixed(0)} KB`);
 }
