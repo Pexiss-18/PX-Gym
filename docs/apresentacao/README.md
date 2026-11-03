@@ -1,12 +1,14 @@
 # Apresentações — Px GYM
 
-Dois decks no mesmo design, cada um em arquivo único e sem internet:
+Três decks no mesmo design, cada um em arquivo único e sem internet:
 
 | Arquivo | Conteúdo |
 |---|---|
 | `apresentacao-px-gym.html` | Proposta de especificação e arquitetura (32 slides) |
 | `apresentacao-dominio-interface.html` | Fase “Domínio e Interface Primeiro”, 100% mock: **o deck que se apresenta** (27 slides, com referência de código) |
 | `apresentacao-dominio-interface-completa.html` | A mesma fase em detalhe, para consulta e perguntas (87 slides, 105 trechos de código) |
+| `apresentacao-camera-gps.html` | Câmera e Geolocalização salvando os dados: o roteiro de 10 minutos (23 slides, 18 trechos de código) |
+| `roteiro-camera-gps.html` | O que falar em cada slide do deck de câmera e GPS, com tempos, divisão entre Assis e Paulo e perguntas prováveis. Para PDF: Cmd+P. Regerar: `node docs/apresentacao/dominio-interface/roteiro/camera-gps.mjs` |
 
 ## Deck da proposta
 

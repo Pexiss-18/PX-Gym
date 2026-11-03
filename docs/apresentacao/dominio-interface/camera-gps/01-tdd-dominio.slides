@@ -1,0 +1,150 @@
+=== 3 · Estratégia de TDD
+# Como foi feito: um substituto para cada camada
+> Câmera e GPS não existem no computador onde os testes rodam. Por isso cada camada é testada com um substituto diferente, e o hardware de verdade só entra no celular.
+<div class="panel flush">
+  <table class="t">
+    <colgroup><col style="width:22%"><col style="width:30%"><col></colgroup>
+    <thead><tr><th>Camada testada</th><th>O que substitui o hardware</th><th>Exemplo no projeto</th></tr></thead>
+    <tbody>
+      <tr><td>Domínio e casos de uso</td><td class="m">fakes escritos à mão</td><td class="m"><code>new FakeLocation("denied", ...)</code> finge um GPS com a permissão negada</td></tr>
+      <tr><td>Adaptadores do Expo</td><td class="m"><code>jest.mock</code> das bibliotecas do Expo</td><td class="m">o expo-camera "devolve" uma foto 3024×4032 e o teste confere o corte pedido</td></tr>
+      <tr><td>Banco de dados</td><td class="m">SQLite de verdade, em memória</td><td class="m">as mesmas migrações que o app aplica no celular, rodando no Node</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="panel" style="margin-top:16px">
+  <ul class="marks">
+    <li><b>Vermelho:</b> <span>primeiro o teste que descreve a regra. Ele falha, porque o código ainda não existe.</span></li>
+    <li><b>Verde:</b> <span>depois, o código mínimo para o teste passar.</span></li>
+    <li><b>Refatorar:</b> <span>por fim, a limpeza, com os testes garantindo que nada quebrou.</span></li>
+  </ul>
+</div>
+@refs core/testing/fakes.ts :: export class FakeLocation :: fake do GPS ;; mobile/adapters/gateways/__tests__/CameraGatewayExpo.test.ts :: jest.mock("expo-image-manipulator" :: Expo simulado ;; mobile/db/__tests__/sqlite-test-db.ts :: export function createTestDb :: SQLite em memória
+
+=== 3 · Estratégia de TDD
+# Nossos testes garantem que
+> Cada item abaixo é um teste automatizado que roda em segundos, sem celular.
+<div class="panel">
+  <ul class="checks">
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Toda foto sai em 9:16, 1080×1920 e 92%, com o recorte no centro</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>A posição é gravada junto com a foto quando há permissão</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>A câmera captura sem perda e comprime uma única vez</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Sem permissão, sem sinal ou com erro no GPS, a foto é salva</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>O original de tamanho cheio é apagado do cache</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>O pedido de permissão só aparece depois de um gesto da pessoa</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Coordenada absurda do sensor não entra no domínio</li>
+    <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>O SQLite guarda e devolve a latitude e a longitude</li>
+  </ul>
+</div>
+<dl class="strip five" style="margin-top:16px">
+  <div><dt>Câmera e GPS</dt><dd><span class="num">65</span>testes no total</dd></div>
+  <div><dt>Formato 9:16</dt><dd><span class="num">7</span>testes da regra</dd></div>
+  <div><dt>Adaptador da câmera</dt><dd><span class="num">11</span>testes</dd></div>
+  <div><dt>GPS</dt><dd><span class="num">30</span>adaptador, academias e foto</dd></div>
+  <div><dt>Projeto inteiro</dt><dd><span class="num">425</span>todos passando</dd></div>
+</dl>
+
+=== 4 · Domínio e interfaces
+# A interface da câmera: CameraGateway
+> O domínio diz o que precisa da câmera, com os nomes e os tipos do negócio. Ele não sabe que o Expo existe.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/contracts/ciclo.ts :: export type FotoCapturada = { :: +14 :: capturar(): Promise<FotoCapturada>; :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Três operações:</b> <span>consultar a permissão, pedir a permissão e capturar.</span></li>
+      <li><b>A foto volta enxuta:</b> <span>só o endereço do arquivo, a largura e a altura. Nada de tipos do Expo.</span></li>
+      <li><b>Permissão em português,</b> <span>com três estados. "Bloqueada" quer dizer que só as configurações do celular resolvem.</span></li>
+      <li><b>Quem implementa:</b> <span>o <code>CameraGatewayExpo</code> no app e um fake nos testes.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 4 · Domínio e interfaces
+# A interface do GPS: LocationGateway
+> O mesmo princípio para a localização: o contrato fala de permissão e de posição, não de expo-location.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/contracts/index.ts :: export type LocationPermission = :: +15 :: currentPosition(): Promise<GeoPoint>; :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Consultar não incomoda:</b> <span><code>permission()</code> só lê o estado, sem abrir diálogo.</span></li>
+      <li><b>Pedir só com gesto:</b> <span><code>requestPermission()</code> abre o diálogo do sistema, e só é chamado depois de um toque.</span></li>
+      <li><b>Erro do domínio:</b> <span>sem sinal, <code>currentPosition()</code> lança <code>LocationUnavailableError</code>.</span></li>
+      <li><b>Quem implementa:</b> <span>o <code>LocationGatewayExpo</code> no app e o <code>FakeLocation</code> nos testes.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 4 · Domínio e interfaces
+# A regra do formato da foto
+> A decisão "toda foto de progresso é 9:16, 1080×1920, JPEG 92%" mora no domínio, em TypeScript puro. O adaptador da câmera só executa o que esta regra calcula.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/services/enquadramento-foto.ts :: export const FORMATO_FOTO_PROGRESSO :: +5 :: largura: 1080, ;; altura: 1920, ;; qualidade: 0.92, :: small}}{{code core/domain/services/enquadramento-foto.ts :: export function recorteRetrato :: +12 :: if (largura / altura > RETRATO) { :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Por que 9:16:</b> <span>é o formato do Story do Instagram e combina com foto de corpo inteiro com o celular em pé.</span></li>
+      <li><b>O recorte:</b> <span>a câmera tira em 4:3, então sobra imagem nas laterais. Numa foto de 12 MP, de 3024×4032 sobra 2268×4032, sempre no centro.</span></li>
+      <li><b>Tamanho do arquivo:</b> <span>em 1080×1920 com 92%, cerca de 300 a 500 KB, contra 2,5 a 3,5 MB da foto original.</span></li>
+      <li><b>Entrada inválida:</b> <span>largura ou altura zero, negativa ou NaN lança <code>InvalidValueError</code>.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 4 · Domínio e interfaces
+# A coordenada validada: GeoPoint
+> Toda posição que vem do sensor passa por aqui antes de entrar no domínio. Se o valor for absurdo, ele é barrado.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/value-objects/geo.ts :: export function geoPoint( :: +15 :: throw new InvalidValueError :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Value object:</b> <span>um valor sem identidade própria, validado na criação.</span></li>
+      <li><b>As faixas:</b> <span>latitude entre −90 e 90, longitude entre −180 e 180, e sempre um número finito.</span></li>
+      <li><b>Onde é usado:</b> <span>o adaptador do GPS cria todo <code>GeoPoint</code> por esta função, e o caso de uso das academias calcula distâncias a partir dele.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 4 · Domínio e interfaces
+# A entidade: ProgressPhoto com a posição
+> A foto de progresso guarda onde foi tirada. A posição é opcional, porque a pessoa pode negar a permissão ou o GPS pode estar sem sinal.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/entities/progress-photo.ts :: export type PhotoLocation :: syncStatus: UploadSyncStatus; :: location: PhotoLocation | null; ;; export type PhotoLocation :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>localUri:</b> <span>o arquivo no celular. Sempre existe, porque a foto é salva localmente antes de tudo.</span></li>
+      <li><b>remotePath:</b> <span>o caminho na nuvem, vazio até o envio.</span></li>
+      <li><b>location:</b> <span>latitude e longitude, ou <code>null</code> quando não deu para pegar a posição.</span></li>
+      <li><b>syncStatus:</b> <span><code>pending</code> até subir e <code>synced</code> depois.</span></li>
+      <li><b>Privacidade:</b> <span>a posição fica só no celular, para não expor onde a pessoa mora ou treina.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 5 · TDD na prática
+# Vermelho: o teste vem antes do código
+> As regras começaram como testes. Quando eles rodaram pela primeira vez, o código que eles pediam ainda não existia, e por isso falharam.
+<div class="cols c46">
+  <div class="panel flush">{{code core/domain/__tests__/enquadramento-foto.test.ts :: it("foto 4:3 em pé (12 MP) :: +8 :: x: 378, ;; largura: 2268, :: small}}{{code core/application/__tests__/sync.test.ts :: it("com permissão: grava latitude e longitude :: +9 :: expect(photo.location) :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>O teste fala a língua do negócio:</b> <span>"foto 4:3 em pé", "com permissão grava a posição". O nome do teste é a regra.</span></li>
+      <li><b>A falha da primeira rodada:</b> <span>o TypeScript recusou os testes da posição com o erro <i>"Property 'location' does not exist on type 'ProgressPhoto'"</i>. Esse é o vermelho.</span></li>
+      <li><b>Os outros casos de falha</b> <span>viraram testes do mesmo jeito: permissão negada, GPS sem sinal, serviço com erro e pedido sem gesto.</span></li>
+    </ul>
+  </div>
+</div>
+@refs core/application/__tests__/sync.test.ts :: it("permissão negada: a foto é salva :: permissão negada ;; core/application/__tests__/sync.test.ts :: it("GPS sem sinal: a foto é salva :: sem sinal ;; core/domain/__tests__/enquadramento-foto.test.ts :: it("dimensão inválida vinda da câmera :: entrada inválida
+
+=== 5 · TDD na prática
+# Verde: o código mínimo que faz o teste passar
+> O caso de uso pega a posição pelo LocationGateway, sem saber se do outro lado está o GPS do celular ou o fake do teste.
+<div class="cols c46">
+  <div class="panel flush">{{code core/application/use-cases/save-progress-photo.ts :: private async whereTaken(ask: boolean) :: +15 :: if (permission !== "granted") return null; ;; } catch { :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Nunca lança erro:</b> <span>qualquer falha do GPS vira <code>null</code>, e a foto segue para o banco. O teste "módulo de localização estourando" é o que exigiu o <code>try/catch</code>.</span></li>
+      <li><b>Só pede com gesto:</b> <span>o parâmetro <code>ask</code> vem da tela; sem ele, o diálogo nunca abre.</span></li>
+      <li><b>Resultado:</b> <span>os 7 testes novos passaram, e os 288 que já existiam no core continuaram passando.</span></li>
+    </ul>
+  </div>
+</div>
+@refs core/testing/fakes.ts :: export class FakeLocation :: o fake usado no teste ;; core/application/use-cases/save-progress-photo.ts :: location: await this.whereTaken :: onde a posição entra na foto

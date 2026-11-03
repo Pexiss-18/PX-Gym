@@ -1,0 +1,127 @@
+@@raw
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.73 0.014 264 / 80%)"/></marker>
+  <marker id="arwv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.87 0.23 126 / 85%)"/></marker>
+</defs></svg>
+
+<section class="slide cover" data-sec="Capa">
+  <div class="mark">
+    <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="oklch(0.2 0.008 264)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg></span>
+    <span class="wm">PX Gym</span>
+  </div>
+  <div class="head" style="margin:0">
+    <h1 class="two">Câmera e Geolocalização salvando os dados</h1>
+    <div class="rule"></div>
+    <p class="kicker">Como a foto de progresso é <b>capturada, ajustada para 9:16</b> e gravada no <b>SQLite do celular</b> junto com a <b>posição do GPS</b>, com Clean Architecture, DDD e testes escritos antes do código.</p>
+  </div>
+  <div class="who">
+    <b>Assis Damasceno</b><em>·</em><b>Paulo Rogério</b><em>·</em><span class="mono">2026</span>
+  </div>
+</section>
+
+<section class="slide" data-sec="Agenda">
+  <div class="head tight">
+    <h1>Agenda</h1>
+    <p class="sub">Os sete pontos do roteiro, em dez minutos. Cada slide mostra o arquivo e a linha do código que comprova o que está escrito.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <nav class="agenda">
+      <a data-go="1 · Abertura"><span class="n">01</span><span class="l">Abertura e contextualização<small>o problema e a solução</small></span></a>
+      <a data-go="5 · TDD na prática"><span class="n">05</span><span class="l">O teste: TDD na prática<small>vermelho, verde e refatorar no código real</small></span></a>
+      <a data-go="2 · Arquitetura"><span class="n">02</span><span class="l">Clean Architecture e DDD<small>onde aparecem a câmera e o GPS</small></span></a>
+      <a data-go="6 · Adaptadores Expo"><span class="n">06</span><span class="l">A infraestrutura: os adaptadores<small>expo-camera, expo-image-manipulator, expo-location</small></span></a>
+      <a data-go="3 · Estratégia de TDD"><span class="n">03</span><span class="l">A estratégia de TDD<small>como testamos câmera e geolocalização</small></span></a>
+      <a data-go="7 · Banco local"><span class="n">07</span><span class="l">Salvando no banco local do celular<small>arquivo da foto, SQLite e migração</small></span></a>
+      <a data-go="4 · Domínio e interfaces"><span class="n">04</span><span class="l">O domínio e as interfaces<small>os contratos que o Expo precisa cumprir</small></span></a>
+      <a data-go="Fechamento"><span class="n">✓</span><span class="l">Fechamento<small>o que foi entregue</small></span></a>
+    </nav>
+  </div></div>
+</section>
+@@end
+
+=== 1 · Abertura
+# O problema e a solução
+> O PX Gym é um app de musculação que junta evolução corporal, progressão de carga e metas de nutrição. A câmera registra as fotos de progresso e o GPS registra onde cada foto foi tirada e encontra academias por perto.
+<div class="cols two">
+  <div class="panel">
+    <h3 style="margin:0 0 10px">O problema</h3>
+    <ul class="marks">
+      <li><b>Fotos de evolução ficam soltas</b> <span>na galeria do celular, misturadas com o resto e sem nenhum padrão.</span></li>
+      <li><b>Cada foto tem um tamanho e um enquadramento</b> <span>e isso torna difícil comparar o antes e o depois.</span></li>
+      <li><b>Não fica registrado onde nem quando</b> <span>a foto foi tirada, então não dá para saber em que contexto ela foi feita.</span></li>
+      <li><b>Na academia a internet costuma falhar</b> <span>e um app que depende dela perde o registro.</span></li>
+    </ul>
+  </div>
+  <div class="panel">
+    <h3 style="margin:0 0 10px">A solução</h3>
+    <ul class="marks">
+      <li><b>A foto é tirada dentro do app</b> <span>com uma moldura que mostra exatamente o que vai ficar salvo.</span></li>
+      <li><b>Todas as fotos seguem o mesmo padrão:</b> <span>retrato 9:16, 1080×1920 pixels, JPEG com qualidade 92% (cerca de 300 a 500 KB).</span></li>
+      <li><b>A posição do GPS vai junto com a foto</b> <span>e fica só no celular, sem ir para a nuvem.</span></li>
+      <li><b>Tudo é salvo no SQLite do celular na hora,</b> <span>mesmo sem internet. A imagem sobe para a nuvem depois, quando houver conexão.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 1 · Abertura
+# O caminho de uma foto, do toque até o banco
+> Tudo o que acontece quando a pessoa aperta o botão da câmera. Os próximos slides explicam cada etapa e mostram o código de cada uma.
+<div class="flow">
+  <div class="st"><h3>1. Toque</h3><p>A tela chama o caso de uso. Ela não fala com o hardware.</p><span class="mono">camera.tsx</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st on"><h3>2. Câmera</h3><p>Captura sem perda, recorta em 9:16, reduz para 1080×1920 e salva em JPEG 92%.</p><span class="mono">CameraGatewayExpo</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>3. Arquivo</h3><p>A foto sai do cache temporário e vai para a pasta permanente do app.</p><span class="mono">persistCapture</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st on"><h3>4. GPS</h3><p>Com permissão, o caso de uso pega a latitude e a longitude. Sem permissão, segue sem elas.</p><span class="mono">LocationGatewayExpo</span></div>
+  <div class="ar"><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.73 0.014 264)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
+  <div class="st"><h3>5. SQLite</h3><p>Uma linha na tabela progress_photos com caminho, data, posição e status pending.</p><span class="mono">progress_photos</span></div>
+</div>
+<div class="panel" style="margin-top:18px">
+  <ul class="marks tiny">
+    <li><b>Depois, com internet:</b> <span>a imagem sobe para o Supabase e o status passa de <code>pending</code> para <code>synced</code>. A posição não vai junto.</span></li>
+    <li><b>Se algo falhar no GPS</b> <span>(sem permissão, sem sinal ou serviço desligado), a foto é salva do mesmo jeito. A foto é o principal; a posição é um extra.</span></li>
+  </ul>
+</div>
+@refs mobile/app/(app)/camera.tsx :: async function capture() :: o toque ;; mobile/lib/photos.ts :: export function persistCapture :: o arquivo ;; core/application/use-cases/save-progress-photo.ts :: async execute(input :: o caso de uso
+
+=== 2 · Arquitetura
+# Clean Architecture: quatro camadas, uma direção
+> Cada camada só conhece a que está à sua direita. O domínio não importa nada de fora: zero arquivos do core importam React, Expo, Supabase ou Drizzle.
+<div class="layers">
+  <div class="ly"><h3>Telas e rotas</h3><p class="where">mobile/app/</p><ul><li><b>Desenham</b> o preview e o botão</li><li>Chamam o caso de uso</li><li>Não decidem nenhuma regra</li></ul></div>
+  <div class="ly"><h3>Adaptadores</h3><p class="where">mobile/adapters/ · mobile/db/</p><ul><li><b>Falam com o Expo</b> e com o SQLite</li><li>Implementam as interfaces do domínio</li><li>Traduzem o formato do Expo</li></ul></div>
+  <div class="ly"><h3>Aplicação</h3><p class="where">core/application/</p><ul><li><b>Casos de uso</b> que orquestram</li><li>Salvar foto, buscar academias</li><li>Só enxergam interfaces</li></ul></div>
+  <div class="ly"><h3>Domínio</h3><p class="where">core/domain/</p><ul><li><b>Regras:</b> formato 9:16, coordenada válida</li><li>Entidade ProgressPhoto</li><li>Declara as interfaces</li></ul></div>
+</div>
+<div class="panel" style="margin-top:18px">
+  <ul class="marks tiny">
+    <li><b>Como ler as referências:</b> <span><code>core/</code> é <code>packages/core/src/</code> e <code>mobile/</code> é <code>apps/mobile/src/</code>. O número em verde é a linha do arquivo.</span></li>
+    <li><b>Por que isso importa:</b> <span>como o domínio não conhece o Expo, as regras da câmera e do GPS são testadas em Node puro, sem celular e sem emulador.</span></li>
+    <li><b>Um único lugar junta as peças concretas:</b> <span>o composition root em <code>lib/photos.ts</code>, que entrega o adaptador do Expo ao caso de uso.</span></li>
+  </ul>
+</div>
+@refs core/domain/contracts/ciclo.ts :: export interface CameraGateway :: interface da câmera ;; core/domain/contracts/index.ts :: export interface LocationGateway :: interface do GPS ;; mobile/lib/photos.ts :: export const saveProgressPhotoUseCase :: composition root
+
+=== 2 · Arquitetura :: tight
+# Onde aparecem a câmera e a geolocalização
+> A mesma funcionalidade atravessa as quatro camadas. No DDD, cada peça tem um papel e um nome do negócio.
+<div class="panel flush">
+  <table class="t compact">
+    <colgroup><col style="width:17%"><col style="width:20%"><col><col style="width:27%"></colgroup>
+    <thead><tr><th>Camada</th><th>Peça (papel no DDD)</th><th>O que faz</th><th>Arquivo</th></tr></thead>
+    <tbody>
+      <tr><td>Domínio</td><td class="m">ProgressPhoto (entidade)</td><td class="m">A foto, com data, status de envio e posição</td><td>{{rs core/domain/entities/progress-photo.ts :: export class ProgressPhoto}}</td></tr>
+      <tr><td>Domínio</td><td class="m">GeoPoint (value object)</td><td class="m">Coordenada validada (latitude e longitude na faixa)</td><td>{{rs core/domain/value-objects/geo.ts :: export function geoPoint(}}</td></tr>
+      <tr><td>Domínio</td><td class="m">Enquadramento (serviço)</td><td class="m">Formato 9:16, 1080×1920, 92%, recorte centralizado</td><td>{{rs core/domain/services/enquadramento-foto.ts :: export function recorteRetrato}}</td></tr>
+      <tr><td>Domínio</td><td class="m">CameraGateway, LocationGateway (portas)</td><td class="m">O que o domínio precisa do hardware, sem dizer como</td><td>{{rs core/domain/contracts/ciclo.ts :: export interface CameraGateway}} {{rs core/domain/contracts/index.ts :: export interface LocationGateway}}</td></tr>
+      <tr><td>Aplicação</td><td class="m">SaveProgressPhotoUseCase</td><td class="m">Cria a foto, pega a posição, grava e tenta o envio</td><td>{{rs core/application/use-cases/save-progress-photo.ts :: export class SaveProgressPhotoUseCase}}</td></tr>
+      <tr><td>Aplicação</td><td class="m">FindNearbyGymsUseCase</td><td class="m">Lista as academias perto, da mais próxima à mais longe</td><td>{{rs core/application/use-cases/find-nearby-gyms.ts :: export class FindNearbyGymsUseCase}}</td></tr>
+      <tr><td>Adaptadores</td><td class="m">CameraGatewayExpo, LocationGatewayExpo</td><td class="m">Implementam as portas com as APIs do Expo</td><td>{{rs mobile/adapters/gateways/CameraGatewayExpo.ts :: export class CameraGatewayExpo}} {{rs mobile/adapters/gateways/LocationGatewayExpo.ts :: export class LocationGatewayExpo}}</td></tr>
+      <tr><td>Adaptadores</td><td class="m">DrizzleProgressPhotoRepository</td><td class="m">Repositório de fotos sobre o SQLite do celular</td><td>{{rs mobile/db/progress-photo-repository.ts :: export class DrizzleProgressPhotoRepository}}</td></tr>
+      <tr><td>Telas</td><td class="m">Tela da câmera</td><td class="m">Preview com moldura 9:16; chama o caso de uso</td><td>{{rs mobile/app/(app)/camera.tsx :: export default function CameraScreen}}</td></tr>
+    </tbody>
+  </table>
+</div>

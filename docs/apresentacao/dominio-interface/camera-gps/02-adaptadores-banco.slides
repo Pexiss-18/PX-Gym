@@ -1,0 +1,134 @@
+=== 6 · Adaptadores Expo
+# O adaptador da câmera: expo-camera e expo-image-manipulator
+> Implementa o CameraGateway com as APIs atuais do Expo SDK 57. É aqui, e só aqui, que a foto é capturada, recortada, reduzida e comprimida.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/adapters/gateways/CameraGatewayExpo.ts :: async capturar(): Promise<FotoCapturada> { :: return { uri: ajustada.uri :: quality: 1 ;; recorteRetrato( ;; .resize( ;; compress: this.formato.qualidade, :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>1. Sem perda:</b> <span><code>quality: 1</code> na captura, para não comprimir duas vezes.</span></li>
+      <li><b>2. Recorte do domínio:</b> <span>o adaptador chama <code>recorteRetrato</code>; ele não decide o enquadramento.</span></li>
+      <li><b>3. API nova:</b> <span><code>manipulate</code>, <code>crop</code>, <code>resize</code>, <code>renderAsync</code> e <code>saveAsync</code>, encadeados. O antigo <code>manipulateAsync</code> está obsoleto.</span></li>
+      <li><b>4. Uma compressão:</b> <span>JPEG com 92%, a qualidade do formato.</span></li>
+      <li><b>5. Limpeza:</b> <span>o original é apagado do cache.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 6 · Adaptadores Expo
+# O adaptador do GPS: expo-location
+> Implementa o LocationGateway. Pede localização só em primeiro plano, com precisão balanceada e uma posição de cada vez, sem rastrear a pessoa.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/adapters/gateways/LocationGatewayExpo.ts :: async currentPosition(): Promise<GeoPoint> { :: +18 :: getLastKnownPositionAsync ;; return geoPoint( :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Plano B embutido:</b> <span>dentro da academia, ou com o GPS frio, a posição nova pode não sair. Então o adaptador usa a última posição conhecida.</span></li>
+      <li><b>Erro do domínio, não do Expo:</b> <span>sem nenhuma posição, ele lança <code>LocationUnavailableError</code>.</span></li>
+      <li><b>Validação na entrada:</b> <span>a coordenada passa por <code>geoPoint</code>, então um valor absurdo do sensor é barrado aqui.</span></li>
+    </ul>
+  </div>
+</div>
+@refs mobile/adapters/gateways/__tests__/LocationGatewayExpo.test.ts :: cai pra última posição conhecida :: teste do plano B ;; mobile/adapters/gateways/__tests__/LocationGatewayExpo.test.ts :: coordenada absurda do sensor :: teste da validação
+
+=== 6 · Adaptadores Expo :: tight
+# A infraestrutura se adequa ao domínio, e não o contrário
+> O Expo entrega os dados no formato dele. O adaptador traduz tudo para o formato que o domínio definiu, e nada do Expo passa para dentro.
+<div class="panel flush">
+  <table class="t">
+    <colgroup><col style="width:31%"><col style="width:31%"><col></colgroup>
+    <thead><tr><th>O Expo entrega</th><th>O domínio recebe</th><th>Onde a tradução acontece</th></tr></thead>
+    <tbody>
+      <tr><td class="m">permissão da câmera: <code>granted</code>, <code>canAskAgain</code></td><td class="m"><code>concedida</code>, <code>negada</code> ou <code>bloqueada</code></td><td>{{rs mobile/adapters/gateways/CameraGatewayExpo.ts :: function traduzir(}}</td></tr>
+      <tr><td class="m">foto 4:3 com <code>uri</code>, <code>width</code>, <code>height</code>, <code>exif</code></td><td class="m"><code>{ uri, largura, altura }</code> já em 1080×1920</td><td>{{rs mobile/adapters/gateways/CameraGatewayExpo.ts :: return { uri: ajustada.uri}}</td></tr>
+      <tr><td class="m">permissão do GPS: <code>granted</code>, <code>status</code></td><td class="m"><code>granted</code>, <code>undetermined</code>, <code>denied</code> ou <code>blocked</code></td><td>{{rs mobile/adapters/gateways/LocationGatewayExpo.ts :: function toPermission(}}</td></tr>
+      <tr><td class="m"><code>LocationObject</code> com <code>coords</code></td><td class="m"><code>GeoPoint</code> validado</td><td>{{rs mobile/adapters/gateways/LocationGatewayExpo.ts :: return geoPoint(}}</td></tr>
+      <tr><td class="m">exceção do SDK, GPS sem sinal</td><td class="m"><code>LocationUnavailableError</code></td><td>{{rs mobile/adapters/gateways/LocationGatewayExpo.ts :: throw new LocationUnavailableError}}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+=== 6 · Adaptadores Expo
+# Composition root: onde as peças se encontram
+> Um único arquivo conhece as classes concretas. É aqui que o caso de uso recebe o repositório SQLite, o envio para o Supabase e o GPS real do Expo.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/lib/photos.ts :: export const saveProgressPhotoUseCase :: +8 :: new LocationGatewayExpo(), ;; progressPhotoRepository, :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>No app:</b> <span>o caso de uso recebe o <code>LocationGatewayExpo</code>.</span></li>
+      <li><b>No teste:</b> <span>o mesmo caso de uso recebe o <code>FakeLocation</code>.</span></li>
+      <li><b>Trocar a infraestrutura é trocar uma linha:</b> <span>domínio, caso de uso e testes não mudam.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 7 · Banco local
+# Salvando a foto: do cache para a pasta do app
+> A câmera entrega a foto numa pasta temporária, que o sistema pode limpar a qualquer momento. Por isso o arquivo é movido para a pasta permanente do app antes de ir para o banco.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/app/(app)/camera.tsx :: async function capture() :: +12 :: askLocation: true, :: small}}{{code mobile/lib/photos.ts :: export function persistCapture :: +7 :: new File(cacheUri).move(dest); :: small}}</div>
+  <div class="panel flush">
+    <table class="t compact">
+      <colgroup><col style="width:36%"><col></colgroup>
+      <thead><tr><th>Etapa</th><th>Onde fica a foto</th></tr></thead>
+      <tbody>
+        <tr><td>Captura</td><td class="m">cache, original 4:3</td></tr>
+        <tr><td>Ajuste</td><td class="m">cache, já em 9:16 e 92%</td></tr>
+        <tr><td>Arquivo</td><td class="m">pasta do app: <code>progress-photos/</code>, nome em UUID</td></tr>
+        <tr><td>Banco</td><td class="m">a linha no SQLite aponta para o arquivo</td></tr>
+        <tr><td>Nuvem</td><td class="m">bucket do Supabase, quando houver internet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+=== 7 · Banco local
+# A tabela progress_photos e a migração
+> A foto e a posição ficam numa única linha do SQLite do celular, com Drizzle ORM sobre o expo-sqlite. As colunas de posição entraram por uma migração.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/db/schema.ts :: export const progressPhotos = sqliteTable( :: +17 :: latitude: real("latitude"), ;; longitude: real("longitude"), :: small}}{{code raiz/apps/mobile/drizzle/0002_photo_location.sql :: ALTER TABLE :: +2 ::  :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Uma linha por foto:</b> <span>id, usuário, caminho do arquivo, data, posição e status de envio.</span></li>
+      <li><b>Migração gerada pelo Drizzle:</b> <span>só adiciona as duas colunas. As fotos antigas continuam válidas e ficam sem posição.</span></li>
+      <li><b>Aplicada no boot:</b> <span>o app roda as migrações ao abrir, e os testes usam as mesmas.</span></li>
+    </ul>
+  </div>
+</div>
+
+=== 7 · Banco local
+# O repositório: da entidade para a linha, e de volta
+> O DrizzleProgressPhotoRepository implementa o repositório do domínio sobre o SQLite. Ele transforma a entidade em linha ao salvar, e a linha em entidade ao ler.
+<div class="cols c46">
+  <div class="panel flush">{{code mobile/db/progress-photo-repository.ts :: async save(photo: ProgressPhoto) :: +12 :: latitude: photo.location?.latitude ?? null, ;; longitude: photo.location?.longitude ?? null, :: small}}{{code mobile/db/progress-photo-repository.ts :: location: :: +4 ::  :: small}}</div>
+  <div class="panel">
+    <ul class="marks tiny">
+      <li><b>Sem posição vira NULL</b> <span>no banco, e NULL volta como <code>null</code> na entidade.</span></li>
+      <li><b>Testado com SQLite de verdade:</b> <span>o teste grava uma foto com posição e lê de volta a mesma latitude e longitude.</span></li>
+      <li><b>Funciona sem internet:</b> <span>a linha nasce <code>pending</code>; a imagem sobe depois e a linha passa a <code>synced</code>. A posição nunca é enviada.</span></li>
+    </ul>
+  </div>
+</div>
+@refs mobile/db/__tests__/progress-photo-repository.test.ts :: guarda e devolve a posição :: teste no SQLite ;; mobile/lib/photos.ts :: A posição da foto (latitude/longitude) não vai junto :: a posição não sobe
+
+@@raw
+<section class="slide" data-sec="Fechamento">
+  <div class="head">
+    <h1>O que foi entregue</h1>
+    <p class="sub">Câmera e geolocalização salvando os dados no celular, do domínio até o banco, com os testes escritos antes do código.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <ul class="checks">
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Foto de progresso sempre em 9:16, 1080×1920, JPEG 92%</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Moldura na tela mostrando o que vai ficar na foto</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Posição do GPS gravada junto com a foto, quando há permissão</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Foto salva mesmo sem permissão, sem sinal ou sem internet</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Arquivo na pasta permanente do app e linha no SQLite</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Posição fica só no celular e não vai para a nuvem</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Domínio sem nenhum import de Expo, React, Supabase ou Drizzle</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Adaptadores com as APIs atuais do Expo SDK 57</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>65 testes de câmera e GPS, 425 no projeto, todos passando</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Cada afirmação deste deck apontando para arquivo e linha</li>
+    </ul>
+    <p class="note" style="margin-top:20px"><b>A ideia central:</b> a regra de negócio (o formato da foto, a coordenada válida, "a foto vale mais que a posição") mora num lugar que não conhece câmera, GPS nem banco. Por isso ela foi provada por teste antes de existir o adaptador, e o Expo entrou depois, obedecendo ao contrato que o domínio definiu.</p>
+  </div></div>
+</section>
+@@end
