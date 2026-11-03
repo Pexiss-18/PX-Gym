@@ -24,7 +24,7 @@ const LABELS: Record<string, string> = {
  * real aqui, é a exceção que precisa ler sobre conteúdo rolando), item ativo
  * com chip lime a 14% e ícone+label volt. Única sombra permitida no sistema.
  */
-export function PxTabBar({ state, navigation }: BottomTabBarProps) {
+export function PxTabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -58,13 +58,13 @@ export function PxTabBar({ state, navigation }: BottomTabBarProps) {
                 <Pressable
                   key={route.key}
                   onPress={() => {
-                    const event = navigation.emit({
+                    const event = emitter.emit({
                       type: "tabPress",
                       target: route.key,
                       canPreventDefault: true,
                     });
                     if (!active && !event.defaultPrevented) {
-                      navigation.navigate(route.name);
+                      navigateToTab(route.key);
                     }
                   }}
                   className="relative flex-1 items-center gap-1 rounded-px-md py-2"

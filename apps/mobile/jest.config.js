@@ -11,6 +11,10 @@ const path = require("node:path");
  *
  * @type {import('jest').Config}
  */
+// Pasta do pacote como o app a enxerga (no app ou na raiz do monorepo).
+const pkgDir = (name) =>
+  path.dirname(require.resolve(`${name}/package.json`, { paths: [__dirname] }));
+
 const moduleNameMapper = {
   "^@/(.*)$": "<rootDir>/src/$1",
   "^@px/core$": "<rootDir>/../../packages/core/src/index.ts",
@@ -66,12 +70,12 @@ module.exports = {
       setupFilesAfterEnv: ["<rootDir>/src/adapters/__tests__/utils/setup-telas.ts"],
       moduleNameMapper: {
         ...moduleNameMapper,
-        // O web (raiz do monorepo) usa React 19.3; o app, 19.2 (versão do
-        // Expo). Sem isso o renderizador de teste pega uma cópia e as telas
-        // outra, e todo hook quebra com "Cannot read properties of null".
-        "^react$": "<rootDir>/node_modules/react",
-        "^react/(.*)$": "<rootDir>/node_modules/react/$1",
-        "^test-renderer$": "<rootDir>/node_modules/test-renderer",
+        // O web e o app usam versões diferentes do React, e o npm decide qual
+        // fica na raiz. Sem isso o renderizador de teste pega uma cópia e as
+        // telas outra, e todo hook quebra com "Cannot read properties of null".
+        "^react$": pkgDir("react"),
+        "^react/(.*)$": `${pkgDir("react")}/$1`,
+        "^test-renderer$": pkgDir("test-renderer"),
       },
     },
   ],

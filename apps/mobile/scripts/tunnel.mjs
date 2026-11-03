@@ -47,7 +47,8 @@ tunnel.on("exit", (code) => {
 
 let started = false;
 const onTunnelOutput = (chunk) => {
-  const match = chunk.toString().match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
+  // Ignora api.trycloudflare.com, que aparece nas mensagens de erro do cloudflared.
+  const match = chunk.toString().match(/https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/);
   if (!match || started) return;
   started = true;
   const url = match[0];
