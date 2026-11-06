@@ -81,7 +81,7 @@
 </div>
 <div class="panel" style="margin-top:18px">
   <ul class="marks tiny">
-    <li><b>Depois, com internet:</b> <span>a imagem sobe para o Supabase e o status passa de <code>pending</code> para <code>synced</code>. A posição não vai junto.</span></li>
+    <li><b>Depois, com internet:</b> <span>a imagem sobe para um bucket privado no Cloudflare R2, por um link assinado que a Edge Function do Supabase entrega, e o status passa de <code>pending</code> para <code>synced</code>. A posição não vai junto.</span></li>
     <li><b>Se algo falhar no GPS</b> <span>(sem permissão, sem sinal ou serviço desligado), a foto é salva do mesmo jeito. A foto é o principal; a posição é um extra.</span></li>
   </ul>
 </div>

@@ -138,7 +138,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 
 <section class="sl">
   <div class="cab"><span class="n">4</span><h3>O caminho de uma foto, do toque até o banco</h3><span class="who">Assis</span><span class="tm">35 s · 1:10 → 1:45</span></div>
-  <div class="bloco fala"><p>São cinco etapas. A tela recebe o toque. A câmera captura, recorta e comprime. O arquivo vai para a pasta permanente do app. O GPS dá a posição. E uma linha é gravada no SQLite com status pending.</p><p>Dois pontos importantes: a imagem só sobe para a nuvem depois, quando houver internet, e a posição nunca sobe. E se o GPS falhar, a foto é salva do mesmo jeito.</p></div>
+  <div class="bloco fala"><p>São cinco etapas. A tela recebe o toque. A câmera captura, recorta e comprime. O arquivo vai para a pasta permanente do app. O GPS dá a posição. E uma linha é gravada no SQLite com status pending.</p><p>Dois pontos importantes: a imagem só sobe para a nuvem, um bucket privado no Cloudflare R2, depois, quando houver internet, e a posição nunca sobe. E se o GPS falhar, a foto é salva do mesmo jeito.</p></div>
   <p class="pass">Passagem: “Agora, como isso está organizado no código.”</p>
 </section>
 <div class="sec">2 · Arquitetura</div>
@@ -162,7 +162,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 
 <section class="sl">
   <div class="cab"><span class="n">8</span><h3>Nossos testes garantem que</h3><span class="who">Assis</span><span class="tm">25 s · 3:15 → 3:40</span></div>
-  <div class="bloco fala"><p>Destaque três itens: toda foto sai em 9:16, 1080 por 1920 e 92%; sem permissão ou sem sinal a foto é salva do mesmo jeito; e o SQLite guarda e devolve a posição.</p><p>São 65 testes de câmera e GPS, e 425 no projeto, todos passando.</p></div>
+  <div class="bloco fala"><p>Destaque três itens: toda foto sai em 9:16, 1080 por 1920 e 92%; sem permissão ou sem sinal a foto é salva do mesmo jeito; e o SQLite guarda e devolve a posição.</p><p>São 73 testes de câmera e GPS, e 502 no projeto, todos passando.</p></div>
   <p class="pass">Passagem: “Agora vamos olhar o domínio, começando pelas interfaces.”</p>
 </section>
 <div class="sec">4 · Domínio e interfaces</div>
@@ -192,7 +192,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 
 <section class="sl">
   <div class="cab"><span class="n">13</span><h3>A entidade: ProgressPhoto</h3><span class="who">Paulo</span><span class="tm">25 s · 5:15 → 5:40</span></div>
-  <div class="bloco fala"><p>A entidade guarda o arquivo local, o caminho na nuvem, a data, o status de envio e agora a posição, o campo location.</p><p>A posição é opcional, porque a pessoa pode negar a permissão. E por privacidade ela fica só no celular.</p></div>
+  <div class="bloco fala"><p>A entidade guarda o arquivo local, o caminho na nuvem, a data, o status de envio, que inclui o deleted para foto apagada que ainda precisa sair da nuvem, e agora a posição, o campo location.</p><p>A posição é opcional, porque a pessoa pode negar a permissão. E por privacidade ela fica só no celular.</p></div>
   <p class="pass">Passagem: “Agora vamos ver como isso foi construído com TDD.”</p>
 </section>
 <div class="sec">5 · TDD na prática</div>
@@ -210,7 +210,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 <div class="sec">6 · Adaptadores Expo</div>
 <section class="sl">
   <div class="cab"><span class="n">16</span><h3>O adaptador da câmera</h3><span class="who">Paulo</span><span class="tm">35 s · 6:40 → 7:15</span></div>
-  <div class="bloco fala"><p>O CameraGatewayExpo implementa o contrato com as APIs atuais do Expo SDK 57.</p><p>Ele captura com qualidade 1, sem perda. Pede ao domínio o recorte. Usa o expo-image-manipulator, na API nova que encadeia crop, resize e save, porque o manipulateAsync está obsoleto. Comprime uma única vez, em 92%, e apaga o original do cache.</p></div>
+  <div class="bloco fala"><p>O CameraGatewayExpo implementa o contrato com as APIs atuais do Expo SDK 58.</p><p>Ele captura com qualidade 1, sem perda. Pede ao domínio o recorte. Usa o expo-image-manipulator, na API nova que encadeia crop, resize e save, porque o manipulateAsync está obsoleto. Comprime uma única vez, em 92%, e apaga o original do cache.</p></div>
   <p class="pass">Passagem: “O GPS tem o seu adaptador também.”</p>
 </section>
 
@@ -252,7 +252,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 <div class="sec">Fechamento</div>
 <section class="sl">
   <div class="cab"><span class="n">23</span><h3>O que foi entregue</h3><span class="who">Paulo</span><span class="tm">25 s · 9:25 → 9:50</span></div>
-  <div class="bloco fala"><p>Entregamos a foto padronizada em 9:16, a posição gravada junto, o salvamento offline no SQLite, a posição protegida no celular e o domínio sem nenhum import de framework, com 65 testes de câmera e GPS.</p><p>A ideia central: a regra mora num lugar que não conhece câmera, GPS nem banco. Por isso foi provada por teste antes, e o Expo entrou depois, obedecendo ao contrato. Obrigado.</p></div>
+  <div class="bloco fala"><p>Entregamos a foto padronizada em 9:16, a posição gravada junto, o salvamento offline no SQLite, a posição protegida no celular e o domínio sem nenhum import de framework, com 73 testes de câmera e GPS.</p><p>A ideia central: a regra mora num lugar que não conhece câmera, GPS nem banco. Por isso foi provada por teste antes, e o Expo entrou depois, obedecendo ao contrato. Obrigado.</p></div>
   
 </section>
 
@@ -260,7 +260,7 @@ kbd{font-family:'Geist Mono',monospace;font-size:8.6pt;border:1px solid #b9bdc7;
 <div class="bloco qa"><div class="q"><p class="qq">Por que não usar a opção de proporção do próprio expo-camera?</p><p>A propriedade ratio só funciona no Android. Recortando depois com o expo-image-manipulator, o resultado é igual no Android e no iOS, e a regra do recorte fica no domínio, testada.</p><p class="ver">Onde mostrar: slide 16</p></div></div>
 <div class="bloco qa"><div class="q"><p class="qq">Por que capturar em qualidade 1 e depois salvar em 92%?</p><p>Cada vez que um JPEG é salvo ele perde um pouco. Capturando sem perda e comprimindo uma única vez no final, a foto perde qualidade uma vez só.</p><p class="ver">Onde mostrar: slide 16</p></div></div>
 <div class="bloco qa"><div class="q"><p class="qq">E se a pessoa negar a permissão de localização?</p><p>A foto é salva normalmente, sem posição. Tem teste para isso, e também para GPS sem sinal e para erro no serviço de localização.</p><p class="ver">Onde mostrar: slides 14 e 15</p></div></div>
-<div class="bloco qa"><div class="q"><p class="qq">Por que a posição não vai para o Supabase?</p><p>Privacidade: a posição de uma foto de corpo pode revelar onde a pessoa mora ou treina. Ela é útil no celular, e o envio para a nuvem só leva a imagem e a data.</p><p class="ver">Onde mostrar: slides 13 e 22</p></div></div>
+<div class="bloco qa"><div class="q"><p class="qq">Por que a posição não vai para a nuvem?</p><p>Privacidade: a posição de uma foto de corpo pode revelar onde a pessoa mora ou treina. Ela é útil no celular, e o envio para a nuvem só leva a imagem e a data.</p><p class="ver">Onde mostrar: slides 13 e 22</p></div></div>
 <div class="bloco qa"><div class="q"><p class="qq">Como vocês testam a câmera sem câmera?</p><p>No domínio, a regra do recorte é uma função pura. No adaptador, o expo-camera e o expo-image-manipulator são simulados com jest.mock, e o teste confere o recorte, o tamanho e a qualidade pedidos.</p><p class="ver">Onde mostrar: slides 7 e 16</p></div></div>
 <div class="bloco qa"><div class="q"><p class="qq">O que acontece com as fotos antigas depois da migração?</p><p>A migração só adiciona as colunas de latitude e longitude. As fotos antigas continuam lá, com essas colunas vazias.</p><p class="ver">Onde mostrar: slide 21</p></div></div>
 <div class="bloco qa"><div class="q"><p class="qq">Por que o domínio define a interface e não o Expo?</p><p>Assim o domínio não depende de biblioteca nenhuma. Se o Expo mudar a API, como aconteceu com o manipulateAsync, só o adaptador muda; domínio, casos de uso e testes ficam iguais.</p><p class="ver">Onde mostrar: slides 9, 10 e 18</p></div></div>

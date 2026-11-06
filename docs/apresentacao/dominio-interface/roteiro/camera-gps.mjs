@@ -33,7 +33,7 @@ const slides = [
   { secao: '1 · Abertura', titulo: 'O caminho de uma foto, do toque até o banco', t: 35, quem: A,
     fala: [
       'São cinco etapas. A tela recebe o toque. A câmera captura, recorta e comprime. O arquivo vai para a pasta permanente do app. O GPS dá a posição. E uma linha é gravada no SQLite com status pending.',
-      'Dois pontos importantes: a imagem só sobe para a nuvem depois, quando houver internet, e a posição nunca sobe. E se o GPS falhar, a foto é salva do mesmo jeito.',
+      'Dois pontos importantes: a imagem só sobe para a nuvem, um bucket privado no Cloudflare R2, depois, quando houver internet, e a posição nunca sobe. E se o GPS falhar, a foto é salva do mesmo jeito.',
     ],
     passa: 'Agora, como isso está organizado no código.' },
   { secao: '2 · Arquitetura', titulo: 'Clean Architecture: quatro camadas', t: 30, quem: A,
@@ -57,7 +57,7 @@ const slides = [
   { secao: '3 · Estratégia de TDD', titulo: 'Nossos testes garantem que', t: 25, quem: A,
     fala: [
       'Destaque três itens: toda foto sai em 9:16, 1080 por 1920 e 92%; sem permissão ou sem sinal a foto é salva do mesmo jeito; e o SQLite guarda e devolve a posição.',
-      'São 65 testes de câmera e GPS, e 425 no projeto, todos passando.',
+      'São 73 testes de câmera e GPS, e 502 no projeto, todos passando.',
     ],
     passa: 'Agora vamos olhar o domínio, começando pelas interfaces.' },
   { secao: '4 · Domínio e interfaces', titulo: 'A interface da câmera: CameraGateway', t: 25, quem: A,
@@ -81,7 +81,7 @@ const slides = [
     passa: 'E a foto em si é a entidade ProgressPhoto.' },
   { secao: '4 · Domínio e interfaces', titulo: 'A entidade: ProgressPhoto', t: 25, quem: P,
     fala: [
-      'A entidade guarda o arquivo local, o caminho na nuvem, a data, o status de envio e agora a posição, o campo location.',
+      'A entidade guarda o arquivo local, o caminho na nuvem, a data, o status de envio, que inclui o deleted para foto apagada que ainda precisa sair da nuvem, e agora a posição, o campo location.',
       'A posição é opcional, porque a pessoa pode negar a permissão. E por privacidade ela fica só no celular.',
     ],
     passa: 'Agora vamos ver como isso foi construído com TDD.' },
@@ -99,7 +99,7 @@ const slides = [
     passa: 'Até aqui nada conhece o Expo. Agora vamos à infraestrutura.' },
   { secao: '6 · Adaptadores Expo', titulo: 'O adaptador da câmera', t: 35, quem: P,
     fala: [
-      'O CameraGatewayExpo implementa o contrato com as APIs atuais do Expo SDK 57.',
+      'O CameraGatewayExpo implementa o contrato com as APIs atuais do Expo SDK 58.',
       'Ele captura com qualidade 1, sem perda. Pede ao domínio o recorte. Usa o expo-image-manipulator, na API nova que encadeia crop, resize e save, porque o manipulateAsync está obsoleto. Comprime uma única vez, em 92%, e apaga o original do cache.',
     ],
     passa: 'O GPS tem o seu adaptador também.' },
@@ -135,7 +135,7 @@ const slides = [
     passa: 'Para fechar.' },
   { secao: 'Fechamento', titulo: 'O que foi entregue', t: 25, quem: P,
     fala: [
-      'Entregamos a foto padronizada em 9:16, a posição gravada junto, o salvamento offline no SQLite, a posição protegida no celular e o domínio sem nenhum import de framework, com 65 testes de câmera e GPS.',
+      'Entregamos a foto padronizada em 9:16, a posição gravada junto, o salvamento offline no SQLite, a posição protegida no celular e o domínio sem nenhum import de framework, com 73 testes de câmera e GPS.',
       'A ideia central: a regra mora num lugar que não conhece câmera, GPS nem banco. Por isso foi provada por teste antes, e o Expo entrou depois, obedecendo ao contrato. Obrigado.',
     ],
     passa: '' },
@@ -145,7 +145,7 @@ const perguntas = [
   { q: 'Por que não usar a opção de proporção do próprio expo-camera?', r: 'A propriedade ratio só funciona no Android. Recortando depois com o expo-image-manipulator, o resultado é igual no Android e no iOS, e a regra do recorte fica no domínio, testada.', ver: 'slide 16' },
   { q: 'Por que capturar em qualidade 1 e depois salvar em 92%?', r: 'Cada vez que um JPEG é salvo ele perde um pouco. Capturando sem perda e comprimindo uma única vez no final, a foto perde qualidade uma vez só.', ver: 'slide 16' },
   { q: 'E se a pessoa negar a permissão de localização?', r: 'A foto é salva normalmente, sem posição. Tem teste para isso, e também para GPS sem sinal e para erro no serviço de localização.', ver: 'slides 14 e 15' },
-  { q: 'Por que a posição não vai para o Supabase?', r: 'Privacidade: a posição de uma foto de corpo pode revelar onde a pessoa mora ou treina. Ela é útil no celular, e o envio para a nuvem só leva a imagem e a data.', ver: 'slides 13 e 22' },
+  { q: 'Por que a posição não vai para a nuvem?', r: 'Privacidade: a posição de uma foto de corpo pode revelar onde a pessoa mora ou treina. Ela é útil no celular, e o envio para a nuvem só leva a imagem e a data.', ver: 'slides 13 e 22' },
   { q: 'Como vocês testam a câmera sem câmera?', r: 'No domínio, a regra do recorte é uma função pura. No adaptador, o expo-camera e o expo-image-manipulator são simulados com jest.mock, e o teste confere o recorte, o tamanho e a qualidade pedidos.', ver: 'slides 7 e 16' },
   { q: 'O que acontece com as fotos antigas depois da migração?', r: 'A migração só adiciona as colunas de latitude e longitude. As fotos antigas continuam lá, com essas colunas vazias.', ver: 'slide 21' },
   { q: 'Por que o domínio define a interface e não o Expo?', r: 'Assim o domínio não depende de biblioteca nenhuma. Se o Expo mudar a API, como aconteceu com o manipulateAsync, só o adaptador muda; domínio, casos de uso e testes ficam iguais.', ver: 'slides 9, 10 e 18' },

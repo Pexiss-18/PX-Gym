@@ -37,11 +37,11 @@
   </ul>
 </div>
 <dl class="strip five" style="margin-top:16px">
-  <div><dt>Câmera e GPS</dt><dd><span class="num">65</span>testes no total</dd></div>
+  <div><dt>Câmera e GPS</dt><dd><span class="num">73</span>testes no total</dd></div>
   <div><dt>Formato 9:16</dt><dd><span class="num">7</span>testes da regra</dd></div>
   <div><dt>Adaptador da câmera</dt><dd><span class="num">11</span>testes</dd></div>
-  <div><dt>GPS</dt><dd><span class="num">30</span>adaptador, academias e foto</dd></div>
-  <div><dt>Projeto inteiro</dt><dd><span class="num">425</span>todos passando</dd></div>
+  <div><dt>GPS</dt><dd><span class="num">37</span>adaptador, academias e foto</dd></div>
+  <div><dt>Projeto inteiro</dt><dd><span class="num">502</span>todos passando</dd></div>
 </dl>
 
 === 4 · Domínio e interfaces
@@ -107,13 +107,13 @@
 # A entidade: ProgressPhoto com a posição
 > A foto de progresso guarda onde foi tirada. A posição é opcional, porque a pessoa pode negar a permissão ou o GPS pode estar sem sinal.
 <div class="cols c46">
-  <div class="panel flush">{{code core/domain/entities/progress-photo.ts :: export type PhotoLocation :: syncStatus: UploadSyncStatus; :: location: PhotoLocation | null; ;; export type PhotoLocation :: small}}</div>
+  <div class="panel flush">{{code core/domain/entities/progress-photo.ts :: export type PhotoLocation :: syncStatus: SyncStatus; :: location: PhotoLocation | null; ;; export type PhotoLocation :: small}}</div>
   <div class="panel">
     <ul class="marks tiny">
       <li><b>localUri:</b> <span>o arquivo no celular. Sempre existe, porque a foto é salva localmente antes de tudo.</span></li>
-      <li><b>remotePath:</b> <span>o caminho na nuvem, vazio até o envio.</span></li>
+      <li><b>remotePath:</b> <span>a chave do arquivo no Cloudflare R2, vazia até o envio.</span></li>
       <li><b>location:</b> <span>latitude e longitude, ou <code>null</code> quando não deu para pegar a posição.</span></li>
-      <li><b>syncStatus:</b> <span><code>pending</code> até subir e <code>synced</code> depois.</span></li>
+      <li><b>syncStatus:</b> <span><code>pending</code> até subir, <code>synced</code> depois e <code>deleted</code> quando a pessoa apaga a foto e a cópia da nuvem ainda precisa ser removida.</span></li>
       <li><b>Privacidade:</b> <span>a posição fica só no celular, para não expor onde a pessoa mora ou treina.</span></li>
     </ul>
   </div>

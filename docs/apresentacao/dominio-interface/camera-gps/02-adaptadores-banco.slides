@@ -1,6 +1,6 @@
 === 6 · Adaptadores Expo
 # O adaptador da câmera: expo-camera e expo-image-manipulator
-> Implementa o CameraGateway com as APIs atuais do Expo SDK 57. É aqui, e só aqui, que a foto é capturada, recortada, reduzida e comprimida.
+> Implementa o CameraGateway com as APIs atuais do Expo SDK 58. É aqui, e só aqui, que a foto é capturada, recortada, reduzida e comprimida.
 <div class="cols c46">
   <div class="panel flush">{{code mobile/adapters/gateways/CameraGatewayExpo.ts :: async capturar(): Promise<FotoCapturada> { :: return { uri: ajustada.uri :: quality: 1 ;; recorteRetrato( ;; .resize( ;; compress: this.formato.qualidade, :: small}}</div>
   <div class="panel">
@@ -48,7 +48,7 @@
 
 === 6 · Adaptadores Expo
 # Composition root: onde as peças se encontram
-> Um único arquivo conhece as classes concretas. É aqui que o caso de uso recebe o repositório SQLite, o envio para o Supabase e o GPS real do Expo.
+> Um único arquivo conhece as classes concretas. É aqui que o caso de uso recebe o repositório SQLite, o envio para o Cloudflare R2 e o GPS real do Expo.
 <div class="cols c46">
   <div class="panel flush">{{code mobile/lib/photos.ts :: export const saveProgressPhotoUseCase :: +8 :: new LocationGatewayExpo(), ;; progressPhotoRepository, :: small}}</div>
   <div class="panel">
@@ -74,7 +74,7 @@
         <tr><td>Ajuste</td><td class="m">cache, já em 9:16 e 92%</td></tr>
         <tr><td>Arquivo</td><td class="m">pasta do app: <code>progress-photos/</code>, nome em UUID</td></tr>
         <tr><td>Banco</td><td class="m">a linha no SQLite aponta para o arquivo</td></tr>
-        <tr><td>Nuvem</td><td class="m">bucket do Supabase, quando houver internet</td></tr>
+        <tr><td>Nuvem</td><td class="m">bucket privado no Cloudflare R2, quando houver internet</td></tr>
       </tbody>
     </table>
   </div>
@@ -107,7 +107,7 @@
     </ul>
   </div>
 </div>
-@refs mobile/db/__tests__/progress-photo-repository.test.ts :: guarda e devolve a posição :: teste no SQLite ;; mobile/lib/photos.ts :: A posição da foto (latitude/longitude) não vai junto :: a posição não sobe
+@refs mobile/db/__tests__/progress-photo-repository.test.ts :: guarda e devolve a posição :: teste no SQLite ;; mobile/lib/photos.ts :: A posição da foto não sobe :: a posição não sobe
 
 @@raw
 <section class="slide" data-sec="Fechamento">
@@ -124,8 +124,8 @@
       <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Arquivo na pasta permanente do app e linha no SQLite</li>
       <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Posição fica só no celular e não vai para a nuvem</li>
       <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Domínio sem nenhum import de Expo, React, Supabase ou Drizzle</li>
-      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Adaptadores com as APIs atuais do Expo SDK 57</li>
-      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>65 testes de câmera e GPS, 425 no projeto, todos passando</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Adaptadores com as APIs atuais do Expo SDK 58</li>
+      <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>73 testes de câmera e GPS, 502 no projeto, todos passando</li>
       <li><svg viewBox="0 0 16 16" fill="none" stroke="oklch(0.87 0.23 126)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>Cada afirmação deste deck apontando para arquivo e linha</li>
     </ul>
     <p class="note" style="margin-top:20px"><b>A ideia central:</b> a regra de negócio (o formato da foto, a coordenada válida, "a foto vale mais que a posição") mora num lugar que não conhece câmera, GPS nem banco. Por isso ela foi provada por teste antes de existir o adaptador, e o Expo entrou depois, obedecendo ao contrato que o domínio definiu.</p>
