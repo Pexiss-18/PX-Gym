@@ -227,6 +227,10 @@ export class InMemoryAssessments implements AssessmentRepository {
       null
     );
   }
+  async createManual(assessment: BodyAssessment) {
+    this.assessments.push(assessment);
+    return assessment;
+  }
 }
 
 /**

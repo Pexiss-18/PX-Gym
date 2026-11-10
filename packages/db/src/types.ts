@@ -1,4 +1,5 @@
 import type {
+  AssessmentSource,
   AssessmentStatus,
   ExtractedAssessment,
   MacroTarget,
@@ -10,7 +11,8 @@ import type {
 export type BodyAssessmentRow = {
   id: string;
   user_id: string;
-  pdf_path: string;
+  pdf_path: string | null;
+  source: AssessmentSource;
   status: AssessmentStatus;
   extracted_data: ExtractedAssessment | null;
   error_message: string | null;

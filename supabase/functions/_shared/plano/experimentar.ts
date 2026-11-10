@@ -2,15 +2,15 @@
  * Chamadas de verdade ao Gemini com uma avaliação de exemplo, sem banco nem
  * deploy — pra conferir a chave, a cota e a cara do plano:
  *
- *   npm run try:plan                          gera um plano
- *   npm run try:plan -- "não tenho leg press" gera e depois pede essa mudança
+ *   npm run try:plan                          gera o treino e a dieta
+ *   npm run try:plan -- "não tenho leg press" gera e depois pede essa mudança no treino
  *
  * Lê GEMINI_API_KEY (e GEMINI_MODELS, opcional) de supabase/functions/.env.
- * Cada geração gasta um pedido da cota diária.
+ * Cada geração (treino ou dieta) gasta um pedido da cota diária.
  */
 import { provedoresGemini } from "../ia/gemini.ts";
 import { perfilSchema } from "./esquema.ts";
-import { gerarPlano } from "./gerar-plano.ts";
+import { gerarDieta, gerarTreino } from "./gerar-plano.ts";
 
 const chave = Deno.env.get("GEMINI_API_KEY");
 if (!chave) {
@@ -31,14 +31,15 @@ const perfil = perfilSchema.parse({
   regioesSensiveis: ["ombro"],
 });
 
-const plano = await gerarPlano(provedores, avaliacao, perfil);
-const saida: Record<string, unknown> = { plano };
+const treino = await gerarTreino(provedores, avaliacao, perfil);
+const dieta = await gerarDieta(provedores, avaliacao, perfil);
+const saida: Record<string, unknown> = { treino, dieta };
 
 const pedido = Deno.args[0];
 if (pedido) {
   saida.pedido = pedido;
-  saida.revisado = await gerarPlano(provedores, avaliacao, perfil, {
-    revisao: { planoAtual: plano, pedido },
+  saida.treinoRevisado = await gerarTreino(provedores, avaliacao, perfil, {
+    revisao: { atual: treino.workout, pedido },
   });
 }
 

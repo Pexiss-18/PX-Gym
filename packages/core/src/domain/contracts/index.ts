@@ -70,6 +70,8 @@ export interface AssessmentRepository {
   byId(id: string): Promise<BodyAssessment | null>;
   listByUser(userId: string): Promise<BodyAssessment[]>;
   latestReviewed(userId: string): Promise<BodyAssessment | null>;
+  /** Grava a avaliação digitada no app (sem PDF) e devolve como ficou salva. */
+  createManual(assessment: BodyAssessment): Promise<BodyAssessment>;
 }
 
 export interface NutritionPlanRepository {

@@ -17,9 +17,10 @@ jest.mock("expo-file-system", () => {
 
 jest.mock("expo-image-manipulator", () => {
   const salvar = jest.fn(async () => ({ uri: "file:///ajustada.jpg", width: 1080, height: 1920 }));
-  const contexto = {
-    crop: jest.fn(() => contexto),
-    resize: jest.fn(() => contexto),
+  type Contexto = { crop: jest.Mock; resize: jest.Mock; renderAsync: jest.Mock };
+  const contexto: Contexto = {
+    crop: jest.fn((): Contexto => contexto),
+    resize: jest.fn((): Contexto => contexto),
     renderAsync: jest.fn(async () => ({ saveAsync: salvar })),
   };
   return {

@@ -33,6 +33,7 @@ function assessment(status: BodyAssessment["status"]): BodyAssessment {
     id: "a-1",
     userId: "user-1",
     pdfPath: "user-1/a-1.pdf",
+    source: "pdf",
     status,
     extracted: null,
     errorMessage: null,

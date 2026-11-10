@@ -1,11 +1,16 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import type { BodyAssessment, NutritionPlan } from "@px/core";
+import {
+  RegisterManualAssessmentUseCase,
+  type BodyAssessment,
+  type NutritionPlan,
+} from "@px/core";
 import {
   SupabaseAssessmentRepository,
   SupabaseNutritionPlanRepository,
 } from "@px/db";
 import { supabase } from "./supabase";
+import { cryptoIds, systemClock } from "./system";
 import { useAuth } from "@/adapters/hooks/useAuth";
 
 /*
@@ -17,6 +22,13 @@ import { useAuth } from "@/adapters/hooks/useAuth";
 export const assessmentRepository = new SupabaseAssessmentRepository(supabase);
 export const nutritionPlanRepository = new SupabaseNutritionPlanRepository(
   supabase,
+);
+
+/** Avaliação digitada no app (sem PDF), gravada direto no Supabase. */
+export const registerManualAssessmentUseCase = new RegisterManualAssessmentUseCase(
+  assessmentRepository,
+  systemClock,
+  cryptoIds,
 );
 
 export type Remote<T> =

@@ -41,6 +41,7 @@ export * from "./application/use-cases/unregister-set";
 export * from "./application/use-cases/sync-pending-set-logs";
 export * from "./application/use-cases/save-progress-photo";
 export * from "./application/use-cases/generate-nutrition-plan";
+export * from "./application/use-cases/register-manual-assessment";
 export * from "./application/use-cases/record-cardio-session";
 export * from "./application/use-cases/find-nearby-gyms";
 export * from "./application/use-cases/auth";
