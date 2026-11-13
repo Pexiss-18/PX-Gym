@@ -7,3 +7,4 @@ export * from "./repositories/assessments";
 export * from "./repositories/nutrition-plans";
 export * from "./repositories/workout-sync";
 export * from "./repositories/progress-photos";
+export * from "./repositories/training-plans";

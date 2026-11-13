@@ -12,7 +12,7 @@ import { PillButton } from "@/components/pill-button";
 import { ProgressBar } from "@/components/progress-bar";
 import { WeekStrip } from "@/components/week-strip";
 import { LineChart } from "@/components/charts/line-chart";
-import { todayWorkout } from "@/lib/mock-data";
+import { useTodayWorkout } from "@/lib/use-workout-plan";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { displayName } from "@/lib/identity";
 import { MODO_MOCK } from "@/lib/modo";
@@ -88,11 +88,13 @@ function InicioScreen() {
     return history.map((p) => p.weightKg);
   }, [assessments.data]);
 
-  const totalSets = todayWorkout.exercises.reduce(
+  const { workout: todayWorkout } = useTodayWorkout();
+  const exercises = todayWorkout?.exercises ?? [];
+  const totalSets = exercises.reduce(
     (n, e) => n + e.sets.length,
     0,
   );
-  const completedSets = todayWorkout.exercises.reduce(
+  const completedSets = exercises.reduce(
     (n, e) => n + Math.min(doneByExercise.get(e.id) ?? 0, e.sets.length),
     0,
   );
@@ -223,30 +225,48 @@ function InicioScreen() {
             <Text className="font-sans-medium text-xs uppercase tracking-wide text-fog">
               Treino de hoje
             </Text>
-            <Text className="font-sans text-xs text-fog">
-              {todayWorkout.label}
-            </Text>
-          </View>
-          <Text className="mt-2 font-sans-semibold text-xl text-paper">
-            {todayWorkout.name}
-          </Text>
-          <View className="mt-3 flex-row items-center gap-2">
-            <View className="flex-1">
-              <ProgressBar fraction={fraction} color={colors.voltLime} />
-            </View>
-            <View className="flex-row items-baseline gap-0.5">
-              <Text className="font-mono text-xs text-volt">
-                {completedSets}
+            {todayWorkout ? (
+              <Text className="font-sans text-xs text-fog">
+                {todayWorkout.label}
               </Text>
-              <Text className="font-sans text-xs text-fog">/</Text>
-              <Text className="font-mono text-xs text-fog">{totalSets}</Text>
-            </View>
+            ) : null}
           </View>
-          <View className="mt-4">
-            <PillButton onPress={() => router.push("/treino")}>
-              {completedSets === 0 ? "Começar treino" : "Continuar treino"}
-            </PillButton>
-          </View>
+          {todayWorkout ? (
+            <>
+              <Text className="mt-2 font-sans-semibold text-xl text-paper">
+                {todayWorkout.name}
+              </Text>
+              <View className="mt-3 flex-row items-center gap-2">
+                <View className="flex-1">
+                  <ProgressBar fraction={fraction} color={colors.voltLime} />
+                </View>
+                <View className="flex-row items-baseline gap-0.5">
+                  <Text className="font-mono text-xs text-volt">
+                    {completedSets}
+                  </Text>
+                  <Text className="font-sans text-xs text-fog">/</Text>
+                  <Text className="font-mono text-xs text-fog">{totalSets}</Text>
+                </View>
+              </View>
+              <View className="mt-4">
+                <PillButton onPress={() => router.push("/treino")}>
+                  {completedSets === 0 ? "Começar treino" : "Continuar treino"}
+                </PillButton>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text className="mt-2 font-sans text-sm text-fog">
+                A IA monta um treino pra você a partir da sua avaliação e do seu
+                perfil de treino.
+              </Text>
+              <View className="mt-4">
+                <PillButton onPress={() => router.push("/treino")}>
+                  Gerar meu treino
+                </PillButton>
+              </View>
+            </>
+          )}
         </GlassCard>
 
         {/* plano nutricional */}

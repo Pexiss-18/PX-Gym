@@ -1,12 +1,19 @@
 import type { SetLog } from "../domain/entities/set-log";
 import type { ProgressPhoto } from "../domain/entities/progress-photo";
 import type { BodyAssessment } from "../domain/entities/body-assessment";
+import type { TrainingProfile } from "../domain/entities/training-profile";
+import type { WorkoutPlan } from "../domain/entities/workout-plan";
 import type { NutritionPlan } from "../domain/entities/nutrition-plan";
 import type { Gym } from "../domain/entities/gym";
 import type { GeoPoint } from "../domain/value-objects/geo";
 import { LocationUnavailableError } from "../domain/errors";
 import type {
   AssessmentRepository,
+  PlanGenerationGateway,
+  PlanGenerationRequest,
+  TrainingProfileRepository,
+  WorkoutGenerationOutcome,
+  WorkoutPlanCache,
   AuthGateway,
   Clock,
   ConnectivityStatus,
@@ -316,3 +323,42 @@ export class InMemoryPlans implements NutritionPlanRepository {
     return this.plans.find((p) => p.assessmentId === assessmentId) ?? null;
   }
 }
+
+export class InMemoryTrainingProfiles implements TrainingProfileRepository {
+  profiles = new Map<string, TrainingProfile>();
+  async get(userId: string) {
+    return this.profiles.get(userId) ?? null;
+  }
+  async save(profile: TrainingProfile) {
+    this.profiles.set(profile.userId, profile);
+  }
+}
+
+/** Serve tanto de "servidor" quanto de cópia no aparelho nos testes. */
+export class InMemoryWorkoutPlans implements WorkoutPlanCache {
+  plans = new Map<string, WorkoutPlan>();
+  async get(userId: string) {
+    return this.plans.get(userId) ?? null;
+  }
+  async put(plan: WorkoutPlan) {
+    this.plans.set(plan.userId, plan);
+  }
+  async clear(userId: string) {
+    this.plans.delete(userId);
+  }
+}
+
+/** Geração falsa: responde na ordem de `respostas`; `erro` faz a próxima falhar. */
+export class FakePlanGenerationGateway implements PlanGenerationGateway {
+  pedidos: PlanGenerationRequest[] = [];
+  respostas: WorkoutGenerationOutcome[] = [];
+  erro: Error | null = null;
+  async generateWorkout(_userId: string, request: PlanGenerationRequest) {
+    this.pedidos.push(request);
+    if (this.erro) throw this.erro;
+    const resposta = this.respostas.shift();
+    if (!resposta) throw new Error("sem resposta configurada");
+    return resposta;
+  }
+}
+

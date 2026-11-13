@@ -23,6 +23,8 @@ export * from "./domain/entities/gym";
 export * from "./domain/entities/ciclo-avaliacao";
 export * from "./domain/entities/acompanhamento";
 export * from "./domain/entities/token-personal";
+export * from "./domain/entities/training-profile";
+export * from "./domain/entities/workout-plan";
 
 export * from "./domain/contracts";
 
@@ -35,6 +37,7 @@ export * from "./domain/services/regra-geracao-pdf";
 export * from "./domain/services/regra-devolucao";
 export * from "./domain/services/sincronizacao";
 export * from "./domain/services/enquadramento-foto";
+export * from "./domain/services/treino-do-dia";
 
 export * from "./application/use-cases/register-set";
 export * from "./application/use-cases/unregister-set";
@@ -42,6 +45,8 @@ export * from "./application/use-cases/sync-pending-set-logs";
 export * from "./application/use-cases/save-progress-photo";
 export * from "./application/use-cases/generate-nutrition-plan";
 export * from "./application/use-cases/register-manual-assessment";
+export * from "./application/use-cases/training-profile";
+export * from "./application/use-cases/workout-plan";
 export * from "./application/use-cases/record-cardio-session";
 export * from "./application/use-cases/find-nearby-gyms";
 export * from "./application/use-cases/auth";

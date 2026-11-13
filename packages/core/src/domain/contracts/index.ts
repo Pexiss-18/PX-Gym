@@ -1,6 +1,8 @@
 import type { SetLog } from "../entities/set-log";
 import type { Workout } from "../entities/workout";
 import type { BodyAssessment } from "../entities/body-assessment";
+import type { TrainingProfile } from "../entities/training-profile";
+import type { WorkoutPlan } from "../entities/workout-plan";
 import type {
   NutritionPlan,
   NutritionPlanDraft,
@@ -189,3 +191,40 @@ export interface CardioSessionRepository {
   save(session: CardioSession): Promise<void>;
   listByUser(userId: string): Promise<CardioSession[]>;
 }
+
+/** Perfil de treino (user_profiles no Supabase). */
+export interface TrainingProfileRepository {
+  get(userId: string): Promise<TrainingProfile | null>;
+  save(profile: TrainingProfile): Promise<void>;
+}
+
+/** De onde vem o treino ativo (workout_plans no Supabase). */
+export interface ActiveWorkoutPlanSource {
+  get(userId: string): Promise<WorkoutPlan | null>;
+}
+
+/** Cópia do treino ativo no aparelho, pra abrir sem internet. */
+export interface WorkoutPlanCache extends ActiveWorkoutPlanSource {
+  put(plan: WorkoutPlan): Promise<void>;
+  clear(userId: string): Promise<void>;
+}
+
+/** O que pedir à Edge Function generate-plan. */
+export type PlanGenerationRequest =
+  | { assessmentId: string }
+  | { feedback: string }
+  | { generationId: string };
+
+export type WorkoutGenerationOutcome =
+  | { status: "done"; plan: WorkoutPlan }
+  /** A cota da IA acabou: o pedido ficou na fila com esse id. */
+  | { status: "queued"; generationId: string };
+
+/**
+ * Geração do treino por IA. Recusa do servidor (limite, perfil incompleto,
+ * avaliação não revisada) lança BusinessRuleError com a mensagem dele.
+ */
+export interface PlanGenerationGateway {
+  generateWorkout(userId: string, request: PlanGenerationRequest): Promise<WorkoutGenerationOutcome>;
+}
+

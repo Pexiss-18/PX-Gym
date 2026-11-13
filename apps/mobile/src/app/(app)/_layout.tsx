@@ -107,6 +107,7 @@ export default function AppLayout() {
       <Drawer.Protected guard={!MODO_MOCK}>
         <Drawer.Screen name="progresso" />
         <Drawer.Screen name="avaliacoes" />
+        <Drawer.Screen name="perfil-treino" />
         <Drawer.Screen name="configuracoes" />
         <Drawer.Screen name="academias" />
         <Drawer.Screen name="camera" options={{ swipeEnabled: false }} />

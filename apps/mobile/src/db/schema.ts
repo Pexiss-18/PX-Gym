@@ -67,3 +67,15 @@ export const progressPhotos = sqliteTable(
 );
 
 export type ProgressPhotoLocalRow = typeof progressPhotos.$inferSelect;
+
+/**
+ * Cópia do treino ativo gerado pela IA (workout_plans no Supabase), pra a aba
+ * Treino abrir sem internet. Uma linha por pessoa; o plano vai em JSON.
+ */
+export const workoutPlanCache = sqliteTable("workout_plan_cache", {
+  userId: text("user_id").primaryKey(),
+  planId: text("plan_id").notNull(),
+  payload: text("payload").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+

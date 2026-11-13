@@ -1,10 +1,11 @@
 import { Alert, Pressable, Text, View } from "react-native";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import {
   Camera,
   ChevronRight,
   ClipboardList,
+  Dumbbell,
   LogOut,
   Settings,
 } from "lucide-react-native";
@@ -20,6 +21,11 @@ export default function PerfilScreen() {
   const name = displayName(sessao);
 
   const rows = [
+    {
+      icon: Dumbbell,
+      label: "Perfil de treino",
+      onPress: () => router.push("/perfil-treino"),
+    },
     {
       icon: ClipboardList,
       label: "Avaliações",

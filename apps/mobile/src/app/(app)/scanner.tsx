@@ -8,7 +8,7 @@ import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { PillButton } from "@/components/pill-button";
-import { todayWorkout } from "@/lib/mock-data";
+import { guiaDoExercicio } from "@/lib/guia-exercicios";
 
 /**
  * Leitor de QR dos aparelhos: o QR carrega `pxgym://treino/<exercicioId>`
@@ -17,7 +17,9 @@ import { todayWorkout } from "@/lib/mock-data";
 function parseExerciseId(data: string): string | null {
   const match = /^pxgym:\/\/treino\/(.+)$/.exec(data.trim());
   const id = match ? match[1] : data.trim();
-  return todayWorkout.exercises.some((e) => e.id === id) ? id : null;
+  // qualquer exercício do catálogo: a tela do exercício avisa se ele não
+  // estiver no treino atual
+  return guiaDoExercicio(id) ? id : null;
 }
 
 export default function ScannerScreen() {
