@@ -27,6 +27,25 @@ export class SupabaseAssessmentRepository implements AssessmentRepository {
     return (data as BodyAssessmentRow[]).map(toBodyAssessment);
   }
 
+  /** Avaliação digitada no app: sem PDF, já revisada (migration 0007). */
+  async createManual(assessment: BodyAssessment): Promise<BodyAssessment> {
+    const { data, error } = await this.client
+      .from("body_assessments")
+      .insert({
+        id: assessment.id,
+        user_id: assessment.userId,
+        pdf_path: null,
+        source: "manual",
+        status: "reviewed",
+        extracted_data: assessment.extracted,
+        created_at: assessment.createdAt.toISOString(),
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return toBodyAssessment(data as BodyAssessmentRow);
+  }
+
   async latestReviewed(userId: string): Promise<BodyAssessment | null> {
     const { data, error } = await this.client
       .from("body_assessments")

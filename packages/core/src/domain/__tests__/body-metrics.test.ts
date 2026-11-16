@@ -15,6 +15,7 @@ function assessment(
     id,
     userId: "user-1",
     pdfPath: `${id}.pdf`,
+    source: "pdf",
     status: extracted ? "reviewed" : "processing",
     extracted: extracted
       ? {

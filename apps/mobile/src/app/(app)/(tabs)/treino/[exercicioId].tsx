@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Animated, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ArrowLeft, Check, Minus, Plus, Timer, X } from "lucide-react-native";
 import { colors } from "@px/tokens";
-import { Load } from "@px/core";
+import { Load, type Exercise } from "@px/core";
 import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { LoadProgressionCard } from "@/components/load-progression-card";
 import { ExerciseGuideCard } from "@/components/exercise-guide-card";
 import { guiaDoExercicio } from "@/lib/guia-exercicios";
-import { todayWorkout } from "@/lib/mock-data";
+import { useActiveWorkoutPlan, useWorkoutWithExercise } from "@/lib/use-workout-plan";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { useLoadProgression } from "@/lib/use-workout-data";
 import {
@@ -48,23 +48,49 @@ type SetState = {
  */
 export default function ExercicioScreen() {
   const { exercicioId } = useLocalSearchParams<{ exercicioId: string }>();
+  const { status } = useActiveWorkoutPlan();
+  const workout = useWorkoutWithExercise(exercicioId ?? "");
+  const exercise = workout?.exercises.find((e) => e.id === exercicioId);
+
+  if (!exercise) {
+    return (
+      <Screen>
+        <View className="mb-6">
+          <BackButton />
+        </View>
+        {status === "loading" ? (
+          <ActivityIndicator color={colors.voltLime} />
+        ) : (
+          <Text className="font-sans text-sm text-fog">
+            Este exercício não está no seu treino atual.
+          </Text>
+        )}
+      </Screen>
+    );
+  }
+
+  // key: trocar de treino (ou de dia) recomeça o estado das séries
+  return <ExercicioConteudo key={`${workout!.id}:${exercise.id}`} exercise={exercise} />;
+}
+
+function ExercicioConteudo({ exercise }: { exercise: Exercise }) {
+  const exercicioId = exercise.id;
   const { sessao } = useAuth();
-  const exercise = todayWorkout.exercises.find((e) => e.id === exercicioId);
-  const guia = exercise ? guiaDoExercicio(exercise.id) : null;
+  const guia = guiaDoExercicio(exercise.id);
 
   // Ao vivo: marcar uma série já move a curva de progressão logo acima.
   const progression = useLoadProgression(exercicioId ?? "");
 
   const [sets, setSets] = useState<SetState[]>(
     () =>
-      exercise?.sets.map((s) => ({
+      exercise.sets.map((s) => ({
         setNumber: s.setNumber,
         targetReps: s.targetReps,
         previousLoadKg: s.previousLoadKg,
         loadKg: s.targetLoadKg,
         completed: false,
         logId: null,
-      })) ?? [],
+      })),
   );
 
   // Séries com escrita em andamento — ignora toques repetidos no check.
@@ -118,19 +144,6 @@ export default function ExercicioScreen() {
       cancelled = true;
     };
   }, [exercicioId]);
-
-  if (!exercise) {
-    return (
-      <Screen>
-        <View className="mb-6">
-          <BackButton />
-        </View>
-        <Text className="font-sans text-sm text-fog">
-          Exercício não encontrado.
-        </Text>
-      </Screen>
-    );
-  }
 
   function update(setNumber: number, patch: Partial<SetState>) {
     setSets((prev) =>

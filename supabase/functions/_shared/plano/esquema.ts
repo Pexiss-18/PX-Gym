@@ -123,34 +123,59 @@ export const treinoSchema = z.object({
 
 export type TreinoDaIA = z.infer<typeof treinoSchema>;
 
-export const planoDaIASchema = z.object({
-  nutrition: dietaSchema,
+/** As duas partes do plano, geradas em pedidos separados. */
+export type Parte = "treino" | "dieta";
+
+const fontesSchema = z
+  .array(z.string())
+  .describe("Ids dos artigos do acervo usados; vazio se nenhum");
+
+/** O que a IA devolve quando o pedido é o treino. */
+export const respostaDeTreinoSchema = z.object({
   workout: treinoSchema,
-  sources: z.array(z.string()).describe("Ids dos artigos do acervo usados; vazio se nenhum"),
+  sources: fontesSchema,
   preferences: z
     .object({
       unavailableExerciseIds: z
         .array(z.string())
         .describe("Exercícios que o usuário disse não ter como fazer na academia dele"),
+    })
+    .describe("Só o que o pedido de mudança declara; lista vazia se não houver pedido"),
+});
+
+export type RespostaDeTreino = z.infer<typeof respostaDeTreinoSchema>;
+
+/** O que a IA devolve quando o pedido é a dieta. */
+export const respostaDeDietaSchema = z.object({
+  nutrition: dietaSchema,
+  sources: fontesSchema,
+  preferences: z
+    .object({
       dislikedFoods: z
         .array(z.string())
         .describe("Alimentos que o usuário disse não gostar ou não comer, no singular"),
     })
-    .describe("Só o que o pedido de mudança declara; listas vazias se não houver pedido"),
+    .describe("Só o que o pedido de mudança declara; lista vazia se não houver pedido"),
 });
 
-export type PlanoDaIA = z.infer<typeof planoDaIASchema>;
+export type RespostaDeDieta = z.infer<typeof respostaDeDietaSchema>;
 
 /**
- * JSON Schema enviado ao provedor. O id do exercício vira enum do catálogo
- * sem os vetados (ver exerciciosVetados): o modelo fica impedido de inventar
- * exercício ou de usar um que o usuário não pode fazer, e o que ainda
- * escapar é filtrado em ajustarTreino.
+ * JSON Schema enviado ao provedor. No treino, o id do exercício vira enum do
+ * catálogo sem os vetados (ver exerciciosVetados): o modelo fica impedido de
+ * inventar exercício ou de usar um que o usuário não pode fazer, e o que
+ * ainda escapar é filtrado em ajustarTreino.
  */
-export function esquemaParaIA(vetados: string[] = []): Record<string, unknown> {
+export function esquemaParaIA(parte: Parte, vetados: string[] = []): Record<string, unknown> {
+  if (parte === "dieta") {
+    // deno-lint-ignore no-explicit-any
+    const json = z.toJSONSchema(respostaDeDietaSchema) as any;
+    delete json.$schema;
+    return json;
+  }
   const todos = EXERCICIOS.map((exercicio) => exercicio.id);
   // deno-lint-ignore no-explicit-any
-  const json = z.toJSONSchema(planoDaIASchema) as any;
+  const json = z.toJSONSchema(respostaDeTreinoSchema) as any;
   delete json.$schema;
   json.properties.workout.properties.days.items.properties.exercises.items.properties
     .exerciseId.enum = todos.filter((id) => !vetados.includes(id));

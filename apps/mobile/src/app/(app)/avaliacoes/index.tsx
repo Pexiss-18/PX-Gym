@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
 import { ClipboardList, CloudOff, Menu } from "lucide-react-native";
 import { colors } from "@px/tokens";
@@ -7,6 +7,7 @@ import type { AssessmentStatus, BodyAssessment } from "@px/core";
 import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
+import { PillButton } from "@/components/pill-button";
 import { Readout } from "@/components/readout";
 import { useAssessments } from "@/lib/remote";
 
@@ -37,9 +38,14 @@ function AssessmentCard({ assessment }: { assessment: BodyAssessment }) {
   return (
     <GlassCard>
       <View className="flex-row items-center justify-between">
-        <Text className="font-sans-medium text-sm text-paper">
-          {formatDate(assessment.createdAt)}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text className="font-sans-medium text-sm text-paper">
+            {formatDate(assessment.createdAt)}
+          </Text>
+          {assessment.source === "manual" ? (
+            <Text className="font-sans text-[11px] text-fog">· digitada</Text>
+          ) : null}
+        </View>
         <View className="flex-row items-center gap-1.5 rounded-full border border-hairline bg-glass-fill px-2.5 py-1">
           <View
             className="h-1.5 w-1.5 rounded-full"
@@ -88,7 +94,10 @@ function AssessmentCard({ assessment }: { assessment: BodyAssessment }) {
   );
 }
 
-/** Histórico real das avaliações corporais enviadas pelo Px GYM web. */
+/**
+ * Histórico das avaliações corporais: as do PDF enviado no Px GYM web e as
+ * digitadas aqui no app.
+ */
 export default function AvaliacoesScreen() {
   const navigation = useNavigation();
   const assessments = useAssessments();
@@ -111,6 +120,12 @@ export default function AvaliacoesScreen() {
         >
           <Menu size={18} color={colors.paperForeground} />
         </Pressable>
+      </View>
+
+      <View className="mb-6">
+        <PillButton onPress={() => router.push("/avaliacoes/nova")}>
+          Registrar avaliação
+        </PillButton>
       </View>
 
       {assessments.status === "loading" ? (
@@ -139,8 +154,8 @@ export default function AvaliacoesScreen() {
             Nenhuma avaliação por aqui ainda
           </Text>
           <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-            Envie o PDF da sua avaliação corporal no Px GYM web e ela aparece
-            aqui.
+            Registre os números da sua avaliação aqui, ou envie o PDF da
+            bioimpedância no Px GYM web.
           </Text>
         </GlassCard>
       ) : (

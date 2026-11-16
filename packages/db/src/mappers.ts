@@ -10,6 +10,8 @@ export function toBodyAssessment(row: BodyAssessmentRow): BodyAssessment {
     id: row.id,
     userId: row.user_id,
     pdfPath: row.pdf_path,
+    // linhas anteriores à migration 0007 não têm a coluna
+    source: row.source ?? "pdf",
     status: row.status,
     extracted: row.extracted_data,
     errorMessage: row.error_message,

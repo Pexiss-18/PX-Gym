@@ -19,10 +19,15 @@ export type ExtractedAssessment = {
   notes: string | null;
 };
 
+/** De onde veio a avaliação: PDF lido pela IA ou digitada pela pessoa. */
+export type AssessmentSource = "pdf" | "manual";
+
 export type BodyAssessment = {
   id: string;
   userId: string;
-  pdfPath: string;
+  /** Caminho do PDF no Storage; null na avaliação digitada no app. */
+  pdfPath: string | null;
+  source: AssessmentSource;
   status: AssessmentStatus;
   extracted: ExtractedAssessment | null;
   errorMessage: string | null;

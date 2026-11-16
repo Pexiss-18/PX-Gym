@@ -1,8 +1,14 @@
 import type {
+  AssessmentSource,
   AssessmentStatus,
   ExtractedAssessment,
   MacroTarget,
   MicroTarget,
+  Nivel,
+  Objetivo,
+  PlanDay,
+  RegiaoSensivel,
+  Sexo,
 } from "@px/core";
 
 /** Linhas das tabelas do Supabase (espelham supabase/migrations). */
@@ -10,7 +16,8 @@ import type {
 export type BodyAssessmentRow = {
   id: string;
   user_id: string;
-  pdf_path: string;
+  pdf_path: string | null;
+  source: AssessmentSource;
   status: AssessmentStatus;
   extracted_data: ExtractedAssessment | null;
   error_message: string | null;
@@ -49,6 +56,34 @@ export type ProgressPhotoRow = {
   storage_path: string;
   taken_at: string;
   note: string | null;
+  created_at: string;
+};
+
+/** Perfil de treino (migration 0004). */
+export type TrainingProfileRow = {
+  user_id: string;
+  sex: Sexo;
+  birth_date: string;
+  height_cm: number | string;
+  goal: Objetivo;
+  level: Nivel;
+  days_per_week: number;
+  minutes_per_session: number;
+  restrictions: string;
+  sensitive_regions: RegiaoSensivel[];
+  unavailable_exercises: string[];
+  disliked_foods: string[];
+  updated_at: string;
+};
+
+/** Treino gerado pela IA (migration 0004); só um ativo por pessoa. */
+export type WorkoutPlanRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  rationale: string;
+  days: PlanDay[];
+  sources: string[];
   created_at: string;
 };
 
