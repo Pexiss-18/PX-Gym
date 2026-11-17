@@ -236,11 +236,18 @@ export type WorkoutGenerationOutcome =
   /** A cota da IA acabou: o pedido ficou na fila com esse id. */
   | { status: "queued"; generationId: string };
 
+export type NutritionGenerationOutcome =
+  | { status: "done"; plan: NutritionPlan }
+  /** A cota da IA acabou: o pedido ficou na fila com esse id. */
+  | { status: "queued"; generationId: string };
+
 /**
- * Geração do treino por IA. Recusa do servidor (limite, perfil incompleto,
- * avaliação não revisada) lança BusinessRuleError com a mensagem dele.
+ * Geração do treino e da dieta por IA, em pedidos separados. Recusa do
+ * servidor (limite, perfil incompleto, avaliação não revisada) lança
+ * BusinessRuleError com a mensagem dele.
  */
 export interface PlanGenerationGateway {
   generateWorkout(userId: string, request: PlanGenerationRequest): Promise<WorkoutGenerationOutcome>;
+  generateNutrition(userId: string, request: PlanGenerationRequest): Promise<NutritionGenerationOutcome>;
 }
 

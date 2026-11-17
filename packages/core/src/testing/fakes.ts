@@ -13,6 +13,7 @@ import type {
   PlanGenerationRequest,
   TrainingProfileRepository,
   WorkoutGenerationOutcome,
+  NutritionGenerationOutcome,
   WorkoutPlanCache,
   AuthGateway,
   Clock,
@@ -354,6 +355,7 @@ export class InMemoryWorkoutPlans implements WorkoutPlanCache {
 export class FakePlanGenerationGateway implements PlanGenerationGateway {
   pedidos: PlanGenerationRequest[] = [];
   respostas: WorkoutGenerationOutcome[] = [];
+  respostasDieta: NutritionGenerationOutcome[] = [];
   erro: Error | null = null;
   async generateWorkout(_userId: string, request: PlanGenerationRequest) {
     this.pedidos.push(request);
@@ -362,7 +364,15 @@ export class FakePlanGenerationGateway implements PlanGenerationGateway {
     if (!resposta) throw new Error("sem resposta configurada");
     return resposta;
   }
+  async generateNutrition(_userId: string, request: PlanGenerationRequest) {
+    this.pedidos.push(request);
+    if (this.erro) throw this.erro;
+    const resposta = this.respostasDieta.shift();
+    if (!resposta) throw new Error("sem resposta configurada");
+    return resposta;
+  }
 }
+
 
 export class FakeGymsCache implements NearbyGymsCache {
   snapshot: NearbyGymsSnapshot | null = null;

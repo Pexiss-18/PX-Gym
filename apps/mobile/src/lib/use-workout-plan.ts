@@ -16,6 +16,7 @@ import { setLogs } from "@/db/schema";
 import { rowToSetLog } from "@/db/set-log-repository";
 import { generateWorkoutPlanUseCase, loadActiveWorkoutPlanUseCase } from "./plans";
 import { todayIsoDate } from "./workout";
+import { toGenerationError, type GenerationError } from "@/components/generation-feedback";
 
 /*
  * Estado do treino ativo compartilhado entre a aba Treino, a tela do
@@ -145,11 +146,7 @@ export function useWorkoutWithExercise(exerciseId: string): Workout | null {
   }, [today, history, exerciseId]);
 }
 
-export type GenerationError = {
-  message: string;
-  /** O que a pessoa precisa fazer antes, quando o motivo é conhecido. */
-  fix: "profile" | "assessment" | null;
-};
+export type { GenerationError } from "@/components/generation-feedback";
 
 /**
  * Ações da geração por IA. Quem chama vê `busy` enquanto a Edge Function
@@ -169,11 +166,7 @@ export function useWorkoutGeneration() {
       try {
         const r = await call();
         if (!r.ok) {
-          const message = r.erro.mensagem;
-          setError({
-            message,
-            fix: /perfil/i.test(message) ? "profile" : /avalia/i.test(message) ? "assessment" : null,
-          });
+          setError(toGenerationError(r.erro.mensagem));
           return false;
         }
         if (r.valor.status === "done") setActivePlan(r.valor.plan);

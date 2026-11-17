@@ -9,43 +9,15 @@ import { ProgressBar } from "@/components/progress-bar";
 import { PillButton } from "@/components/pill-button";
 import { Field } from "@/components/field";
 import { useTodayDoneByExercise } from "@/lib/use-workout-data";
-import {
-  chooseDay,
-  useTodayWorkout,
-  useWorkoutGeneration,
-  type GenerationError,
-} from "@/lib/use-workout-plan";
+import { GeneratingCard, GenerationErrorMessage } from "@/components/generation-feedback";
+import { chooseDay, useTodayWorkout, useWorkoutGeneration } from "@/lib/use-workout-plan";
 
-/** Mensagem de erro da geração, com o atalho pro que falta preencher. */
-function ErroDaGeracao({ error }: { error: GenerationError }) {
-  return (
-    <View className="mt-4 gap-3">
-      <Text className="font-sans text-sm text-protein">{error.message}</Text>
-      {error.fix === "profile" ? (
-        <PillButton variant="ghost" onPress={() => router.push("/perfil-treino")}>
-          Preencher perfil de treino
-        </PillButton>
-      ) : null}
-      {error.fix === "assessment" ? (
-        <PillButton variant="ghost" onPress={() => router.push("/avaliacoes/nova")}>
-          Registrar avaliação
-        </PillButton>
-      ) : null}
-    </View>
-  );
-}
-
-/** Enquanto a IA monta o treino (pode levar até um minuto). */
 function Gerando() {
   return (
-    <GlassCard className="items-center py-10">
-      <ActivityIndicator color={colors.voltLime} />
-      <Text className="mt-4 font-sans-semibold text-base text-paper">Montando seu treino</Text>
-      <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-        A IA está usando sua avaliação, seu perfil e os artigos científicos do app.
-        Pode levar até um minuto.
-      </Text>
-    </GlassCard>
+    <GeneratingCard
+      title="Montando seu treino"
+      description="A IA está usando sua avaliação, seu perfil e os artigos científicos do app. Pode levar até um minuto."
+    />
   );
 }
 
@@ -105,7 +77,7 @@ export default function TreinoScreen() {
               ) : (
                 <PillButton onPress={() => void generation.generate()}>Gerar meu treino</PillButton>
               )}
-              {generation.error ? <ErroDaGeracao error={generation.error} /> : null}
+              {generation.error ? <GenerationErrorMessage error={generation.error} /> : null}
             </View>
           </GlassCard>
         )}
@@ -276,7 +248,7 @@ export default function TreinoScreen() {
             </PillButton>
           </>
         )}
-        {generation.error && !generation.busy ? <ErroDaGeracao error={generation.error} /> : null}
+        {generation.error && !generation.busy ? <GenerationErrorMessage error={generation.error} /> : null}
       </View>
     </Screen>
   );

@@ -158,6 +158,49 @@ describe("SupabasePlanGenerationGateway", () => {
     await expect(pedido).rejects.toThrow("Limite de pedidos do dia atingido. Tente amanhã.");
   });
 
+  it("lê a mensagem do servidor mesmo quando a Response não é a classe global (React Native)", async () => {
+    const respostaDeOutroRealm = {
+      status: 500,
+      json: async () => ({ error: "GEMINI_API_KEY não configurada no servidor." }),
+    };
+    const { client } = fakeClient({ invoke: { error: { name: "FunctionsHttpError", context: respostaDeOutroRealm } } });
+
+    const pedido = new SupabasePlanGenerationGateway(client).generateWorkout("user-1", { assessmentId: "a-1" });
+
+    await expect(pedido).rejects.toThrow("GEMINI_API_KEY não configurada no servidor.");
+  });
+
+  it("pede a dieta com part=nutrition e lê a dieta gravada pelo id", async () => {
+    const row = {
+      id: "n-9", assessment_id: "a-1", user_id: "user-1", calories_target: 2100,
+      macros: { protein: { grams: 150, rationale: "p" }, carbs: { grams: 200, rationale: "c" }, fat: { grams: 70, rationale: "g" } },
+      micros: [], diet_guidance: "Coma bem.", model: "gemini", created_at: "2026-11-16T10:00:00Z",
+    };
+    const { client, invokes, calls } = fakeClient({
+      row,
+      invoke: { data: { status: "done", part: "nutrition", nutritionPlanId: "n-9" } },
+    });
+
+    const r = await new SupabasePlanGenerationGateway(client).generateNutrition("user-1", { assessmentId: "a-1" });
+
+    expect(invokes).toEqual([{ name: "generate-plan", body: { assessmentId: "a-1", part: "nutrition" } }]);
+    expect(calls).toContainEqual({ table: "nutrition_plans", op: "eq", args: ["id", "n-9"] });
+    expect(r.status).toBe("done");
+    if (r.status === "done") {
+      expect(r.plan).toMatchObject({ id: "n-9", assessmentId: "a-1", caloriesTarget: 2100, dietGuidance: "Coma bem." });
+    }
+  });
+
+  it("dieta: mudança vai como nutrition; retomada só com o id; fila devolve o id", async () => {
+    const { client, invokes } = fakeClient({ invoke: { data: { status: "queued", generationId: "g-2" } } });
+    const gateway = new SupabasePlanGenerationGateway(client);
+
+    expect(await gateway.generateNutrition("user-1", { feedback: "sem lactose" })).toEqual({ status: "queued", generationId: "g-2" });
+    await gateway.generateNutrition("user-1", { generationId: "g-2" });
+
+    expect(invokes.map((i) => i.body)).toEqual([{ feedback: "sem lactose", part: "nutrition" }, { generationId: "g-2" }]);
+  });
+
   it("falha do servidor (5xx) vira erro comum", async () => {
     const { client } = fakeClient({ invoke: { error: httpError(502, { error: "Não foi possível gerar o plano agora." }) } });
 

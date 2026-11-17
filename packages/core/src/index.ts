@@ -47,6 +47,7 @@ export * from "./application/use-cases/generate-nutrition-plan";
 export * from "./application/use-cases/register-manual-assessment";
 export * from "./application/use-cases/training-profile";
 export * from "./application/use-cases/workout-plan";
+export * from "./application/use-cases/diet-plan";
 export * from "./application/use-cases/record-cardio-session";
 export * from "./application/use-cases/find-nearby-gyms";
 export * from "./application/use-cases/auth";

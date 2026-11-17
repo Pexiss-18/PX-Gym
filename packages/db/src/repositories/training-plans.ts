@@ -1,6 +1,6 @@
 import {
-  BusinessRuleError,
   type ActiveWorkoutPlanSource,
+  type NutritionGenerationOutcome,
   type PlanDay,
   type PlanGenerationGateway,
   type PlanGenerationRequest,
@@ -10,7 +10,9 @@ import {
   type WorkoutPlan,
 } from "@px/core";
 import type { PxSupabaseClient } from "../client";
-import type { TrainingProfileRow, WorkoutPlanRow } from "../types";
+import { traduzirErroDaFuncao } from "../functions-error";
+import { toNutritionPlan } from "../mappers";
+import type { NutritionPlanRow, TrainingProfileRow, WorkoutPlanRow } from "../types";
 
 export function toTrainingProfile(row: TrainingProfileRow): TrainingProfile {
   return {
@@ -104,23 +106,9 @@ type GenerateWorkoutResponse =
       sources: string[];
     };
 
-/**
- * Recusa da generate-plan (4xx: limite, perfil incompleto, avaliação não
- * revisada, nada pra mudar) vira BusinessRuleError com a mensagem do
- * servidor, que já é escrita pra pessoa. O resto (5xx, rede) passa como erro
- * comum. `context` é a Response do FunctionsHttpError.
- */
-async function translate(error: unknown): Promise<Error> {
-  const response = (error as { context?: unknown }).context;
-  if (response instanceof Response) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    const message = body?.error ?? `generate-plan respondeu ${response.status}`;
-    return response.status >= 400 && response.status < 500
-      ? new BusinessRuleError(message)
-      : new Error(message);
-  }
-  return error instanceof Error ? error : new Error(String(error));
-}
+type GenerateNutritionResponse =
+  | { status: "queued"; generationId: string }
+  | { status: "done"; nutritionPlanId: string };
 
 /** Gera o treino pela Edge Function generate-plan (Gemini + acervo científico). */
 export class SupabasePlanGenerationGateway implements PlanGenerationGateway {
@@ -136,7 +124,7 @@ export class SupabasePlanGenerationGateway implements PlanGenerationGateway {
       "generate-plan",
       { body },
     );
-    if (error) throw await translate(error);
+    if (error) throw await traduzirErroDaFuncao(error);
     if (!data) throw new Error("generate-plan respondeu vazio");
     if (data.status === "queued") return { status: "queued", generationId: data.generationId };
     return {
@@ -151,5 +139,28 @@ export class SupabasePlanGenerationGateway implements PlanGenerationGateway {
         createdAt: new Date(),
       },
     };
+  }
+
+  async generateNutrition(
+    _userId: string,
+    request: PlanGenerationRequest,
+  ): Promise<NutritionGenerationOutcome> {
+    const body = "generationId" in request ? request : { ...request, part: "nutrition" };
+    const { data, error } = await this.client.functions.invoke<GenerateNutritionResponse>(
+      "generate-plan",
+      { body },
+    );
+    if (error) throw await traduzirErroDaFuncao(error);
+    if (!data) throw new Error("generate-plan respondeu vazio");
+    if (data.status === "queued") return { status: "queued", generationId: data.generationId };
+    // A resposta não traz a avaliação de origem: lê a dieta gravada inteira.
+    const { data: row, error: lerErro } = await this.client
+      .from("nutrition_plans")
+      .select("*")
+      .eq("id", data.nutritionPlanId)
+      .maybeSingle();
+    if (lerErro) throw lerErro;
+    if (!row) throw new Error("A dieta foi gerada, mas não deu pra carregá-la.");
+    return { status: "done", plan: toNutritionPlan(row as NutritionPlanRow) };
   }
 }

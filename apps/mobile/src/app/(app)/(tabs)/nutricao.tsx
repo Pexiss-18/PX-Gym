@@ -1,11 +1,26 @@
-import { ActivityIndicator, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { CloudOff, Salad } from "lucide-react-native";
 import { colors } from "@px/tokens";
 import type { MacroTarget } from "@px/core";
 import { Screen } from "@/components/screen";
 import { GlassCard } from "@/components/glass-card";
 import { Readout } from "@/components/readout";
+import { Field } from "@/components/field";
+import { WeeklyMenu } from "@/components/weekly-menu";
+import { PillButton } from "@/components/pill-button";
+import { GeneratingCard, GenerationErrorMessage } from "@/components/generation-feedback";
 import { useLatestPlan } from "@/lib/remote";
+import { useDietGeneration } from "@/lib/use-diet-plan";
+
+function Gerando() {
+  return (
+    <GeneratingCard
+      title="Montando sua dieta"
+      description="A IA está usando sua avaliação, seu perfil e os artigos científicos do app. Pode levar até um minuto."
+    />
+  );
+}
 
 const MACROS = [
   ["protein", "Proteína", colors.proteinCoral],
@@ -42,12 +57,36 @@ function MacroRow({
 }
 
 /**
- * Plano nutricional real: alvos e orientações gerados pela IA a partir da
- * avaliação corporal (pipeline do web). Registro de refeições fica pra uma
- * etapa futura — por enquanto a tela é o plano, não o consumo do dia.
+ * Plano nutricional: alvos e orientações gerados pela IA (Edge Function
+ * generate-plan, parte "nutrition") a partir da avaliação e do perfil. Sem
+ * dieta, convida a gerar; com dieta, deixa pedir mudança ou gerar outra.
+ * Registro de refeições fica pra uma etapa futura.
  */
 export default function NutricaoScreen() {
-  const plan = useLatestPlan();
+  const remoto = useLatestPlan();
+  const dieta = useDietGeneration();
+  const [mudando, setMudando] = useState(false);
+  const [pedido, setPedido] = useState("");
+  // a dieta que acabou de sair vale até a tela recarregar do servidor
+  const plano = dieta.generated ?? remoto.data;
+
+  async function enviarPedido() {
+    if (await dieta.requestChange(pedido)) {
+      setPedido("");
+      setMudando(false);
+    }
+  }
+
+  function gerarNova() {
+    Alert.alert(
+      "Gerar uma dieta nova?",
+      "A dieta atual é substituída. Cada avaliação permite gerar poucas dietas do zero; pra ajustes, use “Pedir mudança”.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Gerar nova", onPress: () => void dieta.generate() },
+      ],
+    );
+  }
 
   return (
     <Screen>
@@ -58,11 +97,11 @@ export default function NutricaoScreen() {
         </Text>
       </View>
 
-      {plan.status === "loading" ? (
+      {remoto.status === "loading" && !plano ? (
         <View className="items-center py-16">
           <ActivityIndicator color={colors.voltLime} />
         </View>
-      ) : plan.status === "error" ? (
+      ) : remoto.status === "error" && !plano ? (
         <GlassCard className="items-center py-10">
           <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
             <CloudOff size={24} color={colors.fogMuted} />
@@ -75,19 +114,36 @@ export default function NutricaoScreen() {
             voltar pra esta tela.
           </Text>
         </GlassCard>
-      ) : !plan.data ? (
-        <GlassCard className="items-center py-10">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
-            <Salad size={24} color={colors.fogMuted} />
-          </View>
-          <Text className="mt-4 font-sans-semibold text-base text-paper">
-            Nenhum plano gerado ainda
-          </Text>
-          <Text className="mt-1 px-6 text-center font-sans text-sm text-fog">
-            Envie o PDF da sua avaliação corporal no Px GYM web — a IA monta
-            seu plano de calorias e macros a partir dela.
-          </Text>
-        </GlassCard>
+      ) : !plano ? (
+        dieta.busy ? (
+          <Gerando />
+        ) : (
+          <GlassCard className="py-8">
+            <View className="items-center">
+              <View className="h-14 w-14 items-center justify-center rounded-full bg-glass-strong">
+                <Salad size={24} color={colors.fogMuted} />
+              </View>
+              <Text className="mt-4 font-sans-semibold text-base text-paper">
+                {dieta.queuedGenerationId ? "Seu pedido está na fila" : "Você ainda não tem uma dieta"}
+              </Text>
+              <Text className="mt-1 px-4 text-center font-sans text-sm text-fog">
+                {dieta.queuedGenerationId
+                  ? "A IA está com muitos pedidos agora. Tente de novo daqui a pouco: o pedido continua guardado."
+                  : "A IA monta suas metas de calorias e macros a partir da sua avaliação corporal e do seu perfil."}
+              </Text>
+            </View>
+            <View className="mt-6 px-2">
+              {dieta.queuedGenerationId ? (
+                <PillButton onPress={() => void dieta.resume(dieta.queuedGenerationId!)}>
+                  Tentar de novo
+                </PillButton>
+              ) : (
+                <PillButton onPress={() => void dieta.generate()}>Gerar minha dieta</PillButton>
+              )}
+              {dieta.error ? <GenerationErrorMessage error={dieta.error} /> : null}
+            </View>
+          </GlassCard>
+        )
       ) : (
         <View className="gap-5">
           <GlassCard>
@@ -96,7 +152,7 @@ export default function NutricaoScreen() {
             </Text>
             <View className="mt-2">
               <Readout
-                value={plan.data.caloriesTarget}
+                value={plano.caloriesTarget}
                 unit="kcal / dia"
                 size={28}
               />
@@ -113,19 +169,51 @@ export default function NutricaoScreen() {
                   key={key}
                   label={label}
                   color={color}
-                  target={plan.data!.macros[key]}
+                  target={plano.macros[key]}
                 />
               ))}
             </View>
           </GlassCard>
 
-          {plan.data.micros.length > 0 ? (
+          {plano.meals && plano.meals.length > 0 ? (
+            <WeeklyMenu key={plano.id} meals={plano.meals} />
+          ) : (
+            // Dieta de antes das refeições: monta o cardápio como pedido de
+            // mudança (mantém as metas e não gasta uma das gerações do zero).
+            dieta.busy ? (
+              <Gerando />
+            ) : (
+              <GlassCard>
+                <Text className="font-sans-semibold text-base text-paper">
+                  Monte seu cardápio da semana
+                </Text>
+                <Text className="mt-1 font-sans text-sm leading-6 text-fog">
+                  Sua dieta tem as metas, mas ainda não tem o que comer. A IA
+                  monta as refeições de segunda a domingo, mantendo essas metas.
+                </Text>
+                <View className="mt-4">
+                  <PillButton
+                    onPress={() =>
+                      void dieta.requestChange(
+                        "Montar o cardápio com as opções de cada refeição, mantendo as mesmas metas.",
+                      )
+                    }
+                  >
+                    Montar meu cardápio
+                  </PillButton>
+                </View>
+                {dieta.error ? <GenerationErrorMessage error={dieta.error} /> : null}
+              </GlassCard>
+            )
+          )}
+
+          {plano.micros.length > 0 ? (
             <GlassCard>
               <Text className="font-sans-medium text-xs uppercase tracking-wide text-fog">
                 Micronutrientes
               </Text>
               <View className="mt-3 gap-3">
-                {plan.data.micros.map((micro) => (
+                {plano.micros.map((micro) => (
                   <View
                     key={micro.name}
                     className="flex-row items-baseline justify-between"
@@ -149,17 +237,49 @@ export default function NutricaoScreen() {
               Orientações
             </Text>
             <Text className="mt-3 font-sans text-sm leading-6 text-paper">
-              {plan.data.dietGuidance}
+              {plano.dietGuidance}
             </Text>
             <Text className="mt-4 font-sans text-[11px] text-fog">
               Gerado em{" "}
-              {plan.data.createdAt.toLocaleDateString("pt-BR", {
+              {plano.createdAt.toLocaleDateString("pt-BR", {
                 day: "2-digit",
                 month: "short",
                 year: "numeric",
               })}
             </Text>
           </GlassCard>
+
+          {/* ajustes pela IA */}
+          <View className="mt-1 gap-3">
+            {dieta.busy ? (
+              <Gerando />
+            ) : mudando ? (
+              <GlassCard className="gap-3">
+                <Field
+                  label="O que você quer mudar?"
+                  value={pedido}
+                  onChangeText={setPedido}
+                  placeholder="Ex.: não como carne vermelha"
+                  multiline
+                  autoFocus
+                />
+                <PillButton onPress={() => void enviarPedido()}>Enviar pedido</PillButton>
+                <PillButton variant="ghost" onPress={() => setMudando(false)}>
+                  Cancelar
+                </PillButton>
+              </GlassCard>
+            ) : (
+              <>
+                <PillButton variant="ghost" onPress={() => setMudando(true)}>
+                  Pedir mudança na dieta
+                </PillButton>
+                <PillButton variant="ghost" onPress={gerarNova}>
+                  Gerar uma dieta nova
+                </PillButton>
+              </>
+            )}
+            {dieta.error && !dieta.busy ? <GenerationErrorMessage error={dieta.error} /> : null}
+          </View>
         </View>
       )}
     </Screen>

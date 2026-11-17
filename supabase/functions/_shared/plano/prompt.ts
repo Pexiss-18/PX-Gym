@@ -1,7 +1,8 @@
 import type { Artigo } from "./acervo.ts";
 import { EXERCICIOS } from "./exercicios.ts";
-import type { Avaliacao, Dieta, Parte, Perfil } from "./esquema.ts";
-import type { Treino } from "./regras.ts";
+import type { Avaliacao, Parte, Perfil, dietaGravadaSchema } from "./esquema.ts";
+import { faixasDaDieta, type Treino } from "./regras.ts";
+import type { z } from "zod";
 
 /** O usuário viu o treino (ou a dieta) e pediu pra mudar algo. */
 export type Revisao<T> = {
@@ -11,7 +12,8 @@ export type Revisao<T> = {
 };
 
 export type RevisaoDeTreino = Revisao<Treino>;
-export type RevisaoDeDieta = Revisao<Dieta>;
+/** A dieta atual vem do banco; as gravadas antes das refeições vêm sem elas. */
+export type RevisaoDeDieta = Revisao<z.infer<typeof dietaGravadaSchema>>;
 
 const TEMA: Record<Parte, Artigo["temas"][number]> = { treino: "treino", dieta: "nutricao" };
 
@@ -65,6 +67,24 @@ const REGRAS_DA_DIETA =
   '- "dietGuidance" precisa ser específica dessa pessoa: quantas refeições, ' +
   "quanto de proteína em cada uma, o que comer antes e depois do treino, com " +
   "exemplos de alimentos. Nada de conselho genérico.\n" +
+  '- Use as faixas de "faixasPermitidas": calorias, proteína e gordura fora ' +
+  "delas são corrigidas depois.\n" +
+  '- Em "meals", monte de 3 a 6 refeições do dia (café da manhã, almoço, ' +
+  "lanche, jantar, pré ou pós-treino, conforme a rotina). Cada refeição tem " +
+  "SEMPRE 3 ou 4 opções com alimentos diferentes, equivalentes em calorias e " +
+  "proteína: o app reveza entre elas pra montar o cardápio de cada dia da " +
+  "semana, então varie de verdade (não repita a mesma base em todas).\n" +
+  "- Somando uma opção de cada refeição, o dia precisa bater as calorias e os " +
+  "macros da meta. As porções são recalculadas depois pela fórmula, então o " +
+  "que importa é a escolha dos alimentos e a proporção entre eles e entre as " +
+  "refeições.\n" +
+  "- Cada alimento vem com gramas (ml para líquidos), os macros daquela " +
+  "quantidade pela tabela TACO quando houver, e a medida caseira que se usa " +
+  "pra ele (colher de sopa, unidade, fatia, concha, copo) com quantos gramas " +
+  "tem 1 dessa medida daquele alimento.\n" +
+  "- Prefira comida simples, barata e comum no Brasil (arroz, feijão, ovo, " +
+  "frango, carne moída, pão, banana, aveia, leite, iogurte). Varie as opções " +
+  "entre si.\n" +
   "- Nunca sugira alimento da lista de alimentos que a pessoa não gosta.";
 
 const MUDANCA_NO_TREINO =
@@ -138,6 +158,12 @@ function treinoParaIA(treino: Treino) {
   };
 }
 
+function faixasParaIA(pesoKg: number, perfil: Perfil) {
+  const f = faixasDaDieta(pesoKg, perfil);
+  const faixa = ([min, max]: readonly [number, number]) => ({ min: Math.ceil(min), max: Math.floor(max) });
+  return { caloriasKcal: faixa(f.calorias), proteinaG: faixa(f.proteina), gorduraG: faixa(f.gordura) };
+}
+
 /** Só números e o perfil: nome, e-mail e id do usuário não saem do Supabase. */
 export function dadosDoPedido(
   parte: Parte,
@@ -171,6 +197,7 @@ export function dadosDoPedido(
         regioesSensiveis: perfil.regioesSensiveis,
         ...(parte === "dieta" ? { alimentosQueNaoGosta: perfil.alimentosQueNaoGosta } : {}),
       },
+      ...(parte === "dieta" ? { faixasPermitidas: faixasParaIA(avaliacao.weightKg, perfil) } : {}),
       ...(revisao ? { planoAtual, pedidoDeMudanca: revisao.pedido } : {}),
     },
     null,

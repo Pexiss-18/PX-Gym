@@ -5,7 +5,7 @@ import { provedoresGemini } from "../_shared/ia/gemini.ts";
 import { ErroDeCota } from "../_shared/ia/provedor.ts";
 import {
   avaliacaoSchema,
-  dietaSchema,
+  dietaGravadaSchema,
   type Perfil,
   perfilDoBanco,
 } from "../_shared/plano/esquema.ts";
@@ -140,17 +140,18 @@ export default {
       } else {
         const { data: dietaAtiva } = await doUsuario
           .from("nutrition_plans")
-          .select("assessment_id, calories_target, macros, micros, diet_guidance")
+          .select("assessment_id, calories_target, macros, micros, diet_guidance, meals")
           .eq("user_id", userId)
           .eq("active", true)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        const dieta = dietaSchema.safeParse({
+        const dieta = dietaGravadaSchema.safeParse({
           caloriesTarget: dietaAtiva?.calories_target,
           macros: dietaAtiva?.macros,
           micros: dietaAtiva?.micros,
           dietGuidance: dietaAtiva?.diet_guidance,
+          meals: dietaAtiva?.meals ?? [],
         });
         if (!dietaAtiva || !dieta.success) return falha(404, semPlano);
         assessmentId = dietaAtiva.assessment_id;

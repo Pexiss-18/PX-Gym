@@ -1,4 +1,5 @@
 import {
+  GenerateDietPlanUseCase,
   GenerateWorkoutPlanUseCase,
   LoadActiveWorkoutPlanUseCase,
   SaveTrainingProfileUseCase,
@@ -28,11 +29,12 @@ export const saveTrainingProfileUseCase = new SaveTrainingProfileUseCase(
 );
 
 const workoutPlanCache = new DrizzleWorkoutPlanCache(db);
+const planGenerationGateway = new SupabasePlanGenerationGateway(supabase);
 
 export const generateWorkoutPlanUseCase = new GenerateWorkoutPlanUseCase(
   assessmentRepository,
   trainingProfileRepository,
-  new SupabasePlanGenerationGateway(supabase),
+  planGenerationGateway,
   workoutPlanCache,
   netInfoConnectivity,
 );
@@ -40,5 +42,12 @@ export const generateWorkoutPlanUseCase = new GenerateWorkoutPlanUseCase(
 export const loadActiveWorkoutPlanUseCase = new LoadActiveWorkoutPlanUseCase(
   new SupabaseWorkoutPlanRepository(supabase),
   workoutPlanCache,
+  netInfoConnectivity,
+);
+
+export const generateDietPlanUseCase = new GenerateDietPlanUseCase(
+  assessmentRepository,
+  trainingProfileRepository,
+  planGenerationGateway,
   netInfoConnectivity,
 );

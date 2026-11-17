@@ -3,6 +3,7 @@ import type {
   AssessmentStatus,
   ExtractedAssessment,
   MacroTarget,
+  Meal,
   MicroTarget,
   Nivel,
   Objetivo,
@@ -32,6 +33,8 @@ export type NutritionPlanRow = {
   macros: { protein: MacroTarget; carbs: MacroTarget; fat: MacroTarget };
   micros: MicroTarget[];
   diet_guidance: string;
+  /** Migration 0008; ausente em bancos que ainda não a aplicaram. */
+  meals?: Meal[] | null;
   model: string;
   created_at: string;
 };

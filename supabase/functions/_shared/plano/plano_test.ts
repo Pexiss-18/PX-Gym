@@ -17,7 +17,9 @@ import {
   caloriasDeReferencia,
   exerciciosVetados,
   juntarAlimentos,
+  fatoresDaOpcao,
   limparTexto,
+  medidaCaseira,
   PlanoInvalido,
   taxaMetabolicaBasal,
 } from "./regras.ts";
@@ -77,6 +79,15 @@ function dietaDaIA(mudancas: Partial<RespostaDeDieta> = {}): RespostaDeDieta {
       },
       micros: [{ name: "Ferro", targetAmount: 8, unit: "mg", rationale: "r" }],
       dietGuidance: "Coma bem.",
+      // 4 refeições de 725 kcal (40 p, 96,25 c, 20 g) = 2900 kcal
+      meals: ["Café da manhã", "Almoço", "Lanche", "Jantar"].map((name) => ({
+        name,
+        options: [
+          { foods: [{ name: "Arroz", grams: 300, unit: "colher de sopa", unitPlural: "colheres de sopa", unitGrams: 50, protein: 40, carbs: 96.25, fat: 20 }] },
+          { foods: [{ name: "Pão", grams: 200, unit: "fatia", unitPlural: "fatias", unitGrams: 50, protein: 40, carbs: 96.25, fat: 20 }] },
+          { foods: [{ name: "Aveia", grams: 180, unit: "colher de sopa", unitPlural: "colheres de sopa", unitGrams: 15, protein: 40, carbs: 96.25, fat: 20 }] },
+        ],
+      })),
     },
     sources: [],
     preferences: { dislikedFoods: [] },
@@ -166,9 +177,96 @@ Deno.test("dieta: proposta absurda é trazida pra faixa e o ajuste é relatado",
   assertEquals(dieta.macros.protein.grams, 192); // 2,4 g/kg
   assertEquals(dieta.macros.fat.grams, 48); // 0,6 g/kg
   assertEquals(dieta.macros.carbs.grams, Math.round((2321 - 192 * 4 - 48 * 9) / 4));
-  assertEquals(ajustes.length, 4);
+  assertEquals(ajustes.length, 5);
   assertEquals(ajustes[0], "calorias: 900 → 2321 kcal");
+  assert(ajustes[4].startsWith("porções:"), ajustes[4]);
   assertEquals(dieta.macros.protein.rationale, "p");
+});
+
+Deno.test("refeições: calorias de cada opção saem dos macros e o dia fecha sem escalar", () => {
+  const { dieta, ajustes } = ajustarDieta(planoDaIA().nutrition, 80, PERFIL);
+  assertEquals(ajustes, []);
+  assertEquals(dieta.meals.length, 4);
+  const opcao = dieta.meals[0].options[0];
+  assertEquals(opcao.kcal, 725);
+  assertEquals([opcao.protein, opcao.carbs, opcao.fat], [40, 96.3, 20]);
+  assertEquals(opcao.foods[0].measure, "6 colheres de sopa");
+  assertEquals(dieta.meals[0].options[1].foods[0].measure, "4 fatias");
+});
+
+Deno.test("refeições: dia longe da meta tem as porções escaladas e a medida refeita", () => {
+  const proposta = planoDaIA().nutrition;
+  // metade de cada alimento: o dia soma 1450 kcal pra uma meta de 2900
+  proposta.meals = proposta.meals.map((refeicao) => ({
+    ...refeicao,
+    options: refeicao.options.map((o) => ({
+      foods: o.foods.map((a) => ({ ...a, grams: a.grams / 2, protein: a.protein / 2, carbs: a.carbs / 2, fat: a.fat / 2 })),
+    })),
+  }));
+
+  const { dieta, ajustes } = ajustarDieta(proposta, 80, PERFIL);
+
+  assertEquals(ajustes.length, 1);
+  assert(ajustes[0].includes("×2.00"), ajustes[0]);
+  const alimento = dieta.meals[0].options[0].foods[0];
+  assertEquals(alimento.grams, 300);
+  assertEquals(alimento.measure, "6 colheres de sopa");
+  const dia = dieta.meals.reduce((total, r) => total + r.options[0].kcal, 0);
+  assert(Math.abs(dia - 2900) <= 8, String(dia));
+});
+
+Deno.test("refeições: opções desiguais da mesma refeição saem com as mesmas calorias", () => {
+  const proposta = planoDaIA().nutrition;
+  const pao = proposta.meals[0].options[1].foods[0];
+  // a IA errou a conta da 2ª opção: metade das calorias
+  proposta.meals[0].options[1].foods[0] = { ...pao, protein: 20, carbs: 48.125, fat: 10 };
+
+  const { dieta } = ajustarDieta(proposta, 80, PERFIL);
+
+  const [a, b] = dieta.meals[0].options;
+  assert(Math.abs(a.kcal - b.kcal) <= 15, `${a.kcal} vs ${b.kcal}`);
+  // porções arredondadas de 5 em 5 g: até 1% de diferença no dia
+  const dia = dieta.meals.reduce((total, r) => total + r.options[1].kcal, 0);
+  assert(Math.abs(dia - 2900) <= 29, String(dia));
+});
+
+Deno.test("refeições: medida caseira em meias unidades; some quando não faz sentido", () => {
+  const colher = { unit: "colher de sopa", unitPlural: "colheres de sopa", unitGrams: 25 };
+  assertEquals(medidaCaseira(40, colher), "1,5 colheres de sopa");
+  assertEquals(medidaCaseira(25, colher), "1 colher de sopa");
+  assertEquals(medidaCaseira(5, colher), "");
+  assertEquals(medidaCaseira(100, { ...colher, unitGrams: 0 }), "");
+});
+
+Deno.test("refeições: proteína e calorias da opção acertadas juntas (sistema 2×2)", () => {
+  const frango = { protein: 31, carbs: 0, fat: 3.6 }; // 156,4 kcal
+  const arroz = { protein: 2.5, carbs: 28, fat: 0.2 }; // 123,8 kcal
+  const [a, b] = fatoresDaOpcao([frango, arroz], 400, 40);
+  assert(a !== b);
+  const proteina = frango.protein * a + arroz.protein * b;
+  const kcal = 156.4 * a + 123.8 * b;
+  assert(Math.abs(proteina - 40) < 0.01, String(proteina));
+  assert(Math.abs(kcal - 400) < 0.01, String(kcal));
+});
+
+Deno.test("refeições: sem os dois grupos ou com porção absurda, escala única só pelas calorias", () => {
+  const banana = { protein: 1.3, carbs: 26, fat: 0.1 };
+  const aveia = { protein: 14, carbs: 66, fat: 8 };
+  const [x, y] = fatoresDaOpcao([banana, aveia], 500, 40);
+  assertEquals(x, y);
+  const frango = { protein: 31, carbs: 0, fat: 3.6 };
+  // 5 g de proteína em 600 kcal exigiria frango negativo
+  const [f, g] = fatoresDaOpcao([frango, banana], 600, 5);
+  assertEquals(f, g);
+});
+
+Deno.test("refeições: no máximo 4 opções por refeição e 6 refeições", () => {
+  const proposta = planoDaIA().nutrition;
+  const muitas = proposta.meals[0];
+  proposta.meals = Array.from({ length: 8 }, () => ({ ...muitas, options: [...muitas.options, ...muitas.options, ...muitas.options] }));
+  const { dieta } = ajustarDieta(proposta, 80, PERFIL);
+  assertEquals(dieta.meals.length, 6);
+  assertEquals(dieta.meals[0].options.length, 4);
 });
 
 Deno.test("dieta: emagrecimento nunca desce abaixo da taxa basal", () => {
@@ -262,6 +360,10 @@ Deno.test("dados do pedido: só números e perfil, sem identidade", () => {
 
   const dieta = JSON.parse(dadosDoPedido("dieta", AVALIACAO, { ...PERFIL, alimentosQueNaoGosta: ["ovo"] }));
   assertEquals(dieta.perfil.alimentosQueNaoGosta, ["ovo"]);
+  // a IA recebe as faixas da fórmula pra mirar dentro delas
+  assert(dieta.faixasPermitidas.caloriasKcal.min < dieta.faixasPermitidas.caloriasKcal.max);
+  assertEquals(dieta.faixasPermitidas.proteinaG, { min: 112, max: 192 });
+  assertEquals(treino.faixasPermitidas, undefined);
 });
 
 Deno.test("gerarTreino: treino inválido cai pro reserva; fontes fora do acervo somem", async () => {

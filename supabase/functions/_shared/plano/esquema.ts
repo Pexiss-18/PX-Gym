@@ -96,9 +96,70 @@ export const dietaSchema = z.object({
   dietGuidance: z
     .string()
     .describe("Orientação de dieta específica para essa pessoa, de 3 a 5 frases, em português"),
+  meals: z
+    .array(
+      z.object({
+        name: z.string().describe("Nome da refeição, ex: Café da manhã, Almoço, Pós-treino"),
+        options: z
+          .array(
+            z.object({
+              foods: z
+                .array(
+                  z.object({
+                    name: z.string().describe("Alimento comum no Brasil, ex: Arroz branco cozido"),
+                    grams: z.number().describe("Quantidade em gramas (ml para líquidos)"),
+                    unit: z.string().describe("Medida caseira no singular, ex: colher de sopa, unidade, fatia"),
+                    unitPlural: z.string().describe("A mesma medida no plural, ex: colheres de sopa, unidades"),
+                    unitGrams: z.number().describe("Quantos gramas tem 1 dessa medida caseira deste alimento"),
+                    protein: z.number().describe("Proteína em gramas nesta quantidade"),
+                    carbs: z.number().describe("Carboidrato em gramas nesta quantidade"),
+                    fat: z.number().describe("Gordura em gramas nesta quantidade"),
+                  }),
+                )
+                .min(1),
+            }),
+          )
+          .min(3)
+          .max(4)
+          .describe("3 ou 4 opções equivalentes com alimentos diferentes; o app reveza entre elas na semana"),
+      }),
+    )
+    .min(1)
+    .describe("Refeições do dia, de 3 a 6, que somadas batem as calorias e os macros"),
 });
 
 export type Dieta = z.infer<typeof dietaSchema>;
+export type Refeicao = Dieta["meals"][number];
+
+/**
+ * Dieta gravada antes das refeições existirem: lida pra pedido de mudança
+ * sem quebrar (refeições vazias, a IA monta do zero).
+ */
+export const dietaGravadaSchema = dietaSchema.extend({
+  meals: z.array(z.any()).default([]),
+});
+
+/** Alimento depois da fórmula: porção calculada e medida caseira refeita. */
+export type AlimentoConferido = {
+  name: string;
+  grams: number;
+  /** Ex.: "4 colheres de sopa"; vazia se a medida não fizer sentido. */
+  measure: string;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+/** Opção de refeição depois da fórmula: com os totais conferidos. */
+export type OpcaoConferida = {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  foods: AlimentoConferido[];
+};
+
+export type RefeicaoConferida = { name: string; options: OpcaoConferida[] };
 
 export const treinoSchema = z.object({
   name: z.string().describe("Nome do plano, ex: ABC — Hipertrofia"),

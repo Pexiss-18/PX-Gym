@@ -3,7 +3,6 @@ import { ACERVO, type Artigo } from "./acervo.ts";
 import { EXERCICIO_POR_ID } from "./exercicios.ts";
 import {
   type Avaliacao,
-  type Dieta,
   esquemaParaIA,
   type Perfil,
   respostaDeDietaSchema,
@@ -18,6 +17,7 @@ import {
 import {
   ajustarDieta,
   ajustarTreino,
+  type DietaConferida,
   exerciciosVetados,
   juntarAlimentos,
   type Treino,
@@ -33,7 +33,7 @@ export type TreinoGerado = {
 };
 
 export type DietaGerada = {
-  nutrition: Dieta;
+  nutrition: DietaConferida;
   /** Ids do acervo que embasaram a dieta. */
   sources: string[];
   /** O que as regras corrigiram na dieta proposta pela IA. */

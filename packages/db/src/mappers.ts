@@ -28,6 +28,7 @@ export function toNutritionPlan(row: NutritionPlanRow): NutritionPlan {
     macros: row.macros,
     micros: row.micros,
     dietGuidance: row.diet_guidance,
+    meals: row.meals ?? [],
     model: row.model,
     createdAt: new Date(row.created_at),
   };
