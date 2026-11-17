@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { router } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
+import { File } from "expo-file-system";
+import { FileText } from "lucide-react-native";
+import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { Field } from "@/components/field";
+import { DateField } from "@/components/date-field";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/adapters/hooks/useAuth";
-import { registerManualAssessmentUseCase } from "@/lib/remote";
-
-/** Medidas mais comuns numa avaliação com personal; todas opcionais. */
-const MEDIDAS = ["Peito", "Cintura", "Abdômen", "Quadril", "Braço", "Coxa", "Panturrilha"];
+import { readAssessmentPdfUseCase, registerManualAssessmentUseCase } from "@/lib/remote";
+import { formularioDoPdf, MEDIDAS } from "@/lib/assessment-form";
 
 /** "" vira null; vírgula vale como decimal; texto que não é número vira NaN (o domínio recusa). */
 function lerNumero(texto: string): number | null {
@@ -18,18 +21,11 @@ function lerNumero(texto: string): number | null {
   return limpo === "" ? null : Number(limpo);
 }
 
-/** Aceita DD/MM/AAAA (o jeito brasileiro) e entrega AAAA-MM-DD; vazio = hoje. */
-function lerData(texto: string): string | null {
-  const limpo = texto.trim();
-  if (limpo === "") return null;
-  const br = limpo.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  return br ? `${br[3]}-${br[2]}-${br[1]}` : limpo;
-}
-
 /**
- * Avaliação digitada pela pessoa — quem fez a avaliação com um personal e
- * não tem PDF. Só o peso é obrigatório. A validação é do domínio
- * (RegisterManualAssessmentUseCase); a tela só converte o texto.
+ * Nova avaliação, de dois jeitos: enviando o PDF (a IA lê e preenche os
+ * campos pra pessoa conferir) ou digitando. Só o peso é obrigatório. A
+ * validação é do domínio (RegisterManualAssessmentUseCase); a tela só
+ * converte o texto.
  */
 export default function NovaAvaliacaoScreen() {
   const { sessao } = useAuth();
@@ -39,8 +35,52 @@ export default function NovaAvaliacaoScreen() {
   const [data, setData] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [medidas, setMedidas] = useState<Record<string, string>>({});
+  /** Medidas do PDF que não têm campo padrão (ex.: Braço esquerdo). */
+  const [extras, setExtras] = useState<string[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [lendoPdf, setLendoPdf] = useState(false);
+  const [erroDoPdf, setErroDoPdf] = useState<string | null>(null);
+  /** PDF lido e guardado; vai junto da avaliação quando a pessoa salvar. */
+  const [pdf, setPdf] = useState<{ path: string; nome: string } | null>(null);
+
+  async function enviarPdf() {
+    if (!sessao || lendoPdf) return;
+    const escolha = await DocumentPicker.getDocumentAsync({
+      type: "application/pdf",
+      copyToCacheDirectory: true,
+    });
+    const arquivo = escolha.canceled ? null : escolha.assets[0];
+    if (!arquivo) return;
+
+    setErroDoPdf(null);
+    setLendoPdf(true);
+    try {
+      const bytes = new Uint8Array(await new File(arquivo.uri).arrayBuffer());
+      const r = await readAssessmentPdfUseCase.execute(sessao.usuario.id, bytes);
+      if (!r.ok) {
+        setErroDoPdf(
+          r.erro.tipo === "falha-externa" && !/internet/i.test(r.erro.mensagem)
+            ? "Não consegui ler esse PDF agora. Tente de novo ou digite os números."
+            : r.erro.mensagem,
+        );
+        return;
+      }
+      const f = formularioDoPdf(r.valor.extracted);
+      setPeso(f.peso);
+      setGordura(f.gordura);
+      setMusculo(f.musculo);
+      setData(f.data);
+      setObservacoes(f.observacoes);
+      setMedidas(f.medidas);
+      setExtras(f.extras);
+      setPdf({ path: r.valor.pdfPath, nome: arquivo.name });
+    } catch {
+      setErroDoPdf("Não consegui abrir esse arquivo. Tente de novo.");
+    } finally {
+      setLendoPdf(false);
+    }
+  }
 
   async function salvar() {
     if (!sessao || salvando) return;
@@ -56,9 +96,10 @@ export default function NovaAvaliacaoScreen() {
       weightKg,
       bodyFatPct: lerNumero(gordura),
       muscleMassKg: lerNumero(musculo),
-      assessmentDate: lerData(data),
+      assessmentDate: data || null, // vazio = hoje
       notes: observacoes,
-      measurements: MEDIDAS.map((label) => ({
+      pdfPath: pdf?.path ?? null,
+      measurements: [...MEDIDAS, ...extras].map((label) => ({
         label,
         valueCm: lerNumero(medidas[label] ?? ""),
       })),
@@ -88,9 +129,52 @@ export default function NovaAvaliacaoScreen() {
         </View>
       </View>
 
+      {/* jeito 1: o PDF da bioimpedância, lido pela IA */}
+      <GlassCard className="mb-6">
+        {lendoPdf ? (
+          <View className="items-center py-4">
+            <ActivityIndicator color={colors.voltLime} />
+            <Text className="mt-3 font-sans-semibold text-base text-paper">Lendo seu PDF</Text>
+            <Text className="mt-1 text-center font-sans text-sm text-fog">
+              A IA está tirando os números do laudo. Leva uns segundos.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-glass-strong">
+                <FileText size={18} color={pdf ? colors.voltLime : colors.fogMuted} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-sans-semibold text-base text-paper">
+                  {pdf ? "PDF lido" : "Tem o PDF da avaliação?"}
+                </Text>
+                <Text className="font-sans text-xs text-fog" numberOfLines={1}>
+                  {pdf ? pdf.nome : "Bioimpedância, InBody, laudo do personal"}
+                </Text>
+              </View>
+            </View>
+            <Text className="mt-3 font-sans text-sm leading-5 text-fog">
+              {pdf
+                ? "Os campos abaixo foram preenchidos com o que a IA leu. Confira cada número antes de salvar: ela pode errar."
+                : "A IA lê os números e preenche tudo aqui embaixo. Você confere antes de salvar."}
+            </Text>
+            <View className="mt-4">
+              <PillButton variant={pdf ? "ghost" : "primary"} onPress={() => void enviarPdf()}>
+                {pdf ? "Enviar outro PDF" : "Enviar PDF"}
+              </PillButton>
+            </View>
+            {erroDoPdf ? (
+              <Text className="mt-3 font-sans text-sm text-protein">{erroDoPdf}</Text>
+            ) : null}
+          </>
+        )}
+      </GlassCard>
+
       <Text className="mb-4 font-sans text-sm text-fog">
-        Digite os números da sua avaliação com o personal. Só o peso é
-        obrigatório; o resto ajuda a montar um treino e uma dieta mais certos.
+        {pdf
+          ? "Confira os números. Só o peso é obrigatório."
+          : "Ou digite os números da sua avaliação. Só o peso é obrigatório; o resto ajuda a montar um treino e uma dieta mais certos."}
       </Text>
 
       <GlassCard className="gap-4">
@@ -115,12 +199,11 @@ export default function NovaAvaliacaoScreen() {
           keyboardType="decimal-pad"
           placeholder="Ex.: 34"
         />
-        <Field
+        <DateField
           label="Data da avaliação"
           value={data}
-          onChangeText={setData}
-          keyboardType="numbers-and-punctuation"
-          placeholder="Hoje (ou DD/MM/AAAA)"
+          onChange={setData}
+          placeholder="Hoje"
         />
       </GlassCard>
 
@@ -128,7 +211,7 @@ export default function NovaAvaliacaoScreen() {
         Medidas (cm)
       </Text>
       <GlassCard className="gap-4">
-        {MEDIDAS.map((label) => (
+        {[...MEDIDAS, ...extras].map((label) => (
           <Field
             key={label}
             label={label}

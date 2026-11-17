@@ -1,16 +1,18 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
+  ReadAssessmentPdfUseCase,
   RegisterManualAssessmentUseCase,
   type BodyAssessment,
   type NutritionPlan,
 } from "@px/core";
 import {
+  SupabaseAssessmentPdfReader,
   SupabaseAssessmentRepository,
   SupabaseNutritionPlanRepository,
 } from "@px/db";
 import { supabase } from "./supabase";
-import { cryptoIds, systemClock } from "./system";
+import { cryptoIds, netInfoConnectivity, systemClock } from "./system";
 import { useAuth } from "@/adapters/hooks/useAuth";
 
 /*
@@ -29,6 +31,12 @@ export const registerManualAssessmentUseCase = new RegisterManualAssessmentUseCa
   assessmentRepository,
   systemClock,
   cryptoIds,
+);
+
+/** PDF da avaliação lido pela IA (Edge Function extract-assessment). */
+export const readAssessmentPdfUseCase = new ReadAssessmentPdfUseCase(
+  new SupabaseAssessmentPdfReader(supabase, () => cryptoIds.next()),
+  netInfoConnectivity,
 );
 
 export type Remote<T> =

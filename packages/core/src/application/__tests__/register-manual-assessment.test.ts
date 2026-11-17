@@ -121,4 +121,19 @@ describe("RegisterManualAssessmentUseCase", () => {
 
     expect(r).toEqual({ ok: false, erro: { tipo: "falha-externa", mensagem: "sem rede" } });
   });
+
+  it("com o PDF lido e conferido: guarda o caminho e marca a origem como pdf", async () => {
+    const { useCase } = deps();
+    const r = await useCase.execute({ userId: "user-1", weightKg: 81.4, pdfPath: "user-1/abc.pdf" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.valor).toMatchObject({ pdfPath: "user-1/abc.pdf", source: "pdf", status: "reviewed" });
+  });
+
+  it("PDF da pasta de outra pessoa é recusado", async () => {
+    const { assessments, useCase } = deps();
+    const r = await useCase.execute({ userId: "user-1", weightKg: 81.4, pdfPath: "user-2/abc.pdf" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erro.tipo).toBe("dados-invalidos");
+    expect(assessments.assessments).toHaveLength(0);
+  });
 });

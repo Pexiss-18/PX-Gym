@@ -37,7 +37,16 @@ export class ProvedorGemini implements ProvedorIA {
         body: JSON.stringify({
           model: this.modelo,
           system_instruction: pedido.sistema,
-          input: pedido.entrada,
+          input: pedido.anexos?.length
+            ? [
+              { type: "text", text: pedido.entrada },
+              ...pedido.anexos.map((anexo) => ({
+                type: "document",
+                data: anexo.base64,
+                mime_type: anexo.mimeType,
+              })),
+            ]
+            : pedido.entrada,
           response_format: {
             type: "text",
             mime_type: "application/json",

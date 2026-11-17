@@ -16,6 +16,8 @@ export type ManualAssessmentInput = {
   /** AAAA-MM-DD; sem ela, vale a data de hoje. */
   assessmentDate?: string | null;
   notes?: string | null;
+  /** PDF lido pela IA e conferido pela pessoa; sem ele, avaliação digitada. */
+  pdfPath?: string | null;
 };
 
 function dataLocal(date: Date): string {
@@ -41,9 +43,10 @@ function medidas(linhas: ManualAssessmentInput["measurements"] = []): Assessment
 }
 
 /**
- * Avaliação digitada no app — quem fez a avaliação com um personal e não tem
- * PDF. Os números já vêm conferidos pela pessoa, então ela nasce revisada e
- * serve direto pra gerar o treino e a dieta.
+ * Avaliação conferida no app: digitada (quem fez com um personal e não tem
+ * PDF) ou lida do PDF pela IA e corrigida pela pessoa. Os números já vêm
+ * conferidos, então ela nasce revisada e serve direto pra gerar o treino e a
+ * dieta.
  */
 export class RegisterManualAssessmentUseCase {
   constructor(
@@ -75,11 +78,16 @@ export class RegisterManualAssessmentUseCase {
         throw new InvalidValueError("A data da avaliação não pode estar no futuro.");
       }
 
+      const pdfPath = input.pdfPath?.trim() || null;
+      if (pdfPath && !pdfPath.startsWith(`${input.userId}/`)) {
+        throw new InvalidValueError("Esse PDF não é seu.");
+      }
+
       const assessment: BodyAssessment = {
         id: this.ids.next(),
         userId: input.userId,
-        pdfPath: null,
-        source: "manual",
+        pdfPath,
+        source: pdfPath ? "pdf" : "manual",
         status: "reviewed",
         extracted: {
           weightKg,

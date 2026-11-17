@@ -109,6 +109,26 @@ Deno.test("gemini: envia o esquema e lê o texto do passo model_output", async (
   });
 });
 
+Deno.test("gemini: anexo vai como document junto do texto", async () => {
+  let corpo: Record<string, unknown> = {};
+  const buscar: typeof fetch = (_url, init) => {
+    corpo = JSON.parse(String(init?.body));
+    return Promise.resolve(
+      Response.json({ status: "completed", output_text: "{}" }),
+    );
+  };
+
+  await new ProvedorGemini("m", "k", buscar).gerar({
+    ...PEDIDO,
+    anexos: [{ mimeType: "application/pdf", base64: "JVBERi0=" }],
+  });
+
+  assertEquals(corpo.input, [
+    { type: "text", text: PEDIDO.entrada },
+    { type: "document", data: "JVBERi0=", mime_type: "application/pdf" },
+  ]);
+});
+
 Deno.test("gemini: HTTP 429 vira ErroDeCota", async () => {
   await assertRejects(
     () => new ProvedorGemini("m", "k", buscarFixo(429, { error: { message: "quota" } })).gerar(PEDIDO),

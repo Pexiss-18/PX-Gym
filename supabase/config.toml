@@ -425,6 +425,13 @@ entrypoint = "./functions/generate-plan/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-plan/*.html" ]
 
+[functions.extract-assessment]
+enabled = true
+# O JWT é conferido dentro da função (withSupabase auth: "user").
+verify_jwt = false
+import_map = "./functions/extract-assessment/deno.json"
+entrypoint = "./functions/extract-assessment/index.ts"
+
 [functions.photo-storage]
 enabled = true
 # O JWT é conferido dentro da função (withSupabase auth: "user").

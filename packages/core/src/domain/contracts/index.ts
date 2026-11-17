@@ -1,6 +1,6 @@
 import type { SetLog } from "../entities/set-log";
 import type { Workout } from "../entities/workout";
-import type { BodyAssessment } from "../entities/body-assessment";
+import type { BodyAssessment, ExtractedAssessment } from "../entities/body-assessment";
 import type { TrainingProfile } from "../entities/training-profile";
 import type { WorkoutPlan } from "../entities/workout-plan";
 import type {
@@ -72,8 +72,26 @@ export interface AssessmentRepository {
   byId(id: string): Promise<BodyAssessment | null>;
   listByUser(userId: string): Promise<BodyAssessment[]>;
   latestReviewed(userId: string): Promise<BodyAssessment | null>;
-  /** Grava a avaliação digitada no app (sem PDF) e devolve como ficou salva. */
+  /**
+   * Grava a avaliação conferida no app (digitada, ou lida do PDF e conferida)
+   * e devolve como ficou salva.
+   */
   createManual(assessment: BodyAssessment): Promise<BodyAssessment>;
+}
+
+/** O que a IA leu do PDF: a pessoa confere antes de virar avaliação. */
+export type PdfAssessmentReading = {
+  /** Onde o PDF ficou guardado ({userId}/{id}.pdf). */
+  pdfPath: string;
+  extracted: ExtractedAssessment;
+};
+
+/**
+ * Guarda o PDF da avaliação e pede a leitura à IA. Recusa do servidor (não é
+ * avaliação, limite do dia) lança BusinessRuleError com a mensagem dele.
+ */
+export interface AssessmentPdfReader {
+  read(userId: string, pdf: Uint8Array): Promise<PdfAssessmentReading>;
 }
 
 export interface NutritionPlanRepository {

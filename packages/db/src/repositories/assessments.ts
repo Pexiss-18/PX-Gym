@@ -1,5 +1,12 @@
-import type { AssessmentRepository, BodyAssessment } from "@px/core";
+import type {
+  AssessmentPdfReader,
+  AssessmentRepository,
+  BodyAssessment,
+  ExtractedAssessment,
+  PdfAssessmentReading,
+} from "@px/core";
 import type { PxSupabaseClient } from "../client";
+import { traduzirErroDaFuncao } from "../functions-error";
 import type { BodyAssessmentRow } from "../types";
 import { toBodyAssessment } from "../mappers";
 
@@ -27,15 +34,15 @@ export class SupabaseAssessmentRepository implements AssessmentRepository {
     return (data as BodyAssessmentRow[]).map(toBodyAssessment);
   }
 
-  /** Avaliação digitada no app: sem PDF, já revisada (migration 0007). */
+  /** Avaliação conferida no app (digitada ou do PDF), já revisada (migration 0007). */
   async createManual(assessment: BodyAssessment): Promise<BodyAssessment> {
     const { data, error } = await this.client
       .from("body_assessments")
       .insert({
         id: assessment.id,
         user_id: assessment.userId,
-        pdf_path: null,
-        source: "manual",
+        pdf_path: assessment.pdfPath,
+        source: assessment.source,
         status: "reviewed",
         extracted_data: assessment.extracted,
         created_at: assessment.createdAt.toISOString(),
@@ -57,5 +64,33 @@ export class SupabaseAssessmentRepository implements AssessmentRepository {
       .maybeSingle();
     if (error) throw error;
     return data ? toBodyAssessment(data as BodyAssessmentRow) : null;
+  }
+}
+
+/**
+ * Sobe o PDF na pasta do usuário no bucket "assessments" (RLS) e pede a
+ * leitura à Edge Function extract-assessment, que usa o Gemini. Se o envio
+ * falhar no meio, a função apaga o arquivo.
+ */
+export class SupabaseAssessmentPdfReader implements AssessmentPdfReader {
+  constructor(
+    private readonly client: PxSupabaseClient,
+    private readonly newId: () => string,
+  ) {}
+
+  async read(userId: string, pdf: Uint8Array): Promise<PdfAssessmentReading> {
+    const pdfPath = `${userId}/${this.newId()}.pdf`;
+    const { error: uploadError } = await this.client.storage
+      .from("assessments")
+      .upload(pdfPath, pdf, { contentType: "application/pdf" });
+    if (uploadError) throw uploadError;
+
+    const { data, error } = await this.client.functions.invoke<{ assessment: ExtractedAssessment }>(
+      "extract-assessment",
+      { body: { pdfPath } },
+    );
+    if (error) throw await traduzirErroDaFuncao(error);
+    if (!data?.assessment) throw new Error("extract-assessment respondeu vazio");
+    return { pdfPath, extracted: data.assessment };
   }
 }

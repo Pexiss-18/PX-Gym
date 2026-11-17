@@ -9,6 +9,8 @@ import type { GeoPoint } from "../domain/value-objects/geo";
 import { LocationUnavailableError } from "../domain/errors";
 import type {
   AssessmentRepository,
+  AssessmentPdfReader,
+  PdfAssessmentReading,
   PlanGenerationGateway,
   PlanGenerationRequest,
   TrainingProfileRepository,
@@ -373,6 +375,18 @@ export class FakePlanGenerationGateway implements PlanGenerationGateway {
   }
 }
 
+
+/** Leitura falsa de PDF: devolve `resposta` ou lança `erro`. */
+export class FakeAssessmentPdfReader implements AssessmentPdfReader {
+  lidos: Uint8Array[] = [];
+  erro: Error | null = null;
+  constructor(public resposta: PdfAssessmentReading) {}
+  async read(_userId: string, pdf: Uint8Array) {
+    this.lidos.push(pdf);
+    if (this.erro) throw this.erro;
+    return this.resposta;
+  }
+}
 
 export class FakeGymsCache implements NearbyGymsCache {
   snapshot: NearbyGymsSnapshot | null = null;

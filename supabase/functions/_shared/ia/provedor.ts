@@ -9,6 +9,8 @@ export type PedidoIA = {
   entrada: string;
   /** JSON Schema que a resposta precisa seguir. */
   esquema: Record<string, unknown>;
+  /** Arquivos que vão junto da entrada (ex.: o PDF da avaliação), em base64. */
+  anexos?: { mimeType: string; base64: string }[];
 };
 
 export interface ProvedorIA {

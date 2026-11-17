@@ -7,6 +7,7 @@ import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
 import { Field } from "@/components/field";
+import { DateField } from "@/components/date-field";
 import { PillButton } from "@/components/pill-button";
 import { ChoiceChips } from "@/components/choice-chips";
 import { useAuth } from "@/adapters/hooks/useAuth";
@@ -38,13 +39,6 @@ const REGIOES: { value: RegiaoSensivel; label: string }[] = [
   { value: "punho", label: "Punho" },
 ];
 
-/** AAAA-MM-DD ↔ DD/MM/AAAA, o jeito brasileiro de digitar. */
-const paraTela = (iso: string) => iso.split("-").reverse().join("/");
-function paraIso(texto: string): string {
-  const br = texto.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  return br ? `${br[3]}-${br[2]}-${br[1]}` : texto.trim();
-}
-
 /**
  * Perfil de treino: o que a IA precisa saber pra montar o treino e a dieta.
  * As faixas são validadas no domínio (SaveTrainingProfileUseCase).
@@ -72,7 +66,7 @@ export default function PerfilTreinoScreen() {
       .then((perfil) => {
         if (!perfil) return;
         setSexo(perfil.sex);
-        setNascimento(paraTela(perfil.birthDate));
+        setNascimento(perfil.birthDate);
         setAltura(String(perfil.heightCm).replace(".", ","));
         setObjetivo(perfil.goal);
         setNivel(perfil.level);
@@ -87,7 +81,7 @@ export default function PerfilTreinoScreen() {
 
   async function salvar() {
     if (!userId || salvando) return;
-    if (!sexo || !objetivo || !nivel || !dias || !minutos || !nascimento.trim() || !altura.trim()) {
+    if (!sexo || !objetivo || !nivel || !dias || !minutos || !nascimento || !altura.trim()) {
       setErro("Preencha todos os campos marcados com *.");
       return;
     }
@@ -96,7 +90,7 @@ export default function PerfilTreinoScreen() {
     const resultado = await saveTrainingProfileUseCase.execute({
       userId,
       sex: sexo,
-      birthDate: paraIso(nascimento),
+      birthDate: nascimento,
       heightCm: Number(altura.trim().replace(",", ".")),
       goal: objetivo,
       level: nivel,
@@ -145,12 +139,13 @@ export default function PerfilTreinoScreen() {
 
           <GlassCard className="mt-5 gap-5">
             <ChoiceChips label="Sexo *" options={SEXOS} value={sexo} onChange={setSexo} />
-            <Field
+            <DateField
               label="Data de nascimento *"
               value={nascimento}
-              onChangeText={setNascimento}
-              keyboardType="numbers-and-punctuation"
+              onChange={setNascimento}
               placeholder="DD/MM/AAAA"
+              initialDate={new Date(2000, 0, 1)}
+              minimumDate={new Date(1920, 0, 1)}
             />
             <Field
               label="Altura (cm) *"
