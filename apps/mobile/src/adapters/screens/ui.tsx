@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaInsetsContext } from "react-native-safe-area-context";
 import { colors, glass, radius, spacing } from "@px/tokens";
+import { pedirCampoVisivel, useKeyboardAwareScroll } from "../../components/keyboard-aware";
 
 /*
  * Kit visual das telas do relatório: só <View>/<Text> nativos, estilo em
@@ -39,14 +40,16 @@ export function Tela({
 }>) {
   // Sem SafeAreaProvider (testes) cai pra zero em vez de quebrar.
   const insets = useContext(SafeAreaInsetsContext) ?? { top: 0, bottom: 0 };
+  const teclado = useKeyboardAwareScroll();
   return (
     <View style={styles.tela}>
       <ScrollView
+        ref={teclado.scrollRef}
         contentContainerStyle={[
           styles.conteudo,
           { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.xl },
         ]}
-        keyboardShouldPersistTaps="handled"
+        {...teclado.scrollProps}
       >
         <View style={styles.topo}>
           {onVoltar ? (
@@ -69,6 +72,7 @@ export function Tela({
           {acaoTopo}
         </View>
         {children}
+        {teclado.espaco > 0 ? <View style={{ height: teclado.espaco }} /> : null}
       </ScrollView>
     </View>
   );
@@ -132,7 +136,12 @@ export function Botao({
   );
 }
 
-export function Campo({ rotulo, ...props }: TextInputProps & { rotulo: string }) {
+export function Campo({
+  rotulo,
+  onFocus,
+  onContentSizeChange,
+  ...props
+}: TextInputProps & { rotulo: string }) {
   return (
     <View style={styles.campo}>
       <Text style={styles.rotulo}>{rotulo}</Text>
@@ -141,6 +150,14 @@ export function Campo({ rotulo, ...props }: TextInputProps & { rotulo: string })
         placeholderTextColor={colors.fogMuted}
         style={[styles.input, props.multiline && styles.inputMultilinha]}
         {...props}
+        onFocus={(e) => {
+          pedirCampoVisivel();
+          onFocus?.(e);
+        }}
+        onContentSizeChange={(e) => {
+          pedirCampoVisivel();
+          onContentSizeChange?.(e);
+        }}
       />
     </View>
   );

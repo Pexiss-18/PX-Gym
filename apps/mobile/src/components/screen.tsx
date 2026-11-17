@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
-import { KeyboardAvoidingView, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { useKeyboardAwareScroll } from "./keyboard-aware";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@px/tokens";
 
@@ -8,9 +9,9 @@ import { colors } from "@px/tokens";
  * ambiente do DESIGN.md (lime no topo, coral na base, 5–7%, nos cantos,
  * nunca atrás da coluna de texto).
  *
- * `avoidKeyboard`: pra telas de formulário. Encolhe a área útil quando o
- * teclado sobe e deixa rolar, pra o campo focado nunca ficar escondido.
- * O conteúdo continua podendo centralizar (flex-1) quando o teclado some.
+ * Toda tela que rola mantém o campo focado à vista quando o teclado sobe
+ * (ver useKeyboardAwareScroll). `avoidKeyboard`: telas de formulário, que
+ * rolam mesmo com `scroll={false}` e podem centralizar o conteúdo.
  */
 export function Screen({
   children,
@@ -23,6 +24,7 @@ export function Screen({
   avoidKeyboard?: boolean;
 }>) {
   const insets = useSafeAreaInsets();
+  const teclado = useKeyboardAwareScroll();
 
   const body = (
     <View
@@ -51,27 +53,18 @@ export function Screen({
           }}
         />
       </View>
-      {avoidKeyboard ? (
-        // Edge-to-edge (padrão no SDK 57) desliga o adjustResize do Android,
-        // então "padding" é o comportamento certo nas duas plataformas.
-        <KeyboardAvoidingView className="flex-1" behavior="padding">
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          >
-            {body}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      ) : scroll ? (
+      {scroll || avoidKeyboard ? (
         <ScrollView
+          ref={teclado.scrollRef}
           className="flex-1"
+          // formulário: o conteúdo pode centralizar (flex-1) quando o teclado some
+          contentContainerStyle={avoidKeyboard ? { flexGrow: 1 } : undefined}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          {...teclado.scrollProps}
         >
           {body}
+          {teclado.espaco > 0 ? <View style={{ height: teclado.espaco }} /> : null}
         </ScrollView>
       ) : (
         body

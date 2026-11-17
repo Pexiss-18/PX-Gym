@@ -18,6 +18,7 @@ import { colors } from "@px/tokens";
 import { AuthProvider } from "@/adapters/context/AuthContext";
 import { CasosDeUsoProvider } from "@/adapters/context/CasosDeUsoContext";
 import { useAuth } from "@/adapters/hooks/useAuth";
+import { KeyboardDoneBar } from "@/components/keyboard-done-bar";
 import { MODO_MOCK, composicao } from "@/adapters/instancia";
 import { db } from "@/db";
 import migrations from "../../drizzle/migrations";
@@ -83,6 +84,7 @@ export default function RootLayout() {
         <CasosDeUsoProvider casos={composicao.casos}>
           <StatusBar style="light" />
           <RootNavigator />
+          <KeyboardDoneBar />
         </CasosDeUsoProvider>
       </AuthProvider>
     </GestureHandlerRootView>
