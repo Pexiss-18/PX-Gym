@@ -1,7 +1,12 @@
 import { FindNearbyGymsUseCase } from "../use-cases/find-nearby-gyms";
 import type { Gym } from "../../domain/entities/gym";
 import type { GeoPoint } from "../../domain/value-objects/geo";
-import { FakeGymFinder, FakeLocation } from "../../testing/fakes";
+import {
+  FakeGymFinder,
+  FakeGymsCache,
+  FakeLocation,
+  FixedClock,
+} from "../../testing/fakes";
 
 // Centro de BH; deslocamentos de ~0.001 grau ≈ 111m de latitude.
 const center: GeoPoint = { latitude: -19.9245, longitude: -43.9352 };
@@ -174,5 +179,99 @@ describe("FindNearbyGymsUseCase — falhas", () => {
     expect(await useCase.execute({ radiusMeters: 3000 })).toEqual({
       status: "search-failed",
     });
+  });
+});
+
+describe("FindNearbyGymsUseCase — última busca guardada", () => {
+  const savedAt = new Date("2026-11-03T14:20:00-03:00");
+
+  function setupWithCache(gyms: Gym[], location = new FakeLocation("granted", center)) {
+    const finder = new FakeGymFinder(gyms);
+    const cache = new FakeGymsCache();
+    return {
+      finder,
+      cache,
+      useCase: new FindNearbyGymsUseCase(finder, location, {
+        cache,
+        clock: new FixedClock(savedAt),
+      }),
+    };
+  }
+
+  it("busca que deu certo é guardada com a posição e a hora", async () => {
+    const { useCase, cache } = setupWithCache([gym("a", 0.001)]);
+
+    await useCase.execute({ radiusMeters: 3000 });
+
+    expect(cache.snapshot).toEqual({ center, gyms: [gym("a", 0.001)], savedAt });
+  });
+
+  it("resultado novo não traz cachedAt", async () => {
+    const { useCase } = setupWithCache([gym("a", 0.001)]);
+
+    const result = await useCase.execute({ radiusMeters: 3000 });
+
+    if (result.status !== "found") throw new Error(result.status);
+    expect(result.cachedAt).toBeUndefined();
+  });
+
+  it("finder fora do ar: devolve a última busca, recalculada a partir da posição atual", async () => {
+    const { useCase, finder, cache } = setupWithCache([]);
+    cache.snapshot = {
+      center: { latitude: center.latitude + 0.002, longitude: center.longitude },
+      gyms: [gym("longe", 0.009), gym("perto", 0.001)],
+      savedAt,
+    };
+    finder.failNext = true;
+
+    const result = await useCase.execute({ radiusMeters: 3000 });
+
+    if (result.status !== "found") throw new Error(result.status);
+    expect(result.cachedAt).toEqual(savedAt);
+    expect(result.center).toEqual(center);
+    expect(result.gyms.map((g) => g.id)).toEqual(["perto", "longe"]);
+    expect(result.gyms[0]!.distanceMeters).toBeLessThan(130);
+  });
+
+  it("finder fora do ar e a pessoa longe da última busca: search-failed, não 'nenhuma academia'", async () => {
+    const { useCase, finder, cache } = setupWithCache([]);
+    cache.snapshot = { center, gyms: [gym("outra-cidade", 0.5)], savedAt };
+    finder.failNext = true;
+
+    expect(await useCase.execute({ radiusMeters: 3000 })).toEqual({
+      status: "search-failed",
+    });
+  });
+
+  it("finder fora do ar sem busca guardada: search-failed", async () => {
+    const { useCase, finder } = setupWithCache([]);
+    finder.failNext = true;
+
+    expect(await useCase.execute({ radiusMeters: 3000 })).toEqual({
+      status: "search-failed",
+    });
+  });
+
+  it("falha ao ler a busca guardada também é search-failed", async () => {
+    const { useCase, finder, cache } = setupWithCache([]);
+    cache.load = async () => {
+      throw new Error("storage corrompido");
+    };
+    finder.failNext = true;
+
+    expect(await useCase.execute({ radiusMeters: 3000 })).toEqual({
+      status: "search-failed",
+    });
+  });
+
+  it("falha ao guardar não estraga a busca que deu certo", async () => {
+    const { useCase, cache } = setupWithCache([gym("a", 0.001)]);
+    cache.save = async () => {
+      throw new Error("storage cheio");
+    };
+
+    const result = await useCase.execute({ radiusMeters: 3000 });
+
+    expect(result.status).toBe("found");
   });
 });

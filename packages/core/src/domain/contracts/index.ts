@@ -140,6 +140,22 @@ export interface NearbyGymsFinder {
   search(center: GeoPoint, radiusMeters: number): Promise<Gym[]>;
 }
 
+/** A última busca de academias que deu certo: o que o finder devolveu, de onde e quando. */
+export type NearbyGymsSnapshot = {
+  center: GeoPoint;
+  gyms: Gym[];
+  savedAt: Date;
+};
+
+/**
+ * Guarda a última busca no aparelho, pra tela ter o que mostrar quando o
+ * finder cair (o Overpass público vive lotado). Fica só no celular.
+ */
+export interface NearbyGymsCache {
+  save(snapshot: NearbyGymsSnapshot): Promise<void>;
+  load(): Promise<NearbyGymsSnapshot | null>;
+}
+
 /**
  * Estado da permissão de localização em primeiro plano. "blocked" = negada
  * sem poder perguntar de novo; só as configurações do sistema resolvem.

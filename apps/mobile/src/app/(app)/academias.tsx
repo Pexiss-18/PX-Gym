@@ -21,6 +21,17 @@ import { findNearbyGymsUseCase } from "@/lib/gyms";
 
 const RADIUS_METERS = 4000;
 
+/** "hoje, 14:20" ou "02/11, 14:20" — quando foi a busca mostrada do cache. */
+function formatSavedAt(savedAt: Date, now = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hora = `${pad(savedAt.getHours())}:${pad(savedAt.getMinutes())}`;
+  const mesmoDia = savedAt.toDateString() === now.toDateString();
+  const dia = mesmoDia
+    ? "hoje"
+    : `${pad(savedAt.getDate())}/${pad(savedAt.getMonth() + 1)}`;
+  return `${dia}, ${hora}`;
+}
+
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${meters} m`;
   return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
@@ -151,6 +162,22 @@ export default function AcademiasScreen() {
         </GlassCard>
       ) : (
         <View className="gap-5">
+          {state.cachedAt ? (
+            <GlassCard>
+              <View className="flex-row items-center gap-3">
+                <CloudOff size={18} color={colors.fogMuted} />
+                <Text className="flex-1 font-sans text-xs leading-5 text-fog">
+                  A busca de academias está fora do ar. Mostrando a de{" "}
+                  {formatSavedAt(state.cachedAt)}.
+                </Text>
+                <Pressable onPress={() => void search(false)} hitSlop={8}>
+                  <Text className="font-sans-semibold text-xs text-volt">
+                    Tentar de novo
+                  </Text>
+                </Pressable>
+              </View>
+            </GlassCard>
+          ) : null}
           <View className="h-64 overflow-hidden rounded-px-lg border border-hairline">
             <GymMap center={state.center} gyms={state.gyms} />
           </View>

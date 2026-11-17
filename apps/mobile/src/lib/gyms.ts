@@ -5,77 +5,24 @@ import {
   type NearbyGymsFinder,
 } from "@px/core";
 import { LocationGatewayExpo } from "@/adapters/gateways/LocationGatewayExpo";
+import { NearbyGymsCacheAsyncStorage } from "@/adapters/gateways/NearbyGymsCacheAsyncStorage";
+import { FirstAvailableGymFinder } from "@/adapters/gateways/FirstAvailableGymFinder";
+import { NominatimGymFinder } from "@/adapters/gateways/NominatimGymFinder";
+import {
+  OVERPASS_ESPELHOS,
+  OVERPASS_PRINCIPAL,
+  OverpassGymFinder,
+} from "@/adapters/gateways/OverpassGymFinder";
+import { systemClock } from "./system";
 
 /*
- * Busca de academias. Fonte ativa: OpenStreetMap via Overpass API — grátis,
- * sem chave e sem billing. O GooglePlacesGymFinder abaixo fica pronto pra
- * religar se um dia o billing do Google for ativado (basta trocar o finder
- * no useCase lá no fim do arquivo).
+ * Busca de academias, tudo OpenStreetMap: grátis, sem chave e sem billing.
+ * Ordem: Overpass principal (o mais completo), Nominatim (o mais estável) e
+ * os espelhos do Overpass. Quando todos caem, a tela mostra a última busca
+ * guardada no aparelho. O GooglePlacesGymFinder abaixo fica pronto pra religar
+ * se um dia o billing do Google for ativado (basta trocar o finder no useCase
+ * lá no fim do arquivo).
  */
-
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
-
-type OverpassResponse = {
-  elements?: {
-    type: "node" | "way" | "relation";
-    id: number;
-    lat?: number;
-    lon?: number;
-    center?: { lat: number; lon: number };
-    tags?: Record<string, string>;
-  }[];
-};
-
-class OverpassGymFinder implements NearbyGymsFinder {
-  async search(center: GeoPoint, radiusMeters: number): Promise<Gym[]> {
-    const around = `(around:${radiusMeters},${center.latitude},${center.longitude})`;
-    const query = `
-      [out:json][timeout:15];
-      (
-        nwr["leisure"="fitness_centre"]${around};
-        nwr["amenity"="gym"]${around};
-      );
-      out center 40;
-    `;
-
-    const response = await fetch(OVERPASS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        // Política de uso do Overpass: cliente identificado (sem isso, 406).
-        "User-Agent": "PxGYM/0.1 (app fitness pessoal)",
-        Accept: "application/json",
-      },
-      body: `data=${encodeURIComponent(query)}`,
-    });
-    if (!response.ok) {
-      throw new Error(`Overpass respondeu ${response.status}`);
-    }
-
-    const data = (await response.json()) as OverpassResponse;
-    return (data.elements ?? [])
-      .map((el) => {
-        const lat = el.lat ?? el.center?.lat;
-        const lon = el.lon ?? el.center?.lon;
-        if (lat === undefined || lon === undefined) return null;
-        return {
-          id: `${el.type}/${el.id}`,
-          name: el.tags?.name ?? "Academia",
-          address: formatAddress(el.tags),
-          location: { latitude: lat, longitude: lon },
-        };
-      })
-      .filter((gym): gym is Gym => gym !== null);
-  }
-}
-
-function formatAddress(tags?: Record<string, string>): string | null {
-  if (!tags) return null;
-  const street = tags["addr:street"];
-  if (!street) return null;
-  const number = tags["addr:housenumber"];
-  return number ? `${street}, ${number}` : street;
-}
 
 const PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY;
 
@@ -142,6 +89,11 @@ export class GooglePlacesGymFinder implements NearbyGymsFinder {
 }
 
 export const findNearbyGymsUseCase = new FindNearbyGymsUseCase(
-  new OverpassGymFinder(),
+  new FirstAvailableGymFinder([
+    new OverpassGymFinder([OVERPASS_PRINCIPAL]),
+    new NominatimGymFinder(),
+    new OverpassGymFinder(OVERPASS_ESPELHOS),
+  ]),
   new LocationGatewayExpo(),
+  { cache: new NearbyGymsCacheAsyncStorage(), clock: systemClock },
 );

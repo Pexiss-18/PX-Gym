@@ -20,7 +20,9 @@ import type {
   IdGenerator,
   LocationGateway,
   LocationPermission,
+  NearbyGymsCache,
   NearbyGymsFinder,
+  NearbyGymsSnapshot,
   LocalPhotoFiles,
   NutritionPlanRepository,
   ProgressPhotoCloud,
@@ -362,3 +364,14 @@ export class FakePlanGenerationGateway implements PlanGenerationGateway {
   }
 }
 
+export class FakeGymsCache implements NearbyGymsCache {
+  snapshot: NearbyGymsSnapshot | null = null;
+
+  async save(snapshot: NearbyGymsSnapshot) {
+    this.snapshot = snapshot;
+  }
+
+  async load() {
+    return this.snapshot;
+  }
+}
