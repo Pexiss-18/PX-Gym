@@ -2,6 +2,8 @@ import * as SecureStore from "expo-secure-store";
 import type { Papel, Sessao, SessionStorage } from "@px/core";
 
 export const CHAVE_SESSAO = "pxgym.sessao";
+/** Sessão do login real (Supabase), separada da do modo mock. */
+export const CHAVE_SESSAO_REAL = "pxgym.sessao.supabase";
 
 const PAPEIS: readonly Papel[] = ["aluno", "personal", "coordenacao"];
 

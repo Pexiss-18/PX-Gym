@@ -3,7 +3,11 @@ import { SupabaseAuthGateway } from "@px/db";
 import { MODO_MOCK } from "@/lib/modo";
 import { supabase } from "@/lib/supabase";
 import { cryptoIds, systemClock } from "@/lib/system";
-import { SessionStorageSecureStore } from "./auth/SessionStorageSecureStore";
+import {
+  CHAVE_SESSAO,
+  CHAVE_SESSAO_REAL,
+  SessionStorageSecureStore,
+} from "./auth/SessionStorageSecureStore";
 import { criarComposicao } from "./composicao";
 import { LocationGatewayExpo } from "./gateways/LocationGatewayExpo";
 import { LocationGatewaySimulado, SENHA_DEMO } from "./memoria/gateways-simulados";
@@ -18,7 +22,9 @@ export { MODO_MOCK };
 export const composicao = criarComposicao({
   clock: systemClock,
   ids: cryptoIds,
-  sessoes: new SessionStorageSecureStore(),
+  // Uma chave por modo: a sessão do stub (id "u-aluno") não pode ser
+  // restaurada no modo real, onde o Supabase recusa o id e nada carrega.
+  sessoes: new SessionStorageSecureStore(MODO_MOCK ? CHAVE_SESSAO : CHAVE_SESSAO_REAL),
   auth: MODO_MOCK ? undefined : new SupabaseAuthGateway(supabase),
 });
 
