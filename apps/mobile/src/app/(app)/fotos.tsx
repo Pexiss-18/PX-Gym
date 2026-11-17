@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { DrawerActions } from "expo-router/react-navigation";
@@ -7,6 +8,7 @@ import { colors } from "@px/tokens";
 import { Screen } from "@/components/screen";
 import { BackButton } from "@/components/back-button";
 import { GlassCard } from "@/components/glass-card";
+import { PhotoViewer } from "@/components/photo-viewer";
 import { PillButton } from "@/components/pill-button";
 import { useAuth } from "@/adapters/hooks/useAuth";
 import { MODO_MOCK } from "@/lib/modo";
@@ -18,6 +20,8 @@ type FotoDaGaleria = {
   demo?: boolean;
   takenAt: Date;
   syncStatus: string;
+  /** Onde foi tirada; null sem permissão ou sem sinal (e no modo mock). */
+  location?: { latitude: number; longitude: number } | null;
 };
 
 // No modo mock a galeria vive em memória; o módulo do SQLite nem é carregado.
@@ -58,6 +62,8 @@ export default function FotosScreen() {
   const navigation = useNavigation();
   const { sessao } = useAuth();
   const photos = useFotos(sessao?.usuario.id ?? "");
+  // Índice da foto aberta em tela cheia; null = galeria.
+  const [aberta, setAberta] = useState<number | null>(null);
 
   return (
     <Screen bottomInset={24}>
@@ -98,12 +104,15 @@ export default function FotosScreen() {
         </GlassCard>
       ) : (
         <View className="flex-row flex-wrap justify-between gap-y-3">
-          {photos.map((photo) => (
+          {photos.map((photo, i) => (
             <Pressable
               key={photo.id}
               className="w-[31.5%]"
+              onPress={() => setAberta(i)}
               onLongPress={() => confirmarExclusao(photo)}
-              accessibilityHint="Segure para apagar"
+              accessibilityRole="button"
+              accessibilityLabel={`Abrir foto de ${formatDay(photo.takenAt)}`}
+              accessibilityHint="Toque para ver em tela cheia, segure para apagar"
             >
               <View className="aspect-square overflow-hidden rounded-px-md border border-hairline">
                 {photo.demo ? (
@@ -158,9 +167,16 @@ export default function FotosScreen() {
       ) : null}
       {photos.length > 0 ? (
         <Text className="mt-2 text-center font-sans text-[11px] text-fog">
-          Segure uma foto para apagar.
+          Toque numa foto para ver em tela cheia, segure para apagar.
         </Text>
       ) : null}
+
+      <PhotoViewer
+        photos={photos}
+        index={aberta}
+        onClose={() => setAberta(null)}
+        onDelete={confirmarExclusao}
+      />
     </Screen>
   );
 }
