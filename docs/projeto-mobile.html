@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Gerado por docs/build-projeto.mjs a partir de docs/projeto-mobile.md. Não edite à mão. -->
 <title>Px GYM — Documento de Projeto</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -360,7 +365,7 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
 <section class="sheet cover">
   <h1 class="wordmark">Px <span class="gym">GYM</span></h1>
 
-  <p class="tagline">Aplicativo mobile offline-first para registro de treino, composição corporal e nutrição.</p>
+  <p class="tagline">Aplicativo mobile offline-first para registro de treino, composição corporal e nutrição, com treino e dieta montados por IA.</p>
 
   <dl class="meta">
     <div>
@@ -377,20 +382,20 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
     </div>
     <div>
       <dt>Data</dt>
-      <dd>Agosto de 2026</dd>
+      <dd>Agosto de 2026 · revisado em novembro de 2026</dd>
     </div>
     <div>
       <dt>Stack do app</dt>
-      <dd class="mono">Expo SDK 57 · React Native 0.86 · Expo Router 57<br>expo-sqlite + Drizzle ORM · NativeWind</dd>
+      <dd class="mono">Expo SDK 58 · React Native 0.88 · Expo Router 58<br>expo-sqlite + Drizzle ORM · NativeWind</dd>
     </div>
     <div>
       <dt>Backend</dt>
-      <dd class="mono">Supabase (Postgres + Auth + Storage)<br>OpenStreetMap / Overpass API</dd>
+      <dd class="mono">Supabase (Postgres, Auth, Storage, Edge Functions) · Cloudflare R2 · Google Gemini<br>OpenStreetMap</dd>
     </div>
   </dl>
 
   <div class="abstract">
-    <p>O Px GYM é usado no pior lugar possível para depender de rede: dentro da academia, entre uma série e outra, com uma mão só. Por isso o aplicativo foi construído com o banco local como fonte da verdade durante o treino — cada série marcada é gravada no SQLite do aparelho e só depois empurrada para o Supabase, quando houver conexão. Este documento descreve o escopo, a navegação, a estratégia offline-first, o backend, o uso de câmera e GPS e a arquitetura de código do projeto.</p>
+    <p>O Px GYM é usado no pior lugar possível para depender de rede: dentro da academia, entre uma série e outra, com uma mão só. Por isso o aplicativo foi construído com o banco local como fonte da verdade durante o treino: cada série marcada é gravada no SQLite do aparelho e só depois empurrada para o Supabase, quando houver conexão. Sobre essa base, o app monta o treino e a dieta com inteligência artificial a partir da avaliação corporal, sempre com a regra de que a IA propõe e a fórmula confere. Este documento descreve o escopo, a navegação, a estratégia offline-first, o backend, o uso de câmera e GPS, a arquitetura de código e o uso de IA no projeto.</p>
   </div>
 
   <nav class="toc">
@@ -401,6 +406,7 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
       <li>Backend e sincronização <span>· Supabase</span></li>
       <li>Integração com hardware e sensores</li>
       <li>Arquitetura e padrões de código</li>
+      <li>Inteligência artificial <span>· Gemini</span></li>
     </ol>
   </nav>
 </section>
@@ -408,271 +414,197 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
 <!-- ============================ 1 ============================ -->
 <section class="sheet">
   <h2><span class="n">01</span> Visão geral e escopo</h2>
-
   <h3>Tema e objetivo</h3>
-  <p>O Px GYM reúne em um único aplicativo três informações que hoje vivem separadas na rotina de quem treina: <strong>o registro do treino</strong> (qual carga foi usada em cada série), <strong>a evolução da composição corporal</strong> (peso, percentual de gordura, massa magra, medidas) e <strong>as metas nutricionais</strong> (calorias e macronutrientes). O objetivo é que o usuário consiga responder “estou evoluindo?” em poucos toques e registrar a série do dia sem fricção.</p>
-
-  <p>O problema central não é apenas de organização, é de <em>contexto de uso</em>. O momento em que o dado precisa ser registrado — logo depois de terminar a série — é exatamente o momento em que o usuário está em pé, suado, com o celular em uma mão e, com frequência, sem sinal: sala de peso livre no subsolo, Wi-Fi da academia sobrecarregado, plano de dados no fim do mês. Um app que exija rede para salvar uma série simplesmente não é usável nesse cenário. Daí a decisão que organiza todo o resto do projeto: <strong>o registro do treino funciona 100% offline</strong>, e a nuvem é um destino eventual, nunca um pré-requisito.</p>
-
-  <p>Um segundo problema que o app resolve é a <strong>progressão de carga</strong>. Planilhas e apps genéricos guardam o histórico, mas obrigam o usuário a garimpar “quanto eu levantei da última vez?”. No Px GYM, a carga anterior de cada exercício é lida do banco local e mostrada junto ao campo de registro, e a curva de progressão daquele exercício é desenhada na mesma tela.</p>
-
+  <p>O Px GYM reúne em um único aplicativo informações que hoje vivem separadas na rotina de quem treina: <strong>o registro do treino</strong> (qual carga foi usada em cada série), <strong>a evolução da composição corporal</strong> (peso, percentual de gordura, massa magra, medidas), <strong>o plano de treino e a dieta</strong> (o que fazer em cada dia e o que comer) e <strong>as fotos de progresso</strong>. O objetivo é que o usuário consiga responder "estou evoluindo?" em poucos toques, saber o que treinar hoje e registrar a série sem fricção.</p>
+  <p>O problema central não é só de organização, é de <em>contexto de uso</em>. O momento em que o dado precisa ser registrado é logo depois de terminar a série, e é exatamente quando o usuário está em pé, suado, com o celular numa mão e, com frequência, sem sinal: sala de peso livre no subsolo, Wi-Fi da academia sobrecarregado, plano de dados no fim do mês. Um app que exija rede para salvar uma série simplesmente não é usável nesse cenário. Daí a decisão que organiza todo o resto do projeto: <strong>o registro do treino funciona 100% offline</strong>, e a nuvem é um destino eventual, nunca um pré-requisito. Isso vale também para o plano de treino: ele nasce no servidor, mas fica copiado no aparelho.</p>
+  <p>Um segundo problema que o app resolve é a <strong>progressão de carga</strong>. Planilhas e apps genéricos guardam o histórico, mas obrigam o usuário a garimpar "quanto eu levantei da última vez?". No Px GYM, a meta de carga de cada série já vem preenchida com a maior carga da última sessão daquele exercício, a carga anterior aparece junto ao campo de registro, e a curva de progressão é desenhada na mesma tela.</p>
+  <p>O terceiro é <strong>montar o plano</strong>. Quem treina sozinho raramente sabe dividir os grupos musculares na semana, ou calcular quanta proteína comer para o próprio peso. O app pede o perfil uma vez (objetivo, experiência, dias disponíveis, lesões) e a avaliação corporal, que pode ser digitada ou lida do PDF da bioimpedância. Com isso, a IA monta o treino da semana e a dieta com cardápio. Ela só escolhe exercícios de um catálogo fechado, e as metas de calorias e macros são conferidas por fórmula antes de chegar à tela (seção 7).</p>
   <h3>Público-alvo</h3>
-  <p>O usuário final é o <strong>praticante individual de musculação</strong> que acompanha o próprio progresso: treina com regularidade, faz avaliação física periódica (a cada algumas semanas) e segue uma meta de macros. Ele é o único operador do sistema — não existe, nesta fase, papel de treinador, de nutricionista ou de administrador, e nenhum usuário enxerga dados de outro. Essa decisão de escopo aparece diretamente na segurança do backend: todas as tabelas têm Row Level Security ligada com política de dono (<code>auth.uid() = user_id</code>), conforme a seção 4.</p>
-
-  <p>O mesmo usuário, com a mesma conta, também acessa uma aplicação web complementar (Next.js) usada nos momentos de planejamento — é por lá que ele envia o PDF da avaliação física, revisa os dados extraídos e gera o plano nutricional. O aplicativo mobile <strong>consome</strong> esse resultado; ele não é o lugar de fazer upload de PDF nem de revisar laudo.</p>
-
+  <p>O usuário final é o <strong>praticante individual de musculação</strong> que acompanha o próprio progresso: treina com regularidade, faz avaliação física periódica (a cada algumas semanas) e quer um plano que acompanhe essa evolução. Ele é o dono de todos os seus dados, e nenhum usuário enxerga dados de outro. Essa decisão aparece diretamente na segurança do backend: todas as tabelas têm Row Level Security ligada com política de dono (<code>auth.uid() = user_id</code>), conforme a seção 4.</p>
+  <p>O app também tem um módulo de <strong>relatório do ciclo de treino</strong>, construído na fase "domínio e interface primeiro". Nele, o aluno registra os treinos do ciclo, o <strong>personal</strong> avalia e assina, e a <strong>coordenação</strong> da academia aprova ou devolve. As regras e as telas desse módulo estão prontas e testadas, mas ele ainda roda com repositórios em memória.</p>
+  <p>Existe ainda uma aplicação web (Next.js) que fala com o mesmo Supabase. Na primeira versão do projeto era por ela que a avaliação em PDF entrava. Hoje o próprio app faz isso, e o web ficou parado (seção 6).</p>
   <h3>Casos de uso principais</h3>
-  <p>A coluna “offline” indica o comportamento sem conexão — a justificativa de cada caso está na seção 3.</p>
-
+  <p>A coluna "offline" indica o comportamento sem conexão; a justificativa de cada caso está na seção 3.</p>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr>
-          <th class="col-mid">Caso de uso</th>
-          <th>O que o usuário faz</th>
-          <th style="width:16%">Offline</th>
-        </tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Caso de uso</th><th>O que o usuário faz</th><th>Offline</th></tr></thead>
       <tbody>
-        <tr>
-          <td>Entrar ou criar conta</td>
-          <td>Autentica com e-mail e senha; a sessão fica guardada cifrada no aparelho.</td>
-          <td><span class="part">só reabrir</span></td>
-        </tr>
-        <tr>
-          <td>Ver o dia</td>
-          <td>Abre o app e vê sequência de dias treinados, faixa da semana, treino do dia e resumo corporal.</td>
-          <td><span class="part">parcial</span></td>
-        </tr>
-        <tr>
-          <td>Executar o treino do dia</td>
-          <td>Percorre a lista de exercícios e acompanha quantas séries já fechou.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Registrar uma série</td>
-          <td>Ajusta a carga, marca a série concluída e dispara o cronômetro de descanso.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Desmarcar uma série</td>
-          <td>Corrige um toque errado; o descanso é cancelado e o registro é removido.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Ver progressão de carga</td>
-          <td>Consulta a curva de carga do exercício e a comparação com a sessão anterior.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Abrir exercício pelo QR</td>
-          <td>Aponta a câmera para o QR code do aparelho e cai direto na tela daquele exercício.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Registrar foto de progresso</td>
-          <td>Tira a foto pela câmera do app; ela é salva no aparelho na hora.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Ver a galeria de fotos</td>
-          <td>Revisa as fotos por data e vê quais já subiram para a nuvem.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
-        <tr>
-          <td>Acompanhar composição corporal</td>
-          <td>Vê gráficos de peso, gordura e massa magra e a tabela de medidas por avaliação.</td>
-          <td><span class="no">não</span></td>
-        </tr>
-        <tr>
-          <td>Consultar metas de macros</td>
-          <td>Vê calorias-alvo e proteína/carboidrato/gordura do plano vigente.</td>
-          <td><span class="no">não</span></td>
-        </tr>
-        <tr>
-          <td>Encontrar academias por perto</td>
-          <td>Usa o GPS para listar e mapear academias num raio de 4 km.</td>
-          <td><span class="no">não</span></td>
-        </tr>
-        <tr>
-          <td>Conferir a sincronização</td>
-          <td>Vê quantos registros ainda estão pendentes e força um envio manual.</td>
-          <td><span class="yes">sim</span></td>
-        </tr>
+        <tr><td>Entrar ou criar conta</td><td>Autentica com e-mail e senha; a sessão fica guardada cifrada no aparelho.</td><td><span class="part">só reabrir</span></td></tr>
+        <tr><td>Ver o dia</td><td>Abre o app e vê sequência de dias treinados, faixa da semana, treino do dia, resumo corporal e meta de calorias.</td><td><span class="part">parcial</span></td></tr>
+        <tr><td>Preencher o perfil de treino</td><td>Informa objetivo, experiência, dias por semana, tempo por treino, idade, altura e regiões com dor.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Registrar a avaliação corporal</td><td>Digita peso, gordura, massa muscular e medidas, ou envia o PDF da bioimpedância e confere o que a IA leu.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Gerar o treino ou a dieta</td><td>Pede à IA o treino da semana ou a dieta com cardápio, a partir da avaliação mais recente.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Pedir mudança no plano</td><td>Escreve "minha academia não tem leg press" ou "não como carne vermelha" e recebe o plano ajustado.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Executar o treino do dia</td><td>Abre o dia sugerido (ou escolhe outro) e acompanha quantas séries já fechou.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Registrar uma série</td><td>Ajusta a carga, marca a série concluída e dispara o cronômetro de descanso.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Desmarcar uma série</td><td>Corrige um toque errado; o descanso é cancelado e o registro é removido.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Ver progressão de carga</td><td>Consulta a curva de carga do exercício e a comparação com a sessão anterior.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Ver como fazer o exercício</td><td>Lê o passo a passo e os músculos trabalhados, com atalho para vídeos.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Abrir exercício pelo QR</td><td>Aponta a câmera para o QR code do aparelho e cai direto na tela daquele exercício.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Registrar foto de progresso</td><td>Tira a foto pela câmera do app; ela é salva no aparelho na hora, em retrato 9:16.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Ver, ampliar e apagar fotos</td><td>Revisa as fotos por data, abre em tela cheia com data e local e apaga as que não quer.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Acompanhar composição corporal</td><td>Vê gráficos de peso, gordura e massa magra e a variação das medidas.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Consultar a dieta e o cardápio</td><td>Vê as metas do dia e o cardápio, que alterna as opções de cada refeição ao longo da semana.</td><td><span class="no">não</span></td></tr>
+        <tr><td>Encontrar academias por perto</td><td>Usa o GPS para listar e mapear academias num raio de 4 km.</td><td><span class="part">última busca</span></td></tr>
+        <tr><td>Conferir a sincronização</td><td>Vê quantos registros ainda estão pendentes e força um envio manual.</td><td><span class="yes">sim</span></td></tr>
+        <tr><td>Fechar o relatório do ciclo</td><td>Aluno registra treinos e assina; personal avalia e assina; coordenação aprova ou devolve.</td><td><span class="part">em memória</span></td></tr>
       </tbody>
     </table>
   </div>
-
   <div class="note">
-    <p><b>Fora de escopo nesta fase.</b> Rede social ou compartilhamento, biblioteca aberta de exercícios, montagem de treino dentro do app (a rotina do dia ainda é fixa, definida em código), registro de refeições consumidas (o app mostra a meta, não o consumido) e qualquer papel além do próprio usuário.</p>
+    <p><b>Fora de escopo nesta fase.</b> Rede social ou compartilhamento; registro de refeições consumidas (o app mostra a meta e o cardápio, não o que foi comido); edição manual do plano de treino pelo usuário (ajustes passam pelo pedido de mudança); sincronização em segundo plano com o app fechado; e a persistência do relatório do ciclo, que ainda vive em memória.</p>
   </div>
 </section>
 
 <!-- ============================ 2 ============================ -->
 <section class="sheet">
   <h2><span class="n">02</span> Interface e navegação</h2>
-
-  <p class="lead">A navegação é organizada em três camadas do Expo Router: um <strong>Stack raiz</strong> que decide entre área pública e área logada, um <strong>Drawer</strong> que guarda os destinos secundários e as telas de tela cheia, e um <strong>Tabs</strong> com os quatro destinos do dia a dia.</p>
-
+  <p class="lead">A navegação é organizada em três camadas do Expo Router: um <strong>Stack raiz</strong>, que decide entre área pública e área logada; um <strong>Drawer</strong>, que guarda os destinos secundários e as telas de tela cheia; e um <strong>Tabs</strong>, com os quatro destinos do dia a dia.</p>
   <h3>Mapeamento de telas</h3>
-
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr>
-          <th class="col-narrow">Tela</th>
-          <th class="mono col-mid">Rota / arquivo</th>
-          <th>Papel</th>
-        </tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Tela</th><th class="mono col-mid">Rota / arquivo</th><th>Papel</th></tr></thead>
       <tbody>
         <tr><td>Login</td><td class="mono">(auth)/login</td><td>E-mail e senha; entrada padrão de quem não tem sessão.</td></tr>
         <tr><td>Cadastro</td><td class="mono">(auth)/cadastro</td><td>Criação de conta no Supabase Auth.</td></tr>
-        <tr><td>Início</td><td class="mono">(app)/(tabs)/index</td><td>Sequência de dias, faixa da semana, treino do dia, resumo corporal e macros.</td></tr>
-        <tr><td>Treino do dia</td><td class="mono">(app)/(tabs)/treino/index</td><td>Lista de exercícios com progresso de séries e atalho para o leitor de QR.</td></tr>
-        <tr><td>Exercício</td><td class="mono">(app)/(tabs)/treino/[exercicioId]</td><td>Série a série: carga, marcação, descanso e curva de progressão.</td></tr>
-        <tr><td>Nutrição</td><td class="mono">(app)/(tabs)/nutricao</td><td>Calorias-alvo e macros do plano vigente.</td></tr>
-        <tr><td>Perfil</td><td class="mono">(app)/(tabs)/perfil</td><td>Identidade da conta e atalhos para as telas do menu.</td></tr>
-        <tr><td>Progresso</td><td class="mono">(app)/progresso</td><td>Gráficos de peso, gordura e massa magra; tabela de medidas.</td></tr>
-        <tr><td>Avaliações</td><td class="mono">(app)/avaliacoes/index</td><td>Histórico de avaliações com status de processamento.</td></tr>
-        <tr><td>Fotos de progresso</td><td class="mono">(app)/fotos</td><td>Galeria local por data, com indicador de sincronização.</td></tr>
-        <tr><td>Câmera</td><td class="mono">(app)/camera</td><td>Captura da foto de progresso (tela cheia).</td></tr>
+        <tr><td>Código do personal</td><td class="mono">(auth)/token</td><td>Entrada do personal sem conta, com o código que o aluno gerou.</td></tr>
+        <tr><td>Início</td><td class="mono">(app)/(tabs)/index</td><td>Sequência de dias, faixa da semana, treino do dia, resumo corporal e meta de calorias.</td></tr>
+        <tr><td>Treino do dia</td><td class="mono">(app)/(tabs)/treino/index</td><td>Plano ativo, escolha do dia, exercícios com progresso, gerar e pedir mudança, atalho para o QR.</td></tr>
+        <tr><td>Exercício</td><td class="mono">(app)/(tabs)/treino/[exercicioId]</td><td>Série a série: carga, marcação, descanso, curva de progressão e guia de execução.</td></tr>
+        <tr><td>Nutrição</td><td class="mono">(app)/(tabs)/nutricao</td><td>Meta diária, macros, orientação, cardápio do dia; gerar e pedir mudança.</td></tr>
+        <tr><td>Perfil</td><td class="mono">(app)/(tabs)/perfil</td><td>Identidade da conta e atalhos para perfil de treino, fotos e configurações.</td></tr>
+        <tr><td>Perfil de treino</td><td class="mono">(app)/perfil-treino</td><td>O que a IA precisa saber para montar o treino e a dieta.</td></tr>
+        <tr><td>Progresso</td><td class="mono">(app)/progresso</td><td>Gráficos de peso, gordura e massa magra; variação das medidas.</td></tr>
+        <tr><td>Avaliações</td><td class="mono">(app)/avaliacoes/index</td><td>Histórico de avaliações com origem (PDF ou digitada) e status.</td></tr>
+        <tr><td>Nova avaliação</td><td class="mono">(app)/avaliacoes/nova</td><td>Envio do PDF (a IA preenche) ou digitação; a pessoa confere e salva.</td></tr>
+        <tr><td>Fotos de progresso</td><td class="mono">(app)/fotos</td><td>Galeria local por data, com indicador de sincronização e visualizador em tela cheia.</td></tr>
+        <tr><td>Câmera</td><td class="mono">(app)/camera</td><td>Captura da foto de progresso (tela cheia), com as faixas do recorte 9:16.</td></tr>
         <tr><td>Leitor de QR</td><td class="mono">(app)/scanner</td><td>Leitura do QR do aparelho (tela cheia).</td></tr>
         <tr><td>Academias por perto</td><td class="mono">(app)/academias</td><td>Mapa e lista de academias próximas pelo GPS.</td></tr>
         <tr><td>Configurações</td><td class="mono">(app)/configuracoes</td><td>Conta, estado da sincronização, envio manual e versão.</td></tr>
+        <tr><td>Relatórios do ciclo</td><td class="mono">(app)/relatorios/…</td><td>Histórico, relatório, treinos do ciclo, avaliação e assinatura.</td></tr>
       </tbody>
     </table>
   </div>
-
   <h3>Estrutura de roteamento</h3>
-  <p>O Expo Router deriva as rotas da árvore de arquivos. Grupos entre parênteses — <code>(auth)</code>, <code>(app)</code>, <code>(tabs)</code> — organizam a hierarquia de layouts <em>sem</em> aparecer na URL, o que permite separar público de privado sem poluir os caminhos.</p>
-
+  <p>O Expo Router deriva as rotas da árvore de arquivos. Grupos entre parênteses, como <code>(auth)</code>, <code>(app)</code> e <code>(tabs)</code>, organizam a hierarquia de layouts <em>sem</em> aparecer na URL, o que permite separar público de privado sem poluir os caminhos.</p>
   <figure>
-<div class="tree"><span class="k">src/app/_layout.tsx</span>            <span class="c">Stack raiz · AuthProvider · migrations do SQLite</span>
-│                              <span class="c">e as rotas protegidas</span>
+<div class="tree"><span class="k">src/app/_layout.tsx</span>            <span class="c">Stack raiz · AuthProvider · CasosDeUsoProvider</span>
+│                              <span class="c">migrations do SQLite e as rotas protegidas</span>
 ├── <span class="k">(auth)/_layout.tsx</span>         <span class="c">Stack público — só monta sem sessão</span>
 │   ├── login.tsx
-│   └── cadastro.tsx
+│   ├── cadastro.tsx
+│   └── token.tsx              <span class="c">código do personal</span>
 │
 └── <span class="k">(app)/_layout.tsx</span>          <span class="c">Drawer — só monta com sessão</span>
     │                          <span class="c">chama useWorkoutSync() uma vez</span>
     ├── <span class="k">(tabs)/_layout.tsx</span>     <span class="c">Tabs (barra flutuante própria)</span>
     │   ├── index.tsx          <span class="c">Início</span>
-    │   ├── <span class="k">treino/_layout.tsx</span> <span class="c">Stack aninhada (fluxo sequencial)</span>
-    │   │   ├── index.tsx      <span class="c">lista de exercícios</span>
+    │   ├── <span class="k">treino/_layout.tsx</span>  <span class="c">Stack aninhada (fluxo sequencial)</span>
+    │   │   ├── index.tsx      <span class="c">treino do dia</span>
     │   │   └── [exercicioId].tsx  <span class="c">rota dinâmica</span>
     │   ├── nutricao.tsx
     │   └── perfil.tsx
+    ├── perfil-treino.tsx
     ├── progresso.tsx
-    ├── <span class="k">avaliacoes/_layout.tsx</span> <span class="c">Stack (abre espaço para o detalhe)</span>
-    │   └── index.tsx
+    ├── <span class="k">avaliacoes/_layout.tsx</span>  <span class="c">Stack: lista e nova avaliação</span>
+    │   ├── index.tsx
+    │   └── nova.tsx
+    ├── <span class="k">relatorios/_layout.tsx</span>  <span class="c">Stack do relatório do ciclo</span>
+    │   ├── index.tsx          <span class="c">histórico</span>
+    │   └── [cicloId]/         <span class="c">relatório, atividades, avaliação, assinatura</span>
     ├── fotos.tsx
     ├── academias.tsx
     ├── configuracoes.tsx
-    ├── camera.tsx            <span class="c">tela cheia · swipeEnabled: false</span>
-    └── scanner.tsx           <span class="c">tela cheia · swipeEnabled: false</span></div>
+    ├── camera.tsx             <span class="c">tela cheia · swipeEnabled: false</span>
+    └── scanner.tsx            <span class="c">tela cheia · swipeEnabled: false</span></div>
     <figcaption><b>Figura 1.</b> Árvore de rotas. Cada <code>_layout.tsx</code> instala um navegador; os arquivos irmãos viram telas dele.</figcaption>
   </figure>
-
   <h4>Por que cada padrão foi escolhido</h4>
   <ul>
     <li><strong>Tabs para os quatro destinos do dia a dia</strong> (Início, Treino, Nutrição, Perfil): são as telas alcançadas dezenas de vezes por semana e precisam estar a um toque, com o polegar, sem abrir menu.</li>
     <li><strong>Stack aninhada dentro da aba Treino:</strong> lista → exercício é um fluxo sequencial com volta natural. Aninhar a Stack dentro da aba preserva a barra de abas e mantém o histórico do fluxo isolado das outras abas.</li>
-    <li><strong>Drawer para os destinos secundários</strong> (Progresso, Avaliações, Fotos, Academias, Configurações): telas de consulta, visitadas com frequência baixa. Colocá-las em abas competiria com o fluxo de treino.</li>
-    <li><strong>Telas de tela cheia no Drawer com gesto desativado:</strong> câmera e leitor de QR ocupam a tela inteira e usam gestos próprios — o swipe lateral do Drawer é desligado nelas (<code>swipeEnabled: false</code>) para não roubar o toque.</li>
+    <li><strong>Drawer para os destinos secundários</strong> (Relatórios do ciclo, Progresso, Avaliações, Fotos, Academias, Configurações): telas de consulta, visitadas com frequência baixa. Colocá-las em abas competiria com o fluxo de treino. O Drawer volta pelo histórico (<code>backBehavior="history"</code>), então a câmera volta para Fotos, e não para o Início.</li>
+    <li><strong>Telas de tela cheia no Drawer com gesto desativado:</strong> câmera e leitor de QR ocupam a tela inteira e usam gestos próprios. O swipe lateral do Drawer fica desligado nelas (<code>swipeEnabled: false</code>) para não roubar o toque.</li>
   </ul>
-
   <h4>Rotas protegidas</h4>
-  <p>A proteção é declarativa, no layout raiz: <code>Stack.Protected</code> monta o grupo <code>(app)</code> apenas quando existe sessão e o grupo <code>(auth)</code> apenas quando não existe. Não há redirecionamento manual espalhado pelas telas — quem sai da conta simplesmente vê o grupo protegido desmontar, e qualquer tela interna deixa de estar no ar.</p>
-
-  <pre class="code"><span class="c">// src/app/_layout.tsx — a sessão vem do AuthProvider (Supabase Auth)</span>
+  <p>A proteção é declarativa, no layout raiz: <code>Stack.Protected</code> monta o grupo <code>(app)</code> apenas quando existe sessão e o grupo <code>(auth)</code> apenas quando não existe. Não há redirecionamento manual espalhado pelas telas. Quem sai da conta simplesmente vê o grupo protegido desmontar, e nenhuma tela interna continua no ar.</p>
+  <pre class="code"><span class="c">// src/app/_layout.tsx — a sessão vem do AuthContext (AutenticarUsuarioUseCase)</span>
 &lt;Stack screenOptions={{ headerShown: false }}&gt;
-  &lt;<span class="kw">Stack.Protected</span> guard={!!session}&gt;
+  &lt;Stack.Protected guard={!!sessao}&gt;
     &lt;Stack.Screen name="(app)" /&gt;
   &lt;/Stack.Protected&gt;
-  &lt;<span class="kw">Stack.Protected</span> guard={!session}&gt;
+  &lt;Stack.Protected guard={!sessao}&gt;
     &lt;Stack.Screen name="(auth)" /&gt;
   &lt;/Stack.Protected&gt;
 &lt;/Stack&gt;</pre>
-
-  <p>O mesmo layout raiz também segura a splash nativa até três coisas estarem prontas: fontes carregadas, sessão lida do armazenamento seguro e <strong>migrations do SQLite aplicadas</strong>. Nenhuma tela toca o banco antes disso.</p>
-
+  <p>O mesmo layout raiz segura a splash nativa até três coisas estarem prontas: fontes carregadas, sessão restaurada do armazenamento seguro e <strong>migrations do SQLite aplicadas</strong>. Nenhuma tela toca o banco antes disso. A sessão e os casos de uso chegam às telas por Context API (<code>AuthProvider</code> e <code>CasosDeUsoProvider</code>), sem passar por props.</p>
   <h4>Links profundos</h4>
-  <p>O app registra o esquema <code>pxgym://</code> e usa rotas tipadas (<code>typedRoutes</code>), o que faz o TypeScript validar cada caminho de navegação em tempo de compilação. O esquema é o que permite o QR code do aparelho apontar para <code>pxgym://treino/&lt;exercicioId&gt;</code> e abrir a tela do exercício direto — detalhado na seção 5.</p>
+  <p>O app registra o esquema <code>pxgym://</code> e usa rotas tipadas (<code>typedRoutes</code>), o que faz o TypeScript validar cada caminho de navegação em tempo de compilação. É o esquema que permite ao QR code do aparelho apontar para <code>pxgym://treino/&lt;exercicioId&gt;</code> e abrir a tela do exercício direto, como detalhado na seção 5.</p>
 </section>
 
 <!-- ============================ 3 ============================ -->
 <section class="sheet">
   <h2><span class="n">03</span> Estratégia offline-first</h2>
-
   <p class="lead">Durante o treino, o SQLite do aparelho <strong>é</strong> a fonte da verdade. O app nunca espera resposta de rede para confirmar uma ação do usuário: grava local, redesenha a tela e trata o envio para a nuvem como tarefa de segundo plano.</p>
-
   <h3>Funcionamento offline</h3>
   <p>Sem conexão, o usuário abre o app já autenticado (a sessão fica cifrada no aparelho) e faz o treino inteiro:</p>
   <ul>
-    <li>Percorre o treino do dia, marca e desmarca séries, ajusta a carga e usa o cronômetro de descanso.</li>
-    <li>Vê a <strong>carga anterior</strong> de cada exercício e a curva de progressão — ambas calculadas a partir do próprio banco local, não de um endpoint.</li>
+    <li>Abre o <strong>treino ativo</strong> pela cópia guardada no aparelho. O dia sugerido é calculado do histórico local, e ele pode escolher outro.</li>
+    <li>Marca e desmarca séries, ajusta a carga e usa o cronômetro de descanso.</li>
+    <li>Vê a <strong>carga anterior</strong> de cada exercício e a curva de progressão, ambas calculadas a partir do próprio banco local, não de um endpoint.</li>
+    <li>Lê o guia de execução do exercício, que vem embutido no app.</li>
     <li>Vê a sequência de dias treinados e a faixa dos últimos sete dias, recalculadas a cada série marcada.</li>
-    <li>Tira fotos de progresso e navega pela galeria: os arquivos moram no aparelho, então a galeria abre igual com ou sem rede.</li>
-    <li>Confere em Configurações quantos registros e fotos ainda estão pendentes de envio, e pode tentar sincronizar manualmente.</li>
+    <li>Tira, vê e apaga fotos de progresso. Os arquivos moram no aparelho, então a galeria abre igual com ou sem rede, e a foto apagada some na hora.</li>
+    <li>Confere em Configurações quantos registros e fotos ainda estão pendentes de envio e pode tentar sincronizar manualmente.</li>
   </ul>
-
-  <p>Três telas <strong>dependem de rede</strong> por natureza, e isso é uma decisão explícita, não um esquecimento: <strong>Avaliações</strong> e <strong>Nutrição</strong> leem dados que nascem no aplicativo web (o laudo é enviado e processado lá), e <strong>Academias por perto</strong> consulta a base do OpenStreetMap em tempo real. Nesses casos o app não mostra tela vazia nem spinner infinito: cada uma tem estado de erro próprio, com ícone de “sem nuvem” e texto explicando que os dados voltam quando a conexão voltar.</p>
-
+  <p>Algumas telas <strong>dependem de rede</strong> por natureza, e isso é uma decisão explícita, não um esquecimento. Gerar ou mudar o treino e a dieta, ler o PDF da avaliação e salvar avaliação e perfil dependem do servidor e da IA. <strong>Progresso</strong>, <strong>Avaliações</strong> e <strong>Nutrição</strong> leem dados do Supabase. <strong>Academias por perto</strong> consulta o OpenStreetMap em tempo real. Nesses casos o app não mostra tela vazia nem spinner infinito: cada uma tem estado de erro próprio, com explicação e ação de repetir. As ações que precisam de rede recusam <strong>antes</strong> de tentar, com a mensagem "Sem internet agora". As Academias mostram a última busca guardada, com a data dela.</p>
   <div class="note">
-    <p><b>Critério usado para decidir o que é offline.</b> É offline aquilo que o usuário <b>produz</b> no aparelho durante o treino — porque perder esse dado significa perder o treino. É online aquilo que ele apenas <b>consulta</b> e que muda em outro lugar (laudo, plano nutricional, mapa de academias) — cachear isso traria complexidade de invalidação sem resolver o problema real.</p>
+    <p><b>Critério usado para decidir o que é offline.</b> É offline aquilo que o usuário <strong>produz</strong> ou <strong>precisa durante o treino</strong>, porque perder esse dado é perder o treino. Por isso o plano de treino, que nasce no servidor, tem cópia no aparelho. É online aquilo que nasce em outro lugar e que ele consulta fora da academia (a avaliação, a dieta, o mapa): cachear isso traria complexidade de invalidação sem resolver o problema real.</p>
   </div>
-
   <h3>Modelagem de dados local</h3>
-  <p>O banco local é um <code>expo-sqlite</code> chamado <code>pxgym.db</code>, acessado pelo <strong>Drizzle ORM</strong> com esquema tipado e migrations versionadas (aplicadas no boot). Duas tabelas sustentam o modo offline:</p>
-
-  <h4>set_logs — registros de série</h4>
+  <p>O banco local é um <code>expo-sqlite</code> chamado <code>pxgym.db</code>, acessado pelo <strong>Drizzle ORM</strong> com esquema tipado e migrations versionadas, aplicadas no boot. Três tabelas sustentam o modo offline:</p>
+  <h4><code>set_logs</code> — registros de série</h4>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th class="mono col-narrow">Coluna</th><th style="width:16%">Tipo</th><th>Por que precisa estar no aparelho</th></tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Coluna</th><th>Tipo</th><th>Por que precisa estar no aparelho</th></tr></thead>
       <tbody>
-        <tr><td class="mono">id</td><td>text (PK)</td><td>UUID gerado no cliente — é o mesmo id usado no Postgres, o que torna o envio idempotente.</td></tr>
-        <tr><td class="mono">session_date</td><td>text</td><td>Dia da sessão no fuso do aparelho; base da sequência de dias e da faixa semanal.</td></tr>
-        <tr><td class="mono">exercise_id<br>exercise_name</td><td>text</td><td>O nome é copiado junto para que o histórico continue legível offline, sem depender de catálogo remoto.</td></tr>
-        <tr><td class="mono">set_number<br>target_reps</td><td>integer</td><td>Posição da série no exercício e repetições-alvo daquela série.</td></tr>
-        <tr><td class="mono">previous_load_kg</td><td>real</td><td>Fotografia da carga anterior no momento do registro — permite mostrar “+2,5 kg” sem recalcular histórico.</td></tr>
-        <tr><td class="mono">load_kg</td><td>real</td><td>A carga efetivamente usada. É o dado que o app existe para guardar.</td></tr>
-        <tr><td class="mono">completed_at</td><td>integer (ms)</td><td>Momento da conclusão; ordena a curva de progressão.</td></tr>
-        <tr><td class="mono">sync_status</td><td>text</td><td><code>pending</code> · <code>synced</code> · <code>deleted</code> — é a fila de sincronização (adiante).</td></tr>
+        <tr><td><code>id</code></td><td>text (PK)</td><td>UUID gerado no cliente; é o mesmo id usado no Postgres, o que torna o envio idempotente.</td></tr>
+        <tr><td><code>session_date</code></td><td>text</td><td>Dia da sessão no fuso do aparelho; base da sequência de dias, da faixa semanal e do dia sugerido do plano.</td></tr>
+        <tr><td><code>exercise_id</code>, <code>exercise_name</code></td><td>text</td><td>Id do catálogo de exercícios. O nome é copiado junto para o histórico continuar legível offline, mesmo que o plano mude.</td></tr>
+        <tr><td><code>set_number</code>, <code>target_reps</code></td><td>integer</td><td>Posição da série no exercício e repetições-alvo daquela série.</td></tr>
+        <tr><td><code>previous_load_kg</code></td><td>real</td><td>Fotografia da carga anterior no momento do registro; permite mostrar "+2,5 kg" sem recalcular o histórico.</td></tr>
+        <tr><td><code>load_kg</code></td><td>real</td><td>A carga efetivamente usada. É o dado que o app existe para guardar.</td></tr>
+        <tr><td><code>completed_at</code></td><td>integer (ms)</td><td>Momento da conclusão; ordena a curva de progressão.</td></tr>
+        <tr><td><code>sync_status</code></td><td>text</td><td><code>pending</code> · <code>synced</code> · <code>deleted</code>: é a fila de sincronização (adiante).</td></tr>
       </tbody>
     </table>
   </div>
   <p>Três índices acompanham as consultas reais da interface: por <code>session_date</code> (treino do dia), por <code>exercise_id + completed_at</code> (curva de progressão) e por <code>sync_status</code> (varredura da fila).</p>
-
-  <h4>progress_photos — fotos de progresso</h4>
+  <h4><code>progress_photos</code> — fotos de progresso</h4>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th class="mono col-narrow">Coluna</th><th style="width:16%">Tipo</th><th>Por que precisa estar no aparelho</th></tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Coluna</th><th>Tipo</th><th>Por que precisa estar no aparelho</th></tr></thead>
       <tbody>
-        <tr><td class="mono">id</td><td>text (PK)</td><td>UUID do cliente, reaproveitado como nome do arquivo no bucket.</td></tr>
-        <tr><td class="mono">user_id</td><td>text</td><td>Dono da foto; vira a pasta do arquivo no Storage.</td></tr>
-        <tr><td class="mono">local_uri</td><td>text</td><td>Caminho do arquivo no diretório de documentos do app — é o que a galeria exibe, sempre.</td></tr>
-        <tr><td class="mono">remote_path</td><td>text · nulo</td><td>Preenchido só depois do upload; nulo significa “ainda só existe aqui”.</td></tr>
-        <tr><td class="mono">taken_at</td><td>integer (ms)</td><td>Data de captura, usada para agrupar e ordenar a galeria.</td></tr>
-        <tr><td class="mono">note</td><td>text · nulo</td><td>Observação opcional do usuário.</td></tr>
-        <tr><td class="mono">sync_status</td><td>text</td><td><code>pending</code> · <code>synced</code>.</td></tr>
+        <tr><td><code>id</code></td><td>text (PK)</td><td>UUID do cliente, reaproveitado como nome do arquivo na nuvem.</td></tr>
+        <tr><td><code>user_id</code></td><td>text</td><td>Dono da foto; vira a pasta do arquivo na nuvem.</td></tr>
+        <tr><td><code>local_uri</code></td><td>text</td><td>Caminho do arquivo no diretório de documentos do app; é o que a galeria exibe, sempre.</td></tr>
+        <tr><td><code>remote_path</code></td><td>text · nulo</td><td>Preenchido só depois do upload; nulo significa "ainda só existe aqui".</td></tr>
+        <tr><td><code>taken_at</code></td><td>integer (ms)</td><td>Data de captura, usada para agrupar e ordenar a galeria.</td></tr>
+        <tr><td><code>note</code></td><td>text · nulo</td><td>Observação opcional.</td></tr>
+        <tr><td><code>latitude</code>, <code>longitude</code></td><td>real · nulo</td><td>Onde a foto foi tirada. <strong>Fica só no aparelho</strong>: não sobe para a nuvem.</td></tr>
+        <tr><td><code>sync_status</code></td><td>text</td><td><code>pending</code> · <code>synced</code> · <code>deleted</code>.</td></tr>
       </tbody>
     </table>
   </div>
-
-  <p>A reatividade das telas vem do próprio banco: o SQLite é aberto com <code>enableChangeListener</code> e as telas consultam por <code>useLiveQuery</code>. Marcar uma série reexecuta as consultas afetadas e atualiza, no mesmo instante, o progresso do exercício, a sequência de dias, a faixa semanal e a curva — sem estado global duplicado e sem “puxar para atualizar”.</p>
-
+  <h4><code>workout_plan_cache</code> — cópia do treino ativo</h4>
+  <p>Uma linha por pessoa, com o plano gerado pela IA guardado em JSON. É sobrescrita a cada leitura bem-sucedida do servidor e lida quando não há rede ou o servidor não responde. Não tem fila, porque o app nunca escreve no plano, só o lê.</p>
+  <p>A reatividade das telas vem do próprio banco: o SQLite é aberto com <code>enableChangeListener</code>, e as telas consultam por <code>useLiveQuery</code>. Marcar uma série reexecuta as consultas afetadas e atualiza na hora o progresso do exercício, a sequência de dias, a faixa semanal, a curva e o dia sugerido do plano, sem estado global duplicado e sem "puxar para atualizar".</p>
   <h3>Fila de ações</h3>
-  <p>Não existe uma tabela separada de “operações pendentes”. <strong>A fila é uma coluna da própria linha</strong> (<code>sync_status</code>): o registro que o usuário acabou de criar já é, ao mesmo tempo, o dado que a tela mostra e o item que falta enviar. Isso evita manter duas verdades sobre o mesmo fato e elimina a chance de a fila e o dado divergirem.</p>
-
-  <p>O caso delicado é a <strong>exclusão</strong>. Se o usuário desmarca uma série que já foi para a nuvem e o app apagasse a linha local, não sobraria nada para dizer ao servidor que aquele registro morreu — e a próxima leitura o traria de volta. Por isso a exclusão de um registro já sincronizado não apaga: marca a linha como <code>deleted</code> (um <em>tombstone</em>), que fica invisível para toda a interface e só é removida de vez depois que o servidor confirmar a exclusão.</p>
-
+  <p>Não existe uma tabela separada de "operações pendentes". <strong>A fila é uma coluna da própria linha</strong> (<code>sync_status</code>): o registro que o usuário acabou de criar já é, ao mesmo tempo, o dado que a tela mostra e o item que falta enviar. Isso evita manter duas verdades sobre o mesmo fato e elimina a chance de a fila e o dado divergirem.</p>
+  <p>O caso delicado é a <strong>exclusão</strong>. Se o usuário desmarca uma série que já foi para a nuvem e o app apaga a linha local, não sobra nada para avisar o servidor de que aquele registro morreu, e a próxima leitura o traria de volta. Por isso a exclusão de um registro já sincronizado não apaga: marca a linha como <code>deleted</code> (um <em>tombstone</em>), que fica invisível para toda a interface e só é removida de vez depois que o servidor confirma a exclusão.</p>
   <figure>
-    <svg viewBox="0 0 700 260" role="img" aria-label="Ciclo de vida de um registro de série entre os estados pending, synced e deleted">
+<svg viewBox="0 0 700 260" role="img" aria-label="Ciclo de vida de um registro de série entre os estados pending, synced e deleted">
       <defs>
         <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.45 0.012 264)"/>
@@ -725,81 +657,45 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
         <text x="237" y="160" text-anchor="middle" font-size="10" fill="oklch(0.60 0.010 264)">falha de rede: continua pending</text>
       </g>
     </svg>
-    <figcaption><b>Figura 2.</b> Ciclo de vida de um registro de série. Linhas cheias são transições confirmadas; a tracejada é o caminho de falha — nenhuma delas bloqueia a interface.</figcaption>
+    <figcaption><b>Figura 2.</b> Ciclo de vida de um registro de série. A seta tracejada é o caminho de falha; nenhuma transição bloqueia a interface.</figcaption>
   </figure>
-
-  <p>As fotos seguem a mesma lógica com um passo a mais: a captura sai do cache da câmera (que o sistema operacional pode limpar a qualquer momento) e é <strong>movida para o diretório de documentos do app</strong> antes de a linha ser gravada. Só depois disso o registro entra na fila como <code>pending</code>.</p>
+  <p>As fotos seguem a mesma lógica, com dois cuidados a mais. Primeiro, a captura sai do cache da câmera (que o sistema operacional pode limpar a qualquer momento) e é <strong>movida para o diretório de documentos do app</strong> antes de a linha ser gravada. Segundo, **até uma foto ainda <code>pending</code> vira tombstone ao ser apagada**: o upload pode ter chegado ao servidor sem a confirmação voltar, e sem o tombstone a restauração da nuvem a traria de volta.</p>
 </section>
 
 <!-- ============================ 4 ============================ -->
 <section class="sheet">
   <h2><span class="n">04</span> Backend e sincronização</h2>
-
-  <p class="lead">O backend é o Supabase — Postgres, Auth e Storage no mesmo projeto. O aplicativo mobile fala com ele por duas vias distintas: <strong>envia</strong> o que produziu offline e <strong>lê</strong> o que foi produzido no aplicativo web.</p>
-
+  <p class="lead">O backend é o Supabase: Postgres, Auth, Storage e Edge Functions no mesmo projeto. Os arquivos das fotos ficam no Cloudflare R2. O aplicativo fala com o backend por três vias: <strong>envia</strong> o que produziu offline (séries e fotos), <strong>grava direto</strong> o que só faz sentido online (perfil e avaliação) e <strong>pede ao servidor</strong> o que precisa de IA (treino, dieta e leitura do PDF).</p>
   <h3>Modelagem de dados remota</h3>
-
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th class="mono col-narrow">Tabela</th><th class="col-mid">Colunas principais</th><th>Origem e papel</th></tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Tabela</th><th>Colunas principais</th><th>Origem e papel</th></tr></thead>
       <tbody>
-        <tr>
-          <td class="mono">auth.users</td>
-          <td class="mono">id, email</td>
-          <td>Gerenciada pelo Supabase Auth. Todas as tabelas do app referenciam esse <code>id</code> com <code>on delete cascade</code>.</td>
-        </tr>
-        <tr>
-          <td class="mono">set_logs</td>
-          <td class="mono">id (uuid do cliente), user_id, session_date, exercise_id, exercise_name, set_number, target_reps, previous_load_kg, load_kg, completed_at</td>
-          <td>Espelho remoto da tabela local. Escrita exclusivamente pelo mobile.</td>
-        </tr>
-        <tr>
-          <td class="mono">progress_photos</td>
-          <td class="mono">id, user_id, storage_path, taken_at, note</td>
-          <td>Metadados da foto; o binário vive no bucket. Escrita pelo mobile.</td>
-        </tr>
-        <tr>
-          <td class="mono">body_assessments</td>
-          <td class="mono">id, user_id, pdf_path, status, extracted_data (jsonb), error_message</td>
-          <td>Avaliação física enviada em PDF pelo web. O <code>status</code> percorre <code>processing → pending_review → reviewed</code> (ou <code>error</code>). Lida pelo mobile.</td>
-        </tr>
-        <tr>
-          <td class="mono">nutrition_plans</td>
-          <td class="mono">id, assessment_id, user_id, calories_target, macros (jsonb), micros (jsonb), diet_guidance, model</td>
-          <td>Plano gerado por IA a partir da avaliação revisada, no backend do web. Lido pelo mobile.</td>
-        </tr>
-        <tr>
-          <td class="mono">storage: assessments</td>
-          <td class="mono">&lt;user_id&gt;/&lt;arquivo&gt;.pdf</td>
-          <td>Bucket privado dos laudos em PDF.</td>
-        </tr>
-        <tr>
-          <td class="mono">storage: progress-photos</td>
-          <td class="mono">&lt;user_id&gt;/&lt;photo_id&gt;.jpg</td>
-          <td>Bucket privado das fotos de progresso enviadas pelo mobile.</td>
-        </tr>
+        <tr><td><code>auth.users</code></td><td><code>id</code>, <code>email</code>, <code>user_metadata.papel</code></td><td>Gerenciada pelo Supabase Auth. Todas as tabelas do app referenciam esse <code>id</code> com <code>on delete cascade</code>.</td></tr>
+        <tr><td><code>set_logs</code></td><td><code>id</code> (uuid do cliente), <code>user_id</code>, <code>session_date</code>, <code>exercise_id</code>, <code>exercise_name</code>, <code>set_number</code>, <code>target_reps</code>, <code>previous_load_kg</code>, <code>load_kg</code>, <code>completed_at</code></td><td>Espelho remoto da tabela local. Escrita exclusivamente pelo mobile.</td></tr>
+        <tr><td><code>progress_photos</code></td><td><code>id</code>, <code>user_id</code>, <code>storage_path</code>, <code>taken_at</code>, <code>note</code></td><td>Metadados da foto; o arquivo vive no R2 em <code>&lt;user_id&gt;/&lt;photo_id&gt;.jpg</code>. Escrita pelo mobile, sem o local.</td></tr>
+        <tr><td><code>user_profiles</code></td><td><code>user_id</code>, sexo, nascimento, altura, objetivo, nível, dias por semana, minutos por treino, restrições, regiões sensíveis, exercícios indisponíveis, alimentos que não come</td><td>O perfil que a IA usa. O app grava; as duas listas aprendidas são escritas pelo servidor.</td></tr>
+        <tr><td><code>body_assessments</code></td><td><code>id</code>, <code>user_id</code>, <code>source</code> (<code>pdf</code>/<code>manual</code>), <code>pdf_path</code>, <code>status</code>, <code>extracted_data</code> (jsonb)</td><td>Avaliação corporal. O app grava a avaliação já conferida, com status <code>reviewed</code>.</td></tr>
+        <tr><td><code>plan_generations</code></td><td><code>id</code>, <code>user_id</code>, <code>assessment_id</code>, <code>part</code>, <code>kind</code>, <code>status</code>, <code>feedback</code>, <code>profile</code> (jsonb), <code>model</code></td><td>Cada pedido à IA. É a fila (<code>queued</code>) e a base dos limites. Só o servidor escreve.</td></tr>
+        <tr><td><code>workout_plans</code></td><td><code>id</code>, <code>user_id</code>, <code>assessment_id</code>, <code>name</code>, <code>rationale</code>, <code>days</code> (jsonb), <code>sources</code>, <code>model</code>, <code>active</code></td><td>Treino gerado. No máximo um ativo por pessoa (índice único parcial). Só o servidor escreve.</td></tr>
+        <tr><td><code>nutrition_plans</code></td><td><code>id</code>, <code>user_id</code>, <code>assessment_id</code>, <code>calories_target</code>, <code>macros</code>, <code>micros</code>, <code>meals</code> (jsonb), <code>diet_guidance</code>, <code>sources</code>, <code>active</code></td><td>Dieta gerada, com as refeições e suas opções. Vale a ativa mais recente.</td></tr>
+        <tr><td><code>photo_storage_reservations</code>, <code>admin_alerts</code></td><td>reserva por foto; último aviso por tipo</td><td>Trava de custo das fotos e controle dos avisos ao administrador. Só o servidor alcança.</td></tr>
+        <tr><td>storage: <code>assessments</code></td><td><code>&lt;user_id&gt;/&lt;arquivo&gt;.pdf</code></td><td>Bucket privado dos PDFs de avaliação.</td></tr>
       </tbody>
     </table>
   </div>
-
-  <p>O esquema é versionado em arquivos de migration SQL no repositório (<code>supabase/migrations/</code>), o que mantém o banco reproduzível e revisável junto com o código.</p>
-
+  <p>O esquema é versionado em oito migrations SQL no repositório (<code>supabase/migrations/</code>), o que mantém o banco reproduzível e revisável junto com o código. As escritas que precisam ser atômicas, como "desativar o treino anterior e gravar o novo" ou "reservar espaço sem passar do teto", são <strong>funções no banco</strong> (RPC) que só a <code>service_role</code> pode chamar.</p>
   <h3>Estratégia de sincronização</h3>
-  <p>A sincronização é <strong>por gatilhos, não por intervalo</strong> — nada de polling consumindo bateria. O envio é tentado em quatro momentos:</p>
-
+  <p>A sincronização é <strong>por gatilhos, não por intervalo</strong>: nada de polling consumindo bateria. O envio é tentado em quatro momentos:</p>
   <ul>
     <li><strong>Ao montar a área logada</strong>, isto é, sempre que o app abre com sessão válida.</li>
     <li><strong>Quando o NetInfo anuncia que a conexão voltou</strong> (assinatura de eventos de rede).</li>
     <li><strong>Quando o app volta do segundo plano</strong> para o primeiro (evento do <code>AppState</code>).</li>
-    <li><strong>Quando o usuário aperta “sincronizar agora”</strong> em Configurações — a válvula manual para quem quer ver o número de pendências zerar.</li>
+    <li><strong>Quando o usuário aperta "sincronizar agora"</strong> em Configurações, a válvula manual para quem quer ver o número de pendências zerar.</li>
   </ul>
-
-  <p>Os três primeiros gatilhos ficam concentrados em um único hook (<code>useWorkoutSync</code>) montado no layout da área logada, com trava de reentrada para que dois gatilhos simultâneos não disparem duas rodadas ao mesmo tempo.</p>
-
+  <p>Os três primeiros gatilhos ficam concentrados num único hook (<code>useWorkoutSync</code>), montado no layout da área logada, com trava de reentrada para que dois gatilhos simultâneos não disparem duas rodadas ao mesmo tempo. Cada rodada faz, em ordem: envia as séries pendentes e propaga as exclusões; remove na nuvem as fotos apagadas (liberando espaço); envia as fotos pendentes; e, por último, <strong>baixa as fotos que estão na nuvem e não estão no aparelho</strong>. É isso que devolve a galeria a quem reinstalou o app ou trocou de celular.</p>
   <figure>
-    <svg viewBox="0 0 700 300" role="img" aria-label="Fluxo de gravação local e sincronização posterior com o Supabase">
+<svg viewBox="0 0 700 300" role="img" aria-label="Fluxo de gravação local e sincronização posterior com o Supabase">
       <g font-family="Geist, sans-serif" font-size="12">
         <defs>
           <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -865,159 +761,124 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
     </svg>
     <figcaption><b>Figura 3.</b> Caminho de escrita. A faixa de cima acontece em milissegundos e sem rede; a de baixo acontece quando dá, e falhar nela não custa nada ao usuário.</figcaption>
   </figure>
-
-  <p>No sentido inverso — <strong>nuvem → aparelho</strong> — os dados de avaliação e do plano nutricional são buscados sob demanda, com refetch a cada vez que a tela ganha foco. Quem enviou o laudo no computador vê a avaliação aparecer no celular ao voltar para a tela, sem gesto de atualizar. Cada tela expressa três estados explícitos: carregando, erro e pronto.</p>
-
+  <p>No sentido inverso, <strong>nuvem → aparelho</strong>, a avaliação, a dieta e o perfil são buscados sob demanda, com refetch a cada vez que a tela ganha foco. O treino ativo também, mas a resposta atualiza a cópia local. Cada tela expressa três estados explícitos: carregando, erro e pronto.</p>
   <h4>Tratamento de conflitos</h4>
-  <p>A política adotada é <strong>“o registro pertence a quem o criou, e o último envio vence”</strong> (<em>last-write-wins</em> por linha), sustentada por quatro decisões:</p>
+  <p>A política adotada é <strong>"o registro pertence a quem o criou, e o último envio vence"</strong> (<em>last-write-wins</em> por linha), sustentada por quatro decisões:</p>
   <ul>
     <li><strong>Identidade gerada no cliente.</strong> O UUID nasce no aparelho, então o mesmo registro tem o mesmo <code>id</code> nos dois bancos. O envio é um <code>upsert onConflict: id</code>: reenviar dez vezes produz exatamente o mesmo resultado de enviar uma.</li>
-    <li><strong>Escrita de mão única.</strong> Séries e fotos só são escritas pelo aplicativo mobile; nenhum processo do servidor edita esses registros. Logo, o servidor nunca tem uma versão mais nova para disputar com o aparelho.</li>
-    <li><strong>Exclusão com tombstone.</strong> Uma série apagada offline não “ressuscita” na próxima sincronização, porque a exclusão viaja como intenção registrada e só some do aparelho depois de confirmada.</li>
-    <li><strong>Ordem e falha segura.</strong> Primeiro os pendentes, depois as exclusões; e a rodada inteira falha em silêncio — o que não subiu continua <code>pending</code> para a próxima janela. Nenhum erro de rede interrompe o usuário no meio do treino.</li>
+    <li><strong>Escrita de mão única.</strong> Séries e fotos só são escritas pelo aplicativo mobile; nenhum processo do servidor edita esses registros. Os planos, ao contrário, só são escritos pelo servidor, e o app só os lê. Nos dois casos, ninguém disputa a mesma linha.</li>
+    <li><strong>Exclusão com tombstone.</strong> Uma série ou foto apagada offline não "ressuscita" na próxima sincronização, porque a exclusão viaja como intenção registrada e só some do aparelho depois de confirmada.</li>
+    <li><strong>Ordem e falha segura.</strong> Nas séries, primeiro os pendentes e depois as exclusões. Nas fotos, primeiro as exclusões, para liberar espaço. A rodada inteira falha em silêncio: o que não subiu continua <code>pending</code> para a próxima janela, e nenhum erro de rede interrompe o usuário no meio do treino.</li>
   </ul>
-  <p>O limite conhecido dessa escolha é o cenário de <strong>dois aparelhos com a mesma conta editando a mesma série</strong>: o último a sincronizar sobrescreve o outro. Como o produto é de uso individual e a sessão de treino acontece em um aparelho por vez, o custo de um relógio vetorial ou de uma coluna <code>updated_at</code> com resolução por versão não se justifica hoje — e a porta fica aberta, já que a resolução é feita em um único ponto do código (o gateway de sincronização).</p>
-
+  <p>O limite conhecido dessa escolha é o cenário de <strong>dois aparelhos com a mesma conta editando a mesma série</strong>: o último a sincronizar sobrescreve o outro. Como o produto é de uso individual e a sessão de treino acontece num aparelho por vez, o custo de um relógio vetorial ou de uma coluna <code>updated_at</code> com resolução por versão não se justifica hoje. A porta fica aberta, porque a resolução acontece num único ponto do código (o gateway de sincronização).</p>
   <h3>Autenticação e permissões</h3>
-  <p>Sim, o app tem login: <strong>e-mail e senha via Supabase Auth</strong>. A sessão é o que alimenta o guarda de rotas da seção 2 — não há “modo visitante”.</p>
+  <p>Sim, o app tem login: <strong>e-mail e senha via Supabase Auth</strong>. A sessão é o que alimenta o guarda de rotas da seção 2, e não existe "modo visitante". O papel da pessoa no relatório do ciclo (aluno, personal ou coordenação) vem do <code>user_metadata</code> da conta; sem papel, vale aluno. O personal sem conta entra com um código que o aluno gera, que expira e pode ser revogado.</p>
+  <p>A persistência da sessão precisou de um cuidado específico. O armazenamento seguro do sistema (Keychain no iOS, Keystore no Android) tem limite prático de cerca de 2 KB por valor, pequeno demais para a sessão do Supabase. A solução implementada é o padrão <strong>LargeSecureStore</strong>: gera-se uma chave AES-256, ela é guardada no armazenamento seguro do sistema, e a sessão é gravada <em>cifrada</em> (AES-CTR) no armazenamento comum. A credencial nunca toca o disco em texto puro. O <em>refresh</em> automático do token só roda com o app em primeiro plano.</p>
+  <p>No banco, <strong>todas as tabelas têm Row Level Security habilitada</strong>. As de dados do usuário têm políticas de dono; as de controle (pedidos, treinos, reservas, alertas) só são legíveis pelo dono, ou nem isso, e só o servidor escreve nelas. Nos arquivos, as políticas de Storage comparam a <strong>primeira pasta do caminho</strong> com o identificador do usuário autenticado, de modo que ninguém lê o PDF de outra pessoa mesmo conhecendo o caminho. As fotos no R2 não têm acesso público: o app só alcança um arquivo por uma URL assinada, válida por cinco minutos, que a Edge Function <code>photo-storage</code> emite para a pasta do próprio usuário.</p>
+  <pre class="code"><span class="c">-- padrão aplicado às tabelas de dados do usuário</span>
+alter table set_logs enable row level security;
 
-  <p>A persistência da sessão precisou de um cuidado específico. O armazenamento seguro do sistema (Keychain no iOS, Keystore no Android) tem limite prático de cerca de 2 KB por valor, insuficiente para a sessão do Supabase. A solução implementada é o padrão <strong>LargeSecureStore</strong>: gera-se uma chave AES-256, ela é guardada no armazenamento seguro do sistema e a sessão é gravada <em>cifrada</em> (AES-CTR) no armazenamento comum. A credencial nunca toca o disco em texto puro. O <em>refresh</em> automático do token só roda com o app em primeiro plano.</p>
+create policy "set_logs_select_own" on set_logs
+  for select using (auth.uid() = user_id);
+create policy "set_logs_insert_own" on set_logs
+  for insert with check (auth.uid() = user_id);
 
-  <p>No banco, <strong>todas as tabelas têm Row Level Security habilitada</strong>, com políticas de dono para as quatro operações. O mesmo vale para os arquivos: as políticas de Storage comparam a <strong>primeira pasta do caminho</strong> com o identificador do usuário autenticado, de modo que ninguém lê o PDF nem a foto de outra pessoa mesmo conhecendo o caminho.</p>
-
-  <pre class="code"><span class="c">-- padrão aplicado a set_logs, progress_photos, body_assessments e nutrition_plans</span>
-<span class="kw">alter table</span> set_logs <span class="kw">enable row level security</span>;
-
-<span class="kw">create policy</span> "set_logs_select_own" <span class="kw">on</span> set_logs
-  <span class="kw">for select using</span> (auth.uid() = user_id);
-<span class="kw">create policy</span> "set_logs_insert_own" <span class="kw">on</span> set_logs
-  <span class="kw">for insert with check</span> (auth.uid() = user_id);
+<span class="c">-- tabelas que só o servidor escreve: o dono só lê</span>
+create policy "workout_plans_select_own" on workout_plans
+  for select using (auth.uid() = user_id);
 
 <span class="c">-- arquivos: a pasta raiz do objeto precisa ser o id do usuário</span>
-<span class="kw">create policy</span> "progress_photos_storage_select_own" <span class="kw">on</span> storage.objects
-  <span class="kw">for select using</span> (
-    bucket_id = 'progress-photos'
-      <span class="kw">and</span> (storage.foldername(name))[1] = auth.uid()::text
+create policy "assessments_storage_select_own" on storage.objects
+  for select using (
+    bucket_id = 'assessments'
+      and (storage.foldername(name))[1] = auth.uid()::text
   );</pre>
-
-  <p>Os buckets são privados; o aplicativo usa a chave anônima pública do projeto, e é a RLS — não o cliente — que define o que cada sessão enxerga. Não existe chave de serviço embarcada no app.</p>
+  <p>O aplicativo usa só a chave anônima pública do projeto, e é a RLS, não o cliente, que define o que cada sessão enxerga. Nenhuma chave de serviço vai embarcada no app: a <code>service_role</code>, a chave do Gemini e as do R2 vivem só como <em>secrets</em> das Edge Functions.</p>
 </section>
 
 <!-- ============================ 5 ============================ -->
 <section class="sheet">
   <h2><span class="n">05</span> Hardware e sensores</h2>
-
   <h3>Uso da câmera</h3>
   <p>A câmera aparece em <strong>dois fluxos distintos</strong>, cada um com sua tela dedicada de tela cheia.</p>
-
   <h4>Fluxo 1 — Foto de progresso</h4>
-  <p>A foto de progresso é a evidência visual que acompanha os números da avaliação: o mesmo enquadramento, a cada poucas semanas. O usuário chega pela galeria (<code>/fotos</code>) ou pelo Perfil, e a captura é gravada <strong>antes de qualquer chamada de rede</strong>:</p>
-
+  <p>A foto de progresso é a evidência visual que acompanha os números da avaliação: o mesmo enquadramento, a cada poucas semanas. Para que as fotos sejam comparáveis entre si, <strong>toda foto é guardada no mesmo formato</strong>: retrato 9:16, 1080×1920 pixels, JPEG 92% (cerca de 0,3 a 0,5 MB). O usuário chega pela galeria (<code>/fotos</code>) ou pelo Perfil, e a captura é gravada <strong>antes de qualquer chamada de rede</strong>:</p>
   <ol class="steps">
-    <li>A tela pede a permissão de câmera com uma explicação em português — e um caminho de saída (“Agora não”) para quem não quiser conceder.</li>
-    <li>A captura sai da câmera com qualidade 0,85 e cai no diretório de cache do sistema.</li>
-    <li>O arquivo é <strong>movido do cache para o diretório de documentos do app</strong>, em <code>progress-photos/&lt;uuid&gt;.jpg</code>. O cache pode ser esvaziado pelo sistema operacional a qualquer momento; o diretório de documentos, não.</li>
-    <li>Uma linha é gravada no SQLite com <code>local_uri</code>, data e <code>sync_status = pending</code>. A galeria já mostra a foto neste ponto, com ou sem internet.</li>
-    <li>Havendo conexão, o mesmo caso de uso já tenta o upload; não havendo, a foto entra na fila e sobe no próximo gatilho de sincronização.</li>
-    <li>O upload envia os bytes para <code>progress-photos/&lt;user_id&gt;/&lt;photo_id&gt;.jpg</code> e faz o <code>upsert</code> da linha remota. Só então <code>remote_path</code> é preenchido e o status vira <code>synced</code>.</li>
+    <li>A tela pede a permissão de câmera com uma explicação em português, e com uma saída ("Agora não") para quem não quiser conceder. Permissão bloqueada de vez leva às configurações do sistema.</li>
+    <li>O preview mostra faixas escuras nas laterais: é o que o recorte vai tirar.</li>
+    <li>A captura sai da câmera sem perda. O <code>CameraGateway</code> recorta o maior retângulo 9:16 centralizado (a regra é do domínio, em <code>recorteRetrato</code>), redimensiona para 1080×1920, salva em JPEG uma única vez e apaga o original do cache.</li>
+    <li>O arquivo é <strong>movido para o diretório de documentos do app</strong>, em <code>progress-photos/&lt;uuid&gt;.jpg</code>. O cache pode ser esvaziado pelo sistema operacional a qualquer momento; o diretório de documentos, não.</li>
+    <li>Se a localização estiver liberada, o app guarda onde a foto foi tirada. O toque no disparador é o gesto que autoriza o diálogo de permissão. Sem permissão ou sem sinal, a foto é salva sem posição: a foto é o que importa.</li>
+    <li>Uma linha é gravada no SQLite com <code>local_uri</code>, data, posição e <code>sync_status = pending</code>. A galeria já mostra a foto neste ponto, com ou sem internet.</li>
+    <li>Havendo conexão, o mesmo caso de uso já tenta o envio; não havendo, a foto entra na fila e sobe no próximo gatilho. O envio pede à <code>photo-storage</code> uma URL assinada, envia os bytes direto do disco para o R2 e grava a linha remota (sem a posição). Só então <code>remote_path</code> é preenchido e o status vira <code>synced</code>.</li>
   </ol>
-
-  <p>Repare que a galeria <strong>sempre lê o arquivo local</strong>, mesmo depois de sincronizada: a nuvem é backup, não a origem da exibição. Por isso rolar as fotos é instantâneo e não consome dados. O indicador de sincronização em cada foto existe justamente para tornar visível a diferença entre “está no meu celular” e “está salva na nuvem”.</p>
-
+  <p>Repare que a galeria <strong>sempre lê o arquivo local</strong>, mesmo depois de sincronizada: a nuvem é backup, não a origem da exibição. Por isso rolar as fotos é instantâneo e não consome dados. O ponto colorido em cada foto (volt para sincronizada, âmbar para pendente) torna visível a diferença entre "está no meu celular" e "está salva na nuvem". Um toque abre a foto em tela cheia, com a data, o local em graus e o atalho "Ver no mapa"; segurar a foto (ou o botão no visualizador) a apaga.</p>
   <h4>Fluxo 2 — Leitura de QR code do aparelho</h4>
-  <p>Achar o exercício certo numa lista, com o celular na mão e o aparelho ocupado, é fricção pura. O leitor resolve isso: cada aparelho da academia recebe um QR code contendo <code>pxgym://treino/&lt;exercicioId&gt;</code> (ou o identificador puro), e apontar a câmera abre a tela daquele exercício diretamente, pronta para registrar a carga. O leitor trava após a primeira leitura válida para não navegar duas vezes, e um código desconhecido produz uma mensagem clara em vez de uma tela em branco. Esse fluxo é <strong>totalmente offline</strong> — a leitura e a navegação não dependem de rede.</p>
-
+  <p>Achar o exercício certo numa lista, com o celular na mão e o aparelho ocupado, é fricção pura. O leitor resolve isso: cada aparelho da academia recebe um QR code com <code>pxgym://treino/&lt;exercicioId&gt;</code> (ou o identificador puro), e apontar a câmera abre a tela daquele exercício diretamente, pronta para registrar a carga. Vale qualquer exercício do catálogo: se ele não está no treino de hoje, a tela abre no dia do plano que o contém. O leitor trava depois da primeira leitura válida para não navegar duas vezes, e um código que não é de exercício produz uma mensagem clara em vez de uma tela em branco. Esse fluxo é <strong>totalmente offline</strong>.</p>
   <div class="note">
-    <p><b>Permissões.</b> Os textos de permissão são declarados no <code>app.json</code> em português e explicam a finalidade concreta: <i>“O Px GYM usa a câmera pra registrar fotos de progresso e ler QR codes dos aparelhos.”</i> No Android, <code>CAMERA</code>, <code>ACCESS_COARSE_LOCATION</code> e <code>ACCESS_FINE_LOCATION</code> são declaradas explicitamente. Nenhuma permissão é pedida na abertura do app: cada uma é solicitada na tela em que faz sentido, com a explicação à vista.</p>
+    <p><b>Permissões.</b> Os textos de permissão são declarados no <code>app.json</code> em português e explicam a finalidade concreta. Câmera: <em>"O Px GYM usa a câmera pra registrar fotos de progresso e ler QR codes dos aparelhos."</em> Localização: <em>"…pra mostrar academias perto de você e registrar onde suas fotos de progresso foram tiradas — essa posição fica só no seu aparelho."</em> No Android, <code>CAMERA</code>, <code>ACCESS_COARSE_LOCATION</code> e <code>ACCESS_FINE_LOCATION</code> são declaradas explicitamente. Nenhuma permissão é pedida na abertura do app: cada uma é solicitada na tela em que faz sentido, com a explicação à vista.</p>
   </div>
-
   <h3>Uso da geolocalização</h3>
-  <p>A localização serve a um caso de uso único e concreto: <strong>encontrar academias perto de onde o usuário está agora</strong>. É o cenário de quem viaja, mudou de bairro ou quer treinar perto do trabalho — sem localização, a única alternativa seria digitar um endereço, que é justamente o tipo de fricção que o app evita.</p>
-
-  <p>A captura é <strong>pontual e apenas em primeiro plano</strong>. Não há rastreamento em segundo plano: nenhuma permissão do tipo “sempre”, nenhum serviço de localização contínua e, portanto, nenhum consumo de bateria fora do momento em que a tela de academias está aberta. A posição é lida quando a tela abre (ou quando o usuário toca em “tentar de novo”) e descartada em seguida — ela não é gravada no SQLite nem enviada ao Supabase.</p>
-
+  <p>A localização serve a três casos concretos. O principal é <strong>encontrar academias perto de onde o usuário está agora</strong>, o cenário de quem viaja, mudou de bairro ou quer treinar perto do trabalho; sem localização, a única alternativa seria digitar um endereço, justamente o tipo de fricção que o app evita. Os outros dois são <strong>registrar onde cada foto de progresso foi tirada</strong> e o <strong>check-in opcional</strong> de um treino no relatório do ciclo.</p>
+  <p>A captura é <strong>pontual e apenas em primeiro plano</strong>. Não há rastreamento em segundo plano: nenhuma permissão do tipo "sempre", nenhum serviço de localização contínua e, portanto, nenhum consumo de bateria fora do momento em que a posição é pedida. A posição da busca de academias é descartada depois do uso. A da foto fica só no SQLite do aparelho: não sobe para a nuvem e não volta quando a foto é restaurada.</p>
   <ul>
-    <li><strong>Precisão “balanceada”</strong>, e não a máxima: para um raio de busca de 4 km, a precisão de alguns metros do GPS fino seria desperdício de tempo e bateria.</li>
-    <li><strong>Plano B para o fix que não sai.</strong> GPS frio, ambiente fechado ou emulador podem fazer a leitura de posição atual falhar. Nesse caso o app cai na última posição conhecida do sistema, sem limite de idade — para um raio de 4 km ela serve tão bem quanto uma leitura nova, e é melhor que uma tela de erro.</li>
-    <li><strong>Fonte de dados sem chave e sem custo:</strong> as academias vêm do OpenStreetMap pela Overpass API, consultando <code>leisure=fitness_centre</code> e <code>amenity=gym</code> ao redor do ponto. Um adaptador alternativo para a Google Places API está implementado e desativado, pronto para ser ligado se um dia houver faturamento — a tela não muda, só o adaptador.</li>
+    <li><strong>Precisão "balanceada"</strong>, e não a máxima: para um raio de busca de 4 km, a precisão de alguns metros do GPS fino seria desperdício de tempo e bateria.</li>
+    <li><strong>Plano B para o fix que não sai.</strong> GPS frio, ambiente fechado ou emulador podem fazer a leitura de posição atual falhar. Nesse caso o app cai na última posição conhecida do sistema, sem limite de idade: para um raio de 4 km ela serve tão bem quanto uma leitura nova, e é melhor que uma tela de erro.</li>
+    <li><strong>Fontes de dados sem chave e sem custo, em cadeia.</strong> As academias vêm do OpenStreetMap: primeiro o Overpass principal (o mais completo), depois o Nominatim (o mais estável) e por fim os espelhos do Overpass. A primeira que responder vale. A busca que deu certo fica guardada no aparelho; se todas as fontes caírem, a tela mostra a última busca, recalculada para a posição atual e com a data dela. Um adaptador para a Google Places API está implementado e desligado, pronto para ser ligado se um dia houver faturamento: a tela não muda, só o adaptador.</li>
     <li><strong>Mapa nativo por plataforma:</strong> Apple Maps no iOS e MapLibre com tiles do OpenStreetMap no Android, resolvidos por extensão de arquivo de plataforma, sem <code>if</code> espalhado pela tela.</li>
   </ul>
-
-  <p>Como toda a tela depende de rede (Overpass) e de sensor (GPS), ela trata os dois fracassos separadamente: “não consegui sua localização” e “não consegui buscar academias” são mensagens diferentes, com ação de repetir.</p>
+  <p>Como toda a tela depende de rede e de sensor, ela trata os fracassos separadamente: "não achamos sua localização" e "não deu pra buscar agora" são mensagens diferentes, com ação de repetir.</p>
 </section>
 
 <!-- ============================ 6 ============================ -->
 <section class="sheet">
   <h2><span class="n">06</span> Arquitetura e padrões de código</h2>
-
-  <p class="lead">O projeto é um monorepo com dois aplicativos e três pacotes compartilhados. A regra que organiza tudo: <strong>o domínio não conhece nem o React, nem o Expo, nem o Supabase</strong>.</p>
-
+  <p class="lead">O projeto é um monorepo com dois aplicativos, três pacotes compartilhados e as funções do servidor. A regra que organiza tudo: <strong>o domínio não conhece nem o React, nem o Expo, nem o Supabase</strong>.</p>
   <h3>Organização do projeto</h3>
-
   <figure>
-<div class="tree">px-gym/
+<div class="tree"><span class="k">px-gym/</span>
 ├── apps/
-│   ├── <span class="k">mobile/</span>                  <span class="c">Expo · React Native</span>
+│   ├── mobile/                    <span class="c">Expo · React Native</span>
 │   │   ├── src/app/               <span class="c">rotas (Expo Router) — só composição de tela</span>
-│   │   ├── src/components/        <span class="c">UI reutilizável (cartões, gráficos, barras)</span>
+│   │   ├── src/components/        <span class="c">UI reutilizável (cartões, gráficos, visualizador)</span>
+│   │   ├── src/adapters/          <span class="c">gateways nativos, contexto, hooks, telas do relatório</span>
 │   │   ├── src/db/                <span class="c">SQLite: schema, cliente e repositórios Drizzle</span>
-│   │   ├── src/lib/               <span class="c">integrações e composition roots</span>
+│   │   ├── src/lib/               <span class="c">composition roots e hooks de leitura</span>
 │   │   └── drizzle/               <span class="c">migrations do banco local</span>
-│   └── <span class="k">web/</span>                     <span class="c">Next.js — envio e revisão do laudo, plano por IA</span>
+│   └── web/                       <span class="c">Next.js — versão anterior do envio da avaliação</span>
 ├── packages/
-│   ├── <span class="k">core/</span>                    <span class="c">domínio puro — sem React, Expo ou Supabase</span>
-│   │   ├── entities/              <span class="c">SetLog, ProgressPhoto, BodyAssessment…</span>
-│   │   ├── value-objects/         <span class="c">Load, Weight, BodyFat, Macro, GeoPoint</span>
-│   │   ├── use-cases/             <span class="c">RegisterSet, SyncPendingSetLogs, SaveProgressPhoto…</span>
-│   │   ├── services/              <span class="c">progressão de carga, sequência de dias, medidas</span>
-│   │   ├── ports/                 <span class="c">interfaces que a infraestrutura implementa</span>
+│   ├── core/                      <span class="c">domínio puro — sem React, Expo ou Supabase</span>
+│   │   ├── domain/entities/       <span class="c">SetLog, WorkoutPlan, BodyAssessment, CicloAvaliacao…</span>
+│   │   ├── domain/value-objects/  <span class="c">Load, Weight, Email, Criterio, Assinatura…</span>
+│   │   ├── domain/services/       <span class="c">treino do dia, progressão, recorte da foto…</span>
+│   │   ├── domain/contracts/      <span class="c">interfaces que a infraestrutura implementa</span>
+│   │   ├── application/use-cases/ RegisterSet, GenerateWorkoutPlan, AssinarRelatorio…
 │   │   └── testing/               <span class="c">fakes em memória usados pelos testes</span>
-│   ├── <span class="k">db/</span>                      <span class="c">adaptadores Supabase (repositórios e gateway)</span>
-│   └── <span class="k">tokens/</span>                  <span class="c">tokens de design compartilhados entre web e mobile</span>
-└── supabase/migrations/           <span class="c">esquema remoto versionado em SQL</span></div>
-    <figcaption><b>Figura 4.</b> Estrutura de diretórios. As duas aplicações consomem os mesmos pacotes de domínio e de design.</figcaption>
+│   ├── db/                        <span class="c">adaptadores Supabase (repositórios e gateways)</span>
+│   └── tokens/                    <span class="c">tokens de design compartilhados entre web e mobile</span>
+└── supabase/
+    ├── migrations/                <span class="c">esquema remoto versionado em SQL</span>
+    └── functions/                 <span class="c">Edge Functions: generate-plan, extract-assessment,</span>
+                                   <span class="c">photo-storage e o código compartilhado (_shared)</span></div>
+    <figcaption><b>Figura 4.</b> Estrutura de diretórios. Os dois aplicativos consomem os mesmos pacotes de domínio e de design; o servidor tem as próprias regras em <code>_shared</code>.</figcaption>
   </figure>
-
   <h4>Separação de responsabilidades</h4>
-  <p>A separação segue <strong>ports &amp; adapters</strong> (arquitetura limpa). O domínio declara as interfaces de que precisa; cada tecnologia entra como implementação intercambiável:</p>
-
+  <p>A separação segue <strong>ports &amp; adapters</strong> (arquitetura limpa). O domínio declara as interfaces de que precisa, e cada tecnologia entra como implementação intercambiável:</p>
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr><th class="col-narrow">Camada</th><th class="col-mid">O que contém</th><th>Do que ela não pode depender</th></tr>
-      </thead>
+      <thead><tr><th class="col-narrow">Camada</th><th>O que contém</th><th>Do que ela não pode depender</th></tr></thead>
       <tbody>
-        <tr>
-          <td><strong>Domínio</strong><br><span class="mono">packages/core</span></td>
-          <td>Entidades, objetos de valor, casos de uso, serviços de cálculo e os <em>ports</em>: <code>SetLogRepository</code>, <code>WorkoutSyncGateway</code>, <code>ProgressPhotoUploader</code>, <code>NearbyGymsFinder</code>, <code>ConnectivityStatus</code>, <code>Clock</code>, <code>IdGenerator</code>.</td>
-          <td>De nada. Não importa React, React Native, Expo, Drizzle nem Supabase — por isso roda em Node puro nos testes.</td>
-        </tr>
-        <tr>
-          <td><strong>Banco local</strong><br><span class="mono">mobile/src/db</span></td>
-          <td>Esquema Drizzle, migrations e os repositórios que implementam os ports contra o SQLite, além da conversão linha ↔ entidade.</td>
-          <td>De componentes ou telas. Nenhuma consulta SQL vive dentro de uma tela.</td>
-        </tr>
-        <tr>
-          <td><strong>Backend</strong><br><span class="mono">packages/db</span></td>
-          <td>Cliente Supabase, repositórios de avaliação e plano, gateway de sincronização e mapeadores.</td>
-          <td>De React e do domínio de UI; é compartilhado com o app web.</td>
-        </tr>
-        <tr>
-          <td><strong>Composição</strong><br><span class="mono">mobile/src/lib</span></td>
-          <td>Os <em>composition roots</em> que instanciam cada caso de uso com seus adaptadores concretos, mais os <em>hooks</em> que ligam isso às telas.</td>
-          <td>É o único lugar onde “SQLite” e “Supabase” se encontram na mesma linha.</td>
-        </tr>
-        <tr>
-          <td><strong>Apresentação</strong><br><span class="mono">mobile/src/app</span> · <span class="mono">components</span></td>
-          <td>Telas e componentes visuais: leem por <em>hooks</em>, escrevem chamando casos de uso.</td>
-          <td>Não faz consulta SQL, não chama a API do Supabase, não formula regra de progressão.</td>
-        </tr>
+        <tr><td><strong>Domínio</strong><br><code>packages/core</code></td><td>Entidades, objetos de valor, casos de uso, serviços de cálculo e os <em>ports</em>, como <code>SetLogRepository</code>, <code>WorkoutPlanCache</code>, <code>PlanGenerationGateway</code>, <code>CameraGateway</code>, <code>LocationGateway</code>, <code>ConnectivityStatus</code>, <code>Clock</code> e <code>IdGenerator</code>.</td><td>De nada. Não importa React, React Native, Expo, Drizzle nem Supabase; por isso roda em Node puro nos testes.</td></tr>
+        <tr><td><strong>Banco local</strong><br><code>mobile/src/db</code></td><td>Esquema Drizzle, migrations e os repositórios que implementam os ports contra o SQLite, além da conversão linha ↔ entidade.</td><td>De componentes ou telas. Nenhuma consulta SQL vive dentro de uma tela.</td></tr>
+        <tr><td><strong>Gateways nativos</strong><br><code>mobile/src/adapters</code></td><td>Câmera (com o recorte), GPS, armazenamento seguro da sessão, última busca de academias, fontes do OpenStreetMap e os repositórios em memória do relatório.</td><td>Da interface: um gateway não desenha nada.</td></tr>
+        <tr><td><strong>Backend</strong><br><code>packages/db</code></td><td>Cliente Supabase, repositórios, gateway de sincronização, chamadas às Edge Functions e mapeadores.</td><td>De React e da UI; é compartilhado com o app web.</td></tr>
+        <tr><td><strong>Composição</strong><br><code>mobile/src/lib</code></td><td>Os <em>composition roots</em> que instanciam cada caso de uso com seus adaptadores concretos e os <em>hooks</em> que ligam isso às telas.</td><td>É o único lugar onde "SQLite" e "Supabase" se encontram na mesma linha.</td></tr>
+        <tr><td><strong>Apresentação</strong><br><code>mobile/src/app</code> · <code>components</code></td><td>Telas e componentes visuais: leem por <em>hooks</em> e escrevem chamando casos de uso.</td><td>Não faz consulta SQL, não chama a API do Supabase, não formula regra de progressão.</td></tr>
       </tbody>
     </table>
   </div>
-
   <figure>
-    <svg viewBox="0 0 700 210" role="img" aria-label="Direção das dependências: interface e infraestrutura apontam para o domínio">
+<svg viewBox="0 0 700 210" role="img" aria-label="Direção das dependências: interface e infraestrutura apontam para o domínio">
       <g font-family="Geist, sans-serif">
         <defs>
           <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -1036,12 +897,12 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
         <text x="350" y="76" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">entidades e regras</text>
         <text x="350" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">casos de uso</text>
         <text x="350" y="108" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">ports (interfaces)</text>
-        <text x="350" y="132" text-anchor="middle" font-size="9.5" font-weight="500" fill="oklch(0.46 0.135 132)">77 testes unitários</text>
+        <text x="350" y="132" text-anchor="middle" font-size="9.5" font-weight="500" fill="oklch(0.46 0.135 132)">383 testes</text>
 
         <rect x="524" y="30" width="176" height="120" rx="10" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
         <text x="612" y="54" text-anchor="middle" font-size="12" font-weight="600">Infraestrutura</text>
         <text x="612" y="76" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">Drizzle / SQLite</text>
-        <text x="612" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">Supabase</text>
+        <text x="612" y="92" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">Supabase · R2</text>
         <text x="612" y="108" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">NetInfo · câmera · GPS</text>
 
         <path d="M 182 90 L 256 90" stroke="oklch(0.46 0.135 132)" stroke-width="1.6" marker-end="url(#ah3)"/>
@@ -1051,26 +912,66 @@ pre.code .kw{ color: var(--volt-ink); font-weight: 600; }
         <text x="350" y="197" text-anchor="middle" font-size="10.5" fill="oklch(0.45 0.012 264)">trocar SQLite, Supabase ou a fonte de academias não toca em uma linha de regra</text>
       </g>
     </svg>
-    <figcaption><b>Figura 5.</b> Direção das dependências. Nos testes, os adaptadores reais são substituídos por implementações falsas em memória — é o que permite testar sincronização e progressão de carga sem banco, sem rede e sem emulador.</figcaption>
+    <figcaption><b>Figura 5.</b> Direção das dependências. Nos testes, os adaptadores reais são substituídos por implementações falsas em memória; é o que permite testar sincronização, geração de plano e progressão de carga sem banco, sem rede, sem IA e sem emulador.</figcaption>
   </figure>
-
-  <p>O ganho prático dessa separação é testabilidade: a suíte do domínio tem <strong>77 testes</strong> cobrindo progressão de carga, sequência de dias, atividade da semana, objetos de valor, registro de série e — o mais importante — o comportamento da sincronização (offline, nada a enviar, envio bem-sucedido, tombstones), tudo rodando em Node puro, em segundos.</p>
-
+  <p>O ganho prático dessa separação é testabilidade. São <strong>657 testes automatizados</strong>, todos rodando em segundos: 383 no domínio e nos casos de uso (com 95% das linhas cobertas), 47 nos adaptadores do Supabase, 168 no app (repositórios contra SQLite real, gateways, hooks, telas e um fluxo ponta a ponta do relatório) e 59 nas Edge Functions. Eles cobrem o comportamento da sincronização (offline, erro, tombstones, restauração de fotos), o treino do dia, as regras da IA, o relatório do ciclo e as permissões.</p>
+  <p>Outra consequência do desenho é o <strong>modo mock</strong>. Com <code>EXPO_PUBLIC_MODO_MOCK=1</code>, o app troca os adaptadores reais por implementações em memória, sem abrir o SQLite nem criar o cliente do Supabase. O login passa a ser por contas de demonstração, e o GPS e as fotos são simulados. É o mesmo domínio e as mesmas telas, sem nenhuma dependência externa: foi assim que a fase "domínio e interface primeiro" foi construída e apresentada. O padrão é o modo real.</p>
   <h3>Gerenciamento de estado de conexão</h3>
   <p>O estado de rede é tratado em <strong>dois níveis diferentes</strong>, de propósito.</p>
-
-  <p><strong>Como decisão de domínio.</strong> A conectividade entra no núcleo como um <em>port</em> (<code>ConnectivityStatus</code>), e o caso de uso de sincronização consulta esse port antes de tentar qualquer envio — se estiver offline, ele devolve o resultado <code>offline</code> sem gastar requisição. A implementação real usa o NetInfo, com um detalhe que importa: enquanto o sistema ainda está sondando a rede, o indicador de “internet alcançável” vem indefinido, e o app só bloqueia o envio quando ele afirma <em>explicitamente</em> que não há internet. Nos testes, esse mesmo port vira uma implementação falsa que devolve o que o cenário pedir.</p>
-
-  <p><strong>Como reação a eventos.</strong> Um único <em>hook</em> montado no layout da área logada assina o NetInfo e o <code>AppState</code>: conexão restabelecida ou app voltando ao primeiro plano disparam uma rodada de sincronização em segundo plano, com trava de reentrada.</p>
-
-  <p>Do lado da interface, a escolha é <strong>não interromper</strong>. Falha de sincronização não vira alerta nem modal — quem está no meio de uma série não precisa lidar com um erro de rede que o app já sabe contornar. Em vez disso, o estado fica disponível onde o usuário pode agir sobre ele:</p>
+  <p><strong>Como decisão de domínio.</strong> A conectividade entra no núcleo como um <em>port</em> (<code>ConnectivityStatus</code>), e os casos de uso que dependem de rede o consultam antes de tentar qualquer envio. O de sincronização devolve o resultado <code>offline</code> sem gastar requisição; os de gerar plano e ler PDF recusam com a mensagem certa antes de subir qualquer coisa. A implementação real usa o NetInfo, com um detalhe que importa: enquanto o sistema ainda está sondando a rede, o indicador de "internet alcançável" vem indefinido, e o app só bloqueia o envio quando ele afirma <em>explicitamente</em> que não há internet. Nos testes, esse mesmo port vira uma implementação falsa que devolve o que o cenário pedir.</p>
+  <p><strong>Como reação a eventos.</strong> Um único <em>hook</em>, montado no layout da área logada, assina o NetInfo e o <code>AppState</code>: conexão restabelecida ou app voltando ao primeiro plano disparam uma rodada de sincronização em segundo plano, com trava de reentrada.</p>
+  <p>Do lado da interface, a escolha é <strong>não interromper</strong>. Falha de sincronização não vira alerta nem modal: quem está no meio de uma série não precisa lidar com um erro de rede que o app já sabe contornar. O estado fica disponível onde o usuário pode agir sobre ele:</p>
   <ul>
-    <li><strong>Configurações</strong> mostra, ao vivo, quantos registros e fotos estão pendentes (consulta reativa ao SQLite) e oferece o botão de sincronizar agora.</li>
+    <li><strong>Configurações</strong> mostra, ao vivo, quantos registros, remoções e fotos estão pendentes (consulta reativa ao SQLite) e oferece o botão de sincronizar agora, distinguindo "sem conexão" de "o servidor não respondeu".</li>
     <li><strong>A galeria de fotos</strong> marca cada item com um indicador de já sincronizado ou ainda local.</li>
-    <li><strong>Telas que dependem de leitura remota</strong> (Avaliações, Nutrição, Academias) têm estado de erro próprio, com ícone de “sem nuvem”, explicação e ação de repetir.</li>
+    <li><strong>Telas que dependem de leitura remota</strong> (Progresso, Avaliações, Nutrição, Academias) têm estado de erro próprio, com explicação e ação de repetir.</li>
   </ul>
+</section>
 
+<!-- ============================ 7 ============================ -->
+<section class="sheet">
+  <h2><span class="n">07</span> Inteligência artificial</h2>
+  <p class="lead">O app usa IA em três lugares: <strong>montar o treino</strong>, <strong>montar a dieta</strong> e <strong>ler o PDF da avaliação</strong>. Nos três, a IA roda no servidor, dentro de uma Edge Function do Supabase. O app nunca fala com o provedor e nunca carrega a chave. A regra que atravessa tudo é <strong>"a IA propõe, a fórmula confere"</strong>: o modelo escolhe e escreve, mas nenhum número dele chega à tela sem passar por esquema e por regras determinísticas.</p>
+  <h3>O provedor e o custo</h3>
+  <p>O projeto tem orçamento zero, então só serve o que tem plano gratuito sem cartão. O escolhido foi o <strong>Google Gemini Flash-Lite</strong>, pelo AI Studio, com cota diária gratuita. Para não depender de um único modelo, as funções usam uma <strong>cadeia</strong> (<code>gemini-3.5-flash-lite</code> e depois <code>gemini-3.1-flash-lite</code>, com cotas independentes), cuja ordem pode ser trocada por <em>secret</em> sem novo deploy. As funções só conhecem a interface <code>ProvedorIA</code>: trocar de modelo ou de empresa é escrever outro adaptador, e as regras não mudam.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Situação</th><th>O que acontece</th></tr></thead>
+      <tbody>
+        <tr><td>Modelo sem cota (HTTP 429)</td><td>Tenta o próximo da cadeia.</td></tr>
+        <tr><td>Resposta fora do formato, ou que as regras não conseguem consertar</td><td>Conta como falha do modelo e tenta o próximo.</td></tr>
+        <tr><td>Todos sem cota</td><td>O pedido fica <strong>na fila</strong> (<code>queued</code>), e o app oferece "Tentar de novo".</td></tr>
+        <tr><td>Todos falharam de verdade</td><td>O pedido fica em <code>error</code> e o app pede para tentar em instantes.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Para a cota durar e ninguém abusar, o servidor limita cada pessoa a 8 pedidos em 24 horas, 2 planos do zero por avaliação (para treino e para dieta, separadamente) e 5 pedidos de mudança por avaliação. A leitura de PDF tem limite próprio, de 6 por dia. Os mesmos pré-requisitos (internet, perfil preenchido, avaliação revisada) são conferidos <strong>no aparelho antes</strong> do pedido, para nem gastar a viagem.</p>
+  <h3>Treino</h3>
+  <p>A função <code>generate-plan</code> recebe o pedido, lê o perfil e a avaliação pelo cliente do próprio usuário (sujeito à RLS) e manda para o modelo três coisas. A primeira é o <strong>acervo científico</strong>: 25 artigos resumidos, sobre volume, frequência, proximidade da falha, proteína e déficit calórico, entre outros temas. A segunda é o <strong>catálogo fechado</strong> de 58 exercícios, enviado como <code>enum</code> no esquema da resposta. A terceira são os dados da pessoa, só com números e perfil, sem nome nem e-mail. A resposta passa por <code>ajustarTreino</code>, que:</p>
+  <ul>
+    <li>descarta exercício inventado ou repetido no dia;</li>
+    <li>veta o que a academia da pessoa não tem e o que sobrecarrega uma região marcada como sensível (o modelo menor não respeita restrição de lesão só por instrução, então o veto é feito por código);</li>
+    <li>exige um dia por dia de treino pedido e traz séries, repetições e descanso para faixas sãs;</li>
+    <li>usa o nome e o grupo muscular do catálogo, não os da IA;</li>
+    <li>guarda só as fontes que existem no acervo.</li>
+  </ul>
+  <p>O plano não traz cargas. A meta de cada série sai do <strong>histórico de séries do aparelho</strong>, e o dia sugerido também. A IA decide o que treinar, e o registro real decide quanto.</p>
+  <h3>Dieta</h3>
+  <p>A dieta segue o mesmo caminho, com regras de nutrição. A <strong>fórmula de Mifflin-St Jeor</strong> dá a taxa metabólica basal; com o fator de atividade e o ajuste pelo objetivo, sai a referência de calorias. As faixas também vão para a IA, para ela mirar. Depois, <code>ajustarDieta</code> confere:</p>
+  <ul>
+    <li>calorias a até 15% da referência e <strong>nunca abaixo da taxa basal</strong>;</li>
+    <li>proteína entre 1,4 e 2,4 g por kg e gordura entre 0,6 e 1,2 g por kg;</li>
+    <li>carboidrato fechando a conta.</li>
+  </ul>
+  <p>As refeições têm um passo a mais. A IA escolhe os alimentos e o peso de cada refeição no dia, mas erra a soma: numa chamada real, propôs 2.000 kcal para uma meta de 3.000. Por isso <code>conferirRefeicoes</code> <strong>recalcula</strong> as calorias de cada opção a partir dos macros dos alimentos e escala as porções. Quando há alimento proteico e não proteico na opção, resolve um sistema 2×2 que acerta calorias e proteína ao mesmo tempo. A medida caseira ("4 colheres de sopa") é refeita a partir dos gramas finais. O resultado é que <strong>qualquer combinação de opções fecha o dia na meta</strong>. O app monta o cardápio da semana alternando as opções de cada refeição, de modo que dias seguidos não repetem a mesma combinação, e a pessoa pode trocar uma opção na mão.</p>
+  <h3>Pedido de mudança e preferências aprendidas</h3>
+  <p>Depois de gerado, o plano pode ser ajustado em texto livre. A função manda à IA o plano atual e o pedido, com a instrução de mudar <strong>só</strong> o que foi pedido. O que o pedido ensinou (um aparelho que a academia não tem, um alimento que a pessoa não come) é filtrado pelo catálogo e gravado no perfil, e passa a valer em todos os planos seguintes sem a pessoa repetir.</p>
+  <h3>Avaliação pelo PDF</h3>
+  <p>Quem fez bioimpedância recebe um PDF. O app sobe o arquivo para a pasta da pessoa no Storage, e a função <code>extract-assessment</code> o envia ao Gemini como anexo, pedindo peso, gordura, massa muscular, medidas e data num esquema fixo. Valor implausível vira vazio, e documento que não é avaliação é recusado, com o PDF apagado. <strong>Nada é salvo nesse passo</strong>: os números voltam para preencher o formulário, a pessoa confere, corrige e só então salva. Por isso a avaliação nasce revisada.</p>
+  <h3>Avaliação nova, plano novo</h3>
+  <p>Cada plano guarda de qual avaliação veio. Quando chega uma avaliação revisada mais nova que a do plano ativo, as abas Treino e Nutrição mostram o cartão <strong>"Avaliação nova"</strong>, com o botão para atualizar. O cartão nunca gera sozinho, porque cada geração do zero conta no limite.</p>
   <div class="note">
-    <p><b>Estado atual do projeto.</b> Estão implementados: autenticação com sessão cifrada e rotas protegidas, registro de série offline com progressão de carga, sincronização por gatilhos com tombstones, fotos de progresso com upload diferido, leitor de QR, busca de academias por GPS, painéis de progresso corporal e macros, e a suíte de 77 testes de domínio. A rotina de exercícios do dia ainda vem de um conjunto fixo em código — a montagem de treinos pelo usuário é o próximo passo natural, e por já existir o repositório de treino como <i>port</i>, ela entra sem alterar a estratégia offline descrita aqui.</p>
+    <p><b>Estado atual do projeto.</b> Estão implementados: autenticação com sessão cifrada e rotas protegidas; treino e dieta gerados por IA com regras de conferência, pedido de mudança, fila e limites; treino do dia montado do plano e do histórico, disponível offline; registro de série offline com progressão de carga; sincronização por gatilhos com tombstones; avaliação digitada ou lida do PDF; fotos em 9:16 com local, envio diferido ao R2, exclusão e restauração; leitor de QR; guia de execução; busca de academias com fontes em cadeia; painéis de progresso; o relatório do ciclo com regras e telas; e 657 testes automatizados. Os próximos passos são persistir o relatório do ciclo, dar cópia offline à dieta, retomar sozinho os pedidos da fila e testar ponta a ponta em aparelho.</p>
   </div>
 </section>
+</html>

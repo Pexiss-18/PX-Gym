@@ -1,0 +1,64 @@
+<svg viewBox="0 0 700 300" role="img" aria-label="Fluxo de gravação local e sincronização posterior com o Supabase">
+      <g font-family="Geist, sans-serif" font-size="12">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="oklch(0.45 0.012 264)"/>
+          </marker>
+        </defs>
+
+        <!-- faixa 1: imediato -->
+        <text x="0" y="16" font-size="10" font-weight="500" letter-spacing="0.08em" fill="oklch(0.46 0.135 132)">IMEDIATO — SEM REDE</text>
+        <line x1="0" y1="24" x2="700" y2="24" stroke="oklch(0.87 0.23 126)" stroke-width="2"/>
+
+        <rect x="0" y="42" width="150" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="75" y="63" text-anchor="middle" font-size="11.5" font-weight="600">toque na série</text>
+        <text x="75" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">tela do exercício</text>
+
+        <rect x="186" y="42" width="150" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="261" y="63" text-anchor="middle" font-size="11.5" font-weight="600">RegisterSetUseCase</text>
+        <text x="261" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">regra de domínio</text>
+
+        <rect x="372" y="42" width="150" height="46" rx="8" fill="oklch(0.87 0.23 126 / 16%)" stroke="oklch(0.46 0.135 132)" stroke-width="1.5"/>
+        <text x="447" y="63" text-anchor="middle" font-size="11.5" font-weight="600">SQLite: pending</text>
+        <text x="447" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">fonte da verdade</text>
+
+        <rect x="558" y="42" width="142" height="46" rx="8" fill="oklch(0.988 0.002 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="629" y="63" text-anchor="middle" font-size="11.5" font-weight="600">useLiveQuery</text>
+        <text x="629" y="78" text-anchor="middle" font-size="10" fill="oklch(0.45 0.012 264)">telas redesenham</text>
+
+        <path d="M 152 65 L 180 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 338 65 L 366 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 524 65 L 552 65" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- faixa 2: depois -->
+        <text x="0" y="146" font-size="10" font-weight="500" letter-spacing="0.08em" fill="oklch(0.45 0.012 264)">DEPOIS — QUANDO HOUVER CONEXÃO</text>
+        <line x1="0" y1="154" x2="700" y2="154" stroke="oklch(0.45 0.012 264)" stroke-width="1.5"/>
+
+        <rect x="0" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="75" y="192" text-anchor="middle" font-size="11.5" font-weight="600">gatilho</text>
+        <text x="75" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">abertura · NetInfo</text>
+        <text x="75" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">foreground · manual</text>
+
+        <rect x="186" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="261" y="192" text-anchor="middle" font-size="11.5" font-weight="600">SyncPendingSetLogs</text>
+        <text x="261" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">lê pending + tombstones</text>
+        <text x="261" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">checa conectividade</text>
+
+        <rect x="372" y="172" width="150" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.78 0.008 264)" stroke-width="1.2"/>
+        <text x="447" y="192" text-anchor="middle" font-size="11.5" font-weight="600">Gateway Supabase</text>
+        <text x="447" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">upsert onConflict: id</text>
+        <text x="447" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">delete por lote</text>
+
+        <rect x="558" y="172" width="142" height="56" rx="8" fill="oklch(0.962 0.003 264)" stroke="oklch(0.45 0.012 264)" stroke-width="1.5"/>
+        <text x="629" y="192" text-anchor="middle" font-size="11.5" font-weight="600">Postgres</text>
+        <text x="629" y="207" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">set_logs</text>
+        <text x="629" y="219" text-anchor="middle" font-size="9.5" fill="oklch(0.45 0.012 264)">RLS por dono</text>
+
+        <path d="M 152 200 L 180 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 338 200 L 366 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+        <path d="M 524 200 L 552 200" stroke="oklch(0.45 0.012 264)" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <path d="M 447 232 L 447 258 L 261 258 L 261 234" stroke="oklch(0.46 0.135 132)" stroke-width="1.4" fill="none" marker-end="url(#ah2)"/>
+        <text x="354" y="274" text-anchor="middle" font-size="10" fill="oklch(0.46 0.135 132)">sucesso → marca synced / apaga o tombstone local</text>
+      </g>
+    </svg>
