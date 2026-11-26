@@ -87,6 +87,7 @@ export type WorkoutPlanRow = {
   rationale: string;
   days: PlanDay[];
   sources: string[];
+  assessment_id: string;
   created_at: string;
 };
 

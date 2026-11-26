@@ -10,6 +10,7 @@ import { PillButton } from "@/components/pill-button";
 import { Field } from "@/components/field";
 import { useTodayDoneByExercise } from "@/lib/use-workout-data";
 import { GeneratingCard, GenerationErrorMessage } from "@/components/generation-feedback";
+import { NewAssessmentCard } from "@/components/new-assessment-card";
 import { chooseDay, useTodayWorkout, useWorkoutGeneration } from "@/lib/use-workout-plan";
 
 function Gerando() {
@@ -32,6 +33,8 @@ export default function TreinoScreen() {
   const doneByExercise = useTodayDoneByExercise();
   const [mudando, setMudando] = useState(false);
   const [pedido, setPedido] = useState("");
+  // geração pedida pelo cartão da avaliação nova: o erro aparece lá em cima
+  const [pelaAvaliacao, setPelaAvaliacao] = useState(false);
 
   if (today.status === "loading") {
     return (
@@ -93,6 +96,7 @@ export default function TreinoScreen() {
   const fraction = totalSets === 0 ? 0 : completedSets / totalSets;
 
   async function enviarPedido() {
+    setPelaAvaliacao(false);
     if (await generation.requestChange(pedido)) {
       setPedido("");
       setMudando(false);
@@ -105,7 +109,13 @@ export default function TreinoScreen() {
       "O treino atual é substituído. Cada avaliação permite gerar poucos treinos do zero; pra ajustes, use “Pedir mudança”.",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Gerar novo", onPress: () => void generation.generate() },
+        {
+          text: "Gerar novo",
+          onPress: () => {
+            setPelaAvaliacao(false);
+            void generation.generate();
+          },
+        },
       ],
     );
   }
@@ -135,6 +145,19 @@ export default function TreinoScreen() {
           <Text className="font-sans text-xs text-fog">{workout.focus}</Text>
         </View>
       </View>
+
+      {generation.busy ? null : (
+        <NewAssessmentCard
+          part="treino"
+          className="mb-5"
+          planAssessmentId={plan.assessmentId}
+          onUpdate={() => {
+            setPelaAvaliacao(true);
+            void generation.generate();
+          }}
+          error={pelaAvaliacao ? generation.error : null}
+        />
+      )}
 
       {/* troca de dia: o sugerido pelo histórico leva "hoje" */}
       {plan.days.length > 1 ? (
@@ -248,7 +271,9 @@ export default function TreinoScreen() {
             </PillButton>
           </>
         )}
-        {generation.error && !generation.busy ? <GenerationErrorMessage error={generation.error} /> : null}
+        {generation.error && !generation.busy && !pelaAvaliacao ? (
+          <GenerationErrorMessage error={generation.error} />
+        ) : null}
       </View>
     </Screen>
   );

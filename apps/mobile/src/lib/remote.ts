@@ -86,6 +86,14 @@ export function useLatestPlan(): Remote<NutritionPlan | null> {
   return useRemote(fetchLatestPlan);
 }
 
+const fetchLatestReviewed = (userId: string) =>
+  assessmentRepository.latestReviewed(userId);
+
+/** A avaliação revisada mais recente (a que a IA usa pra gerar planos). */
+export function useLatestReviewedAssessment(): Remote<BodyAssessment | null> {
+  return useRemote(fetchLatestReviewed);
+}
+
 export type BodyMetrics = {
   latest: BodyAssessment | null;
   previous: BodyAssessment | null;

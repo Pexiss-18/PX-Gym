@@ -10,6 +10,7 @@ import { Field } from "@/components/field";
 import { WeeklyMenu } from "@/components/weekly-menu";
 import { PillButton } from "@/components/pill-button";
 import { GeneratingCard, GenerationErrorMessage } from "@/components/generation-feedback";
+import { NewAssessmentCard } from "@/components/new-assessment-card";
 import { useLatestPlan } from "@/lib/remote";
 import { useDietGeneration } from "@/lib/use-diet-plan";
 
@@ -67,10 +68,13 @@ export default function NutricaoScreen() {
   const dieta = useDietGeneration();
   const [mudando, setMudando] = useState(false);
   const [pedido, setPedido] = useState("");
+  // geração pedida pelo cartão da avaliação nova: o erro aparece lá em cima
+  const [pelaAvaliacao, setPelaAvaliacao] = useState(false);
   // a dieta que acabou de sair vale até a tela recarregar do servidor
   const plano = dieta.generated ?? remoto.data;
 
   async function enviarPedido() {
+    setPelaAvaliacao(false);
     if (await dieta.requestChange(pedido)) {
       setPedido("");
       setMudando(false);
@@ -83,7 +87,13 @@ export default function NutricaoScreen() {
       "A dieta atual é substituída. Cada avaliação permite gerar poucas dietas do zero; pra ajustes, use “Pedir mudança”.",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Gerar nova", onPress: () => void dieta.generate() },
+        {
+          text: "Gerar nova",
+          onPress: () => {
+            setPelaAvaliacao(false);
+            void dieta.generate();
+          },
+        },
       ],
     );
   }
@@ -146,6 +156,17 @@ export default function NutricaoScreen() {
         )
       ) : (
         <View className="gap-5">
+          {dieta.busy ? null : (
+            <NewAssessmentCard
+              part="dieta"
+              planAssessmentId={plano.assessmentId}
+              onUpdate={() => {
+                setPelaAvaliacao(true);
+                void dieta.generate();
+              }}
+              error={pelaAvaliacao ? dieta.error : null}
+            />
+          )}
           <GlassCard>
             <Text className="font-sans-medium text-xs uppercase tracking-wide text-fog">
               Meta diária
@@ -278,7 +299,9 @@ export default function NutricaoScreen() {
                 </PillButton>
               </>
             )}
-            {dieta.error && !dieta.busy ? <GenerationErrorMessage error={dieta.error} /> : null}
+            {dieta.error && !dieta.busy && !pelaAvaliacao ? (
+              <GenerationErrorMessage error={dieta.error} />
+            ) : null}
           </View>
         </View>
       )}

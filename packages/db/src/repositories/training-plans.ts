@@ -40,6 +40,7 @@ export function toWorkoutPlan(row: WorkoutPlanRow): WorkoutPlan {
     rationale: row.rationale,
     days: row.days,
     sources: row.sources,
+    assessmentId: row.assessment_id,
     createdAt: new Date(row.created_at),
   };
 }
@@ -88,7 +89,7 @@ export class SupabaseWorkoutPlanRepository implements ActiveWorkoutPlanSource {
   async get(userId: string): Promise<WorkoutPlan | null> {
     const { data, error } = await this.client
       .from("workout_plans")
-      .select("id, user_id, name, rationale, days, sources, created_at")
+      .select("id, user_id, name, rationale, days, sources, assessment_id, created_at")
       .eq("user_id", userId)
       .eq("active", true)
       .maybeSingle();
@@ -136,6 +137,8 @@ export class SupabasePlanGenerationGateway implements PlanGenerationGateway {
         rationale: data.workout.rationale,
         days: data.workout.days,
         sources: data.sources,
+        // treino do zero: a avaliação foi pedida; mudança e fila: quem chama completa
+        assessmentId: "assessmentId" in request ? request.assessmentId : undefined,
         createdAt: new Date(),
       },
     };

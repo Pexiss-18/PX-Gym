@@ -32,5 +32,7 @@ export type WorkoutPlan = {
   days: PlanDay[];
   /** Ids dos artigos do acervo que embasaram o plano. */
   sources: string[];
+  /** Avaliação usada na geração; ausente em treino guardado por versão antiga. */
+  assessmentId?: string;
   createdAt: Date;
 };

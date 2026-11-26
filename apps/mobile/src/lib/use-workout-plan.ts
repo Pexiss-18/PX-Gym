@@ -159,7 +159,10 @@ export function useWorkoutGeneration() {
   const [error, setError] = useState<GenerationError | null>(null);
 
   const run = useCallback(
-    async (call: () => Promise<Resultado<WorkoutGenerationOutcome>>): Promise<boolean> => {
+    async (
+      call: () => Promise<Resultado<WorkoutGenerationOutcome>>,
+      mesmaAvaliacao = false,
+    ): Promise<boolean> => {
       if (!userId || busy) return false;
       setBusy(true);
       setError(null);
@@ -169,8 +172,12 @@ export function useWorkoutGeneration() {
           setError(toGenerationError(r.erro.mensagem));
           return false;
         }
-        if (r.valor.status === "done") setActivePlan(r.valor.plan);
-        else setQueuedGeneration(r.valor.generationId);
+        if (r.valor.status === "done") {
+          const plan = r.valor.plan;
+          // a mudança pedida continua presa à avaliação do treino que mudou
+          const assessmentId = plan.assessmentId ?? (mesmaAvaliacao ? state.plan?.assessmentId : undefined);
+          setActivePlan({ ...plan, assessmentId });
+        } else setQueuedGeneration(r.valor.generationId);
         return true;
       } finally {
         setBusy(false);
@@ -184,7 +191,8 @@ export function useWorkoutGeneration() {
     error,
     clearError: () => setError(null),
     generate: () => run(() => generateWorkoutPlanUseCase.generate(userId!)),
-    requestChange: (feedback: string) => run(() => generateWorkoutPlanUseCase.requestChange(userId!, feedback)),
+    requestChange: (feedback: string) =>
+      run(() => generateWorkoutPlanUseCase.requestChange(userId!, feedback), true),
     resume: (generationId: string) => run(() => generateWorkoutPlanUseCase.resume(userId!, generationId)),
   };
 }

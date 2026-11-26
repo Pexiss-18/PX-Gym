@@ -38,6 +38,7 @@ export * from "./domain/services/regra-devolucao";
 export * from "./domain/services/sincronizacao";
 export * from "./domain/services/enquadramento-foto";
 export * from "./domain/services/treino-do-dia";
+export * from "./domain/services/avaliacao-nova";
 
 export * from "./application/use-cases/register-set";
 export * from "./application/use-cases/unregister-set";
