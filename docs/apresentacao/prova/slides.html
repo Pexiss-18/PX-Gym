@@ -1,0 +1,397 @@
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.73 0.014 264 / 80%)"/></marker>
+  <marker id="arwv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,1 L9.5,5 L0,9 z" fill="oklch(0.87 0.23 126 / 85%)"/></marker>
+</defs></svg>
+
+<!-- ============ 01 · capa ============ -->
+<section class="slide cover sx pv" data-sec="Capa">
+  <div class="top">
+    <div class="mark">
+      <span class="dot">{{icon dumbbell-ink}}</span>
+      <span class="wm">Px GYM</span>
+    </div>
+    <div class="event"><b>Apresentação do projeto</b><em>·</em><span>Sistemas de Informação · CEFET-MG</span><em>·</em><span class="mono">2026</span></div>
+  </div>
+  <div class="hero">
+    <h1>Px&nbsp;GYM</h1>
+    <div class="rule"></div>
+    <p class="kicker">Aplicativo móvel que reúne a evolução corporal, a progressão de carga e as metas de dieta de quem treina, e que <b style="color:var(--paper);font-weight:500">funciona sem internet</b> no meio da academia.</p>
+  </div>
+  <dl class="meta">
+    <div>
+      <dt>Plataforma</dt>
+      <dd>Android e iOS<br><span>Expo · React Native · Supabase</span></dd>
+    </div>
+    <div>
+      <dt>Autores</dt>
+      <dd>Paulo Rogério dos Santos Filho<br>Assis Souza Damasceno</dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ============ 02 · o que é ============ -->
+<section class="slide" data-sec="O aplicativo">
+  <div class="head">
+    <h1>O que é o Px GYM</h1>
+  </div>
+  <div class="body"><div class="with-phone">
+    <div class="panel plain">
+      <p class="lead">Um só lugar para ver <em>como estou evoluindo</em> e registrar o treino do dia sem atrito.</p>
+      <p class="lead-sub">Um app de musculação feito para ser usado em pé, entre uma série e outra, com uma mão e sem depender do sinal da academia.</p>
+      <div class="goals" style="margin-top:26px">
+        <div class="goal"><span class="ic">{{icon dumbbell}}</span><div><h3>Treino e progressão de carga</h3><p>Séries registradas num toque e a curva de carga de cada exercício.</p></div></div>
+        <div class="goal"><span class="ic">{{icon trend}}</span><div><h3>Evolução do corpo</h3><p>Avaliações físicas, medidas e fotos de progresso ao longo do tempo.</p></div></div>
+        <div class="goal"><span class="ic">{{icon spark}}</span><div><h3>Treino e dieta gerados por IA</h3><p>A partir da avaliação e do perfil, com regras que conferem cada número.</p></div></div>
+      </div>
+    </div>
+    {{print 01-inicio :: Início :: progresso do dia e avaliação atual}}
+  </div></div>
+</section>
+
+<!-- ============ 03 · cliente e problema ============ -->
+<section class="slide" data-sec="Cliente e problema">
+  <div class="head">
+    <h1>O cliente principal e o problema</h1>
+    <p class="sub">Falta de app de treino não é o problema. A informação de quem treina está espalhada, e o registro acontece no pior lugar possível para um app.</p>
+  </div>
+  <div class="body"><div class="cols g38">
+    <div class="panel" style="justify-content:center">
+      <span class="ic" style="margin-bottom:18px">{{icon user}}</span>
+      <p class="lead" style="font-size:26px">O cliente principal é o praticante de musculação que quer <em>acompanhar a própria evolução</em>.</p>
+      <p class="lead-sub" style="font-size:15px">Treina sozinho ou com personal, faz avaliação física de tempos em tempos e quer saber se está progredindo.</p>
+    </div>
+    <div class="panel">
+      <ul class="marks lg">
+        <li><b>Dados espalhados.</b> <span>Carga numa planilha, exercícios num app, dieta em outro e a avaliação física num PDF. Nada responde se a pessoa está evoluindo.</span></li>
+        <li><b>Progressão de carga em segundo plano.</b> <span>É o principal sinal de evolução no treino de força, mas a maioria dos apps trata a carga como um campo a mais.</span></li>
+        <li><b>A academia não tem sinal.</b> <span>Subsolo, paredes grossas, rede instável. Um app que precisa de internet para salvar uma série perde o dado justo na hora de registrar.</span></li>
+        <li><b>Montar treino e dieta custa caro.</b> <span>O Px GYM gera os dois a partir da avaliação, com regras de segurança, e roda inteiro em planos gratuitos.</span></li>
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 04 · público-alvo ============ -->
+<section class="slide" data-sec="Público-alvo">
+  <div class="head">
+    <h1>Público-alvo</h1>
+    <p class="sub">Quem treina é o centro. Ao redor dele, quem acompanha o treino e quem responde pela academia.</p>
+  </div>
+  <div class="body"><div class="tiles c2">
+    <div class="tile v">
+      <h3><span class="ic">{{icon dumbbell}}</span>Praticantes de musculação</h3>
+      <p>Do iniciante ao intermediário, que treinam com regularidade e querem ver a carga subir e o corpo mudar. É o público principal.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon users}}</span>Personal trainers</h3>
+      <p>Acompanham alunos por ciclos de avaliação, revisam o progresso e assinam o relatório, sem precisar de outra conta.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon building}}</span>Academias</h3>
+      <p>A coordenação aprova ou devolve os relatórios dos personais e ganha um registro do acompanhamento dos alunos.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon wifi-off}}</span>Quem treina sem sinal ou sem orçamento</h3>
+      <p>Academias em subsolo e estudantes: o app funciona offline e não cobra nada, porque a infraestrutura cabe em planos gratuitos.</p>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 05 · perfis ============ -->
+<section class="slide" data-sec="Perfis de usuário">
+  <div class="head">
+    <h1>Perfis de usuário</h1>
+    <p class="sub">O papel vem da sessão. Cada perfil enxerga só as telas e as ações que lhe cabem.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <table class="t roles">
+      <thead><tr><th style="width:17%">Perfil</th><th style="width:30%">Como entra</th><th>O que faz</th></tr></thead>
+      <tbody>
+        <tr><td>Visitante</td><td class="how">sem sessão</td><td>Entra ou cria conta. Nada além disso fica visível.</td></tr>
+        <tr><td style="color:var(--volt)">Aluno</td><td class="how">e-mail e senha (Supabase Auth)</td><td>Registra treino e cargas, avaliações, fotos de progresso; gera treino e dieta pela IA; acha academias por perto.</td></tr>
+        <tr><td>Personal</td><td class="how">token de acesso com validade, sem criar conta</td><td>Acompanha o ciclo de avaliação do aluno, avalia e assina o relatório.</td></tr>
+        <tr><td>Coordenação</td><td class="how">e-mail e senha</td><td>Aprova ou devolve o relatório assinado pelo personal.</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:auto"><b>Por trás das telas:</b> a sincronização também é um ator, mas de tempo. Ela roda sozinha ao entrar no app, ao voltar para ele e quando a rede reconecta.</p>
+  </div></div>
+</section>
+
+<!-- ============ 06 · recursos ============ -->
+<section class="slide" data-sec="Principais recursos">
+  <div class="head">
+    <h1>Principais recursos</h1>
+    <p class="sub">Separados pelo momento em que a pessoa precisa deles.</p>
+  </div>
+  <div class="body"><div class="cols" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="panel feat">
+      <h3><span class="ic">{{icon dumbbell}}</span>Durante o treino</h3>
+      <ul class="marks dense">
+        <li>Treino do dia com séries, repetições e a carga anterior</li>
+        <li>Carga em passos de 2,5 kg, sem digitar</li>
+        <li>Descanso cronometrado entre séries</li>
+        <li>Guia “Como fazer” de cada exercício, com vídeo</li>
+        <li>QR Code no aparelho abre o exercício</li>
+      </ul>
+    </div>
+    <div class="panel feat">
+      <h3><span class="ic">{{icon trend}}</span>Acompanhando a evolução</h3>
+      <ul class="marks dense">
+        <li>Gráfico de progressão de carga por exercício</li>
+        <li>Avaliações: peso, gordura e medidas, digitadas ou lidas do PDF</li>
+        <li>Fotos de progresso com data e local</li>
+        <li>Relatório do ciclo, assinado pelo personal</li>
+      </ul>
+    </div>
+    <div class="panel feat">
+      <h3><span class="ic">{{icon spark}}</span>Planejando</h3>
+      <ul class="marks dense">
+        <li>Treino gerado pela IA a partir da avaliação e do perfil</li>
+        <li>Dieta com metas de macros e cardápio da semana</li>
+        <li>Pedido de ajuste: “não tenho esse aparelho”</li>
+        <li>Academias por perto, no mapa</li>
+      </ul>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 07 · câmera e geolocalização ============ -->
+<section class="slide" data-sec="Câmera e geolocalização">
+  <div class="head">
+    <h1>Câmera e geolocalização</h1>
+    <p class="sub">As duas entram no app por interfaces do domínio (CameraGateway e LocationGateway) e a permissão só é pedida quando a pessoa toca no recurso.</p>
+  </div>
+  <div class="body"><div class="tiles c2" style="grid-template-rows:1fr 1fr">
+    <div class="tile">
+      <h3><span class="ic">{{icon camera}}</span>Foto de progresso</h3>
+      <p>Câmera em 9:16 (expo-camera), JPEG comprimido. O arquivo vai para a pasta do app e o registro para o SQLite; o envio à nuvem acontece depois.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon pin}}</span>Onde a foto foi tirada</h3>
+      <p>A posição do GPS (expo-location) é validada como coordenada e salva junto da foto. No visualizador aparecem a data e o local.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon camera}}</span>QR Code do aparelho</h3>
+      <p>A câmera lê <span class="mono">pxgym://treino/&lt;exercício&gt;</span> e abre o exercício direto. Um QR de fora do treino de hoje é recusado com aviso.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon pin}}</span>Academias por perto</h3>
+      <p>Pela posição atual, busca academias num raio de 4 km no OpenStreetMap, calcula a distância real e ordena. A última busca fica guardada para quando faltar rede.</p>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 08 · online x offline ============ -->
+<section class="slide" data-sec="Online e offline">
+  <div class="head">
+    <h1>O que é offline e o que é online</h1>
+    <p class="sub">Tudo que acontece durante o treino funciona sem rede e sincroniza depois. Só vai direto à nuvem o que depende de um servidor.</p>
+  </div>
+  <div class="body"><div class="lanes">
+    <div class="panel lane">
+      <h3><span class="ic">{{icon wifi-off}}</span>Offline, com sincronização posterior</h3>
+      <p class="why">O celular é a fonte da verdade: SQLite local, gravado na hora.</p>
+      <table class="t">
+        <tbody>
+          <tr><td>Séries, cargas e repetições</td><td>sobem para o Supabase</td></tr>
+          <tr><td>Séries desmarcadas</td><td>viram remoção pendente</td></tr>
+          <tr><td>Fotos de progresso</td><td>sobem para o Cloudflare R2</td></tr>
+          <tr><td>Treino ativo</td><td>cópia local para treinar sem rede</td></tr>
+          <tr><td>Histórico e gráfico de carga</td><td>lidos do banco local</td></tr>
+          <tr><td>Sessão de login</td><td>guardada cifrada no aparelho</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel lane">
+      <h3><span class="ic">{{icon wifi}}</span>Somente online</h3>
+      <p class="why">Dependem de servidor, de IA ou de dados de outra pessoa.</p>
+      <table class="t">
+        <tbody>
+          <tr><td>Entrar e criar conta</td><td>Supabase Auth</td></tr>
+          <tr><td>Gerar treino e dieta</td><td>Edge Function + Gemini</td></tr>
+          <tr><td>Ler o PDF da avaliação</td><td>Edge Function + Gemini</td></tr>
+          <tr><td>Avaliações e plano de dieta</td><td>lidos a cada abertura da tela</td></tr>
+          <tr><td>Busca de academias</td><td>OpenStreetMap (com cache)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 09 · sincronização ============ -->
+<section class="slide" data-sec="Sincronização">
+  <div class="head tight">
+    <h1>Metodologia de sincronização</h1>
+    <p class="sub">Offline-first com fila local. Cada registro carrega o próprio estado, e o envio é idempotente: mandar duas vezes não duplica.</p>
+  </div>
+  <div class="body">
+    <div class="panel flush" style="flex:0 0 auto">
+      <svg class="dg big" viewBox="0 0 1100 176" style="height:176px" role="img" aria-label="Fluxo de registro offline e sincronização">
+        <rect class="nd" x="0" y="8" width="196" height="160" rx="20"/>
+        <text class="tm" x="20" y="38" style="fill:oklch(0.87 0.23 126)">1</text>
+        <text class="tl" x="20" y="70">Toque na série</text>
+        <text class="ts" x="20" y="100">id (UUID) gerado no</text><text class="ts" x="20" y="120">próprio celular</text>
+        <path class="ln" d="M196,88 H222" marker-end="url(#arw)"/>
+        <rect class="nd" x="226" y="8" width="196" height="160" rx="20"/>
+        <text class="tm" x="246" y="38" style="fill:oklch(0.87 0.23 126)">2</text>
+        <text class="tl" x="246" y="70">Grava no SQLite</text>
+        <text class="ts" x="246" y="100">com estado pending;</text><text class="ts" x="246" y="120">a tela atualiza na hora</text>
+        <path class="ln" d="M422,88 H448" marker-end="url(#arw)"/>
+        <rect class="nd" x="452" y="8" width="196" height="160" rx="20"/>
+        <text class="tm" x="472" y="38" style="fill:oklch(0.87 0.23 126)">3</text>
+        <text class="tl" x="472" y="70">Gatilho</text>
+        <text class="ts" x="472" y="100">login, app volta ao</text><text class="ts" x="472" y="120">primeiro plano ou a</text><text class="ts" x="472" y="140">rede reconecta</text>
+        <path class="ln" d="M648,88 H674" marker-end="url(#arw)"/>
+        <rect class="nd" x="678" y="8" width="196" height="160" rx="20"/>
+        <text class="tm" x="698" y="38" style="fill:oklch(0.87 0.23 126)">4</text>
+        <text class="tl" x="698" y="70">Envia em lote</text>
+        <text class="ts" x="698" y="100">upsert por id: reenviar</text><text class="ts" x="698" y="120">não duplica; depois</text><text class="ts" x="698" y="140">apaga as remoções</text>
+        <path class="ln-v" d="M874,88 H900" marker-end="url(#arwv)"/>
+        <rect class="nd-v" x="904" y="8" width="196" height="160" rx="20"/>
+        <text class="tm" x="924" y="38" style="fill:oklch(0.87 0.23 126)">5</text>
+        <text class="tl" x="924" y="70">Confirma</text>
+        <text class="ts" x="924" y="100">só com o OK do servidor</text><text class="ts" x="924" y="120">marca synced ou apaga</text><text class="ts" x="924" y="140">a linha local</text>
+      </svg>
+    </div>
+    <div class="cols two split-center" style="margin-top:16px">
+      <div class="panel">
+        <p style="font-size:15.5px;font-weight:600;margin-bottom:14px">Os três estados de um registro local</p>
+        <div class="states" style="margin-bottom:14px"><span class="st p">pending</span><span class="ar">→</span><span class="st s">synced</span><span class="ar">→</span><span class="st d">deleted</span></div>
+        <p style="font-size:14px;color:var(--fog);line-height:1.5">Desmarcar uma série já enviada não apaga na hora: ela vira <b style="color:var(--paper)">tombstone</b>, some da tela e só é removida do celular depois que a nuvem confirma. Assim nada “ressuscita”.</p>
+      </div>
+      <div class="panel">
+        <ul class="marks">
+          <li><b>Falhou? Fica pendente.</b> <span>Sem rede ou com erro do servidor, nada se perde e nenhum alerta interrompe o treino; o próximo gatilho tenta de novo.</span></li>
+          <li><b>Fotos seguem o mesmo padrão</b> <span>e ainda fazem o caminho de volta: ao reinstalar, o app baixa as que só estão na nuvem.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · supabase ============ -->
+<section class="slide" data-sec="Supabase">
+  <div class="head">
+    <h1>Como o Supabase é usado</h1>
+    <p class="sub">É o back-end inteiro do app, no plano gratuito. O app fala com ele pelo supabase-js; o que precisa de segredo roda nas Edge Functions.</p>
+  </div>
+  <div class="body"><div class="tiles c2">
+    <div class="tile">
+      <h3><span class="ic">{{icon user}}</span>Auth</h3>
+      <p>Cadastro e login por e-mail e senha. Emite o <b>JWT</b> que identifica o usuário em todas as outras chamadas; o token é renovado só com o app aberto.</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon server}}</span>Postgres</h3>
+      <p>Séries, fotos, avaliações, perfil de treino, planos de treino e dieta e a fila de gerações da IA. O esquema evolui por <b>migrations versionadas</b> (0001 a 0008).</p>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon image}}</span>Storage</h3>
+      <p>Guarda o <b>PDF da avaliação física</b> numa pasta por usuário, de onde a IA lê os números para o formulário.</p>
+    </div>
+    <div class="tile v">
+      <h3><span class="ic">{{icon spark}}</span>Edge Functions</h3>
+      <p><b>generate-plan</b> gera treino e dieta, <b>extract-assessment</b> lê o PDF e <b>photo-storage</b> autoriza o envio de fotos ao R2. Rodam em Deno, com as chaves em secrets.</p>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ 11 · outros serviços ============ -->
+<section class="slide" data-sec="Outros serviços na nuvem">
+  <div class="head">
+    <h1>Outros serviços na nuvem</h1>
+    <p class="sub">Todos em plano gratuito e sem cartão no uso do dia a dia. Nenhum é chamado com chave secreta de dentro do app.</p>
+  </div>
+  <div class="body"><div class="panel">
+    <table class="t svc">
+      <thead><tr><th style="width:27%">Serviço</th><th style="width:30%">Para quê</th><th>Como é usado</th></tr></thead>
+      <tbody>
+        <tr><td><b>Google Gemini</b><span>Flash-Lite, via AI Studio</span></td><td>gerar treino e dieta; ler o PDF da avaliação</td><td class="m">Só a Edge Function chama. A IA propõe em JSON validado por esquema e a fórmula confere calorias, proteína e porções.</td></tr>
+        <tr><td><b>Cloudflare R2</b><span>armazenamento de objetos</span></td><td>fotos de progresso</td><td class="m">O app pede à Edge Function uma URL assinada de 5 minutos e envia a foto direto ao bucket privado.</td></tr>
+        <tr><td><b>OpenStreetMap</b><span>Overpass e Nominatim</span></td><td>academias por perto e mapa</td><td class="m">Consulta aberta pela posição do GPS; se uma fonte cai, tenta a outra.</td></tr>
+        <tr><td><b>ntfy</b><span>notificação push</span></td><td>aviso ao administrador</td><td class="m">Quando o espaço das fotos passa de 80%, avisa o admin, no máximo uma vez por dia.</td></tr>
+        <tr><td><b>Expo EAS</b><span>build na nuvem</span></td><td>gerar o APK</td><td class="m">Compila o app Android instalável sem precisar de máquina de build.</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</section>
+
+<!-- ============ 12 · segurança ============ -->
+<section class="slide" data-sec="Segurança">
+  <div class="head">
+    <h1>Segurança no acesso à nuvem</h1>
+    <p class="sub">O app só carrega a chave pública do Supabase. Quem decide o que cada um pode ver é o servidor, nunca a tela.</p>
+  </div>
+  <div class="body"><div class="tiles c3">
+    <div class="tile">
+      <h3><span class="ic">{{icon phone}}</span>No aparelho</h3>
+      <ul class="marks">
+        <li>Sessão cifrada com AES-256; a chave fica no Keychain/Keystore</li>
+        <li>Token só neste aparelho e com ele desbloqueado</li>
+        <li>Nenhuma chave secreta dentro do APK</li>
+        <li>Acesso do personal por token que expira</li>
+      </ul>
+    </div>
+    <div class="tile v">
+      <h3><span class="ic">{{icon shield}}</span>No banco</h3>
+      <ul class="marks">
+        <li><b>RLS em todas as tabelas:</b> <span>cada linha só é lida ou alterada por quem tem o mesmo id do JWT</span></li>
+        <li>Fila e resultado da IA só o servidor escreve</li>
+        <li>Funções privilegiadas liberadas apenas ao service role</li>
+      </ul>
+    </div>
+    <div class="tile">
+      <h3><span class="ic">{{icon lock}}</span>Nas funções e arquivos</h3>
+      <ul class="marks">
+        <li>JWT conferido em cada chamada; entrada validada com Zod</li>
+        <li>Chaves do Gemini e do R2 só em secrets do Supabase</li>
+        <li>Foto sempre em <span class="mono">{id do JWT}/{foto}.jpg</span>, por URL de 5 min</li>
+        <li>Limites: 8 gerações e 6 PDFs por dia; fotos de 2 MB, 300 MB por pessoa</li>
+      </ul>
+    </div>
+  </div>
+    <div class="panel flush" style="flex:0 0 auto;margin-top:18px">
+      <svg class="dg big" viewBox="0 0 1100 150" style="height:150px" role="img" aria-label="Caminho de uma chamada do app até a nuvem">
+        <rect class="nd" x="0" y="35" width="230" height="80" rx="16"/>
+        <text class="tl" x="20" y="68">App no celular</text><text class="ts" x="20" y="92">chave pública + JWT da sessão</text>
+        <path class="ln" d="M230,75 C270,75 270,30 306,30" marker-end="url(#arw)"/>
+        <path class="ln" d="M230,75 C270,75 270,120 306,120" marker-end="url(#arw)"/>
+        <rect class="nd-v" x="310" y="0" width="360" height="62" rx="15"/>
+        <text class="tl" x="330" y="26">Postgres e Storage do Supabase</text><text class="ts" x="330" y="47">RLS filtra cada linha e cada arquivo pelo dono</text>
+        <rect class="nd" x="310" y="88" width="360" height="62" rx="15"/>
+        <text class="tl" x="330" y="114">Edge Function</text><text class="ts" x="330" y="135">confere o JWT, valida a entrada, aplica limites</text>
+        <path class="ln-v" d="M670,119 H736" marker-end="url(#arwv)"/>
+        <text class="tm" x="684" y="110" style="fill:oklch(0.87 0.23 126)">secrets</text>
+        <rect class="nd" x="740" y="88" width="360" height="62" rx="15"/>
+        <text class="tl" x="760" y="114">Gemini · Cloudflare R2 · ntfy</text><text class="ts" x="760" y="135">as chaves nunca saem do servidor</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 · encerramento ============ -->
+<section class="slide cover sx pv end" data-sec="Encerramento">
+  <div class="top">
+    <div class="mark">
+      <span class="dot">{{icon dumbbell-ink}}</span>
+      <span class="wm">Px GYM</span>
+    </div>
+    <div class="event"><b>Apresentação do projeto</b><em>·</em><span>CEFET-MG</span><em>·</em><span class="mono">2026</span></div>
+  </div>
+  <div class="hero">
+    <h1>Obrigado</h1>
+    <div class="rule"></div>
+    <p class="thanks">Perguntas?</p>
+  </div>
+  <dl class="meta">
+    <div>
+      <dt>Em uma frase</dt>
+      <dd>Treino registrado sem internet,<br><span>nuvem como cópia segura.</span></dd>
+    </div>
+    <div>
+      <dt>Autores</dt>
+      <dd>Paulo Rogério dos Santos Filho<br>Assis Souza Damasceno</dd>
+    </div>
+  </dl>
+</section>

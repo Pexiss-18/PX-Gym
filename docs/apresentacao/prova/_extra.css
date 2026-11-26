@@ -1,0 +1,65 @@
+/* ---------- Prova: o que este deck acrescenta a _part1.html + sintec/_extra.css ---------- */
+
+/* capa sem a prateleira de logos do evento */
+.slide.cover.sx.pv .hero{margin-top:96px}
+.slide.cover.sx.pv .meta{margin-top:auto}
+
+/* texto + um celular ao lado */
+.with-phone{display:grid;grid-template-columns:1fr 214px;gap:56px;flex:1 1 auto;min-height:0;align-items:start}
+.with-phone .phone .frame{height:430px}
+
+/* blocos com ícone em grade (público-alvo, câmera/GPS, Supabase, segurança) */
+.tiles{display:grid;gap:18px;flex:1 1 auto;min-height:0}
+.tiles.c2{grid-template-columns:1fr 1fr}
+.tiles.c3{grid-template-columns:1fr 1fr 1fr}
+.tile{background:var(--glass);border:1px solid var(--hair);border-radius:24px;padding:22px 24px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.tile.v{background:oklch(0.87 0.23 126 / 6%);border-color:oklch(0.87 0.23 126 / 30%)}
+.tile h3{display:flex;align-items:center;gap:12px;font-size:17.5px;font-weight:600;letter-spacing:-0.012em;line-height:1.25}
+.tile h3 .ic{flex:none}
+.tile p{font-size:14.5px;color:var(--fog);line-height:1.5;text-wrap:pretty}
+.tile p b{color:var(--paper);font-weight:600}
+.tile .marks{gap:9px}
+.tile .marks li{font-size:14px;line-height:1.45}
+.tile .marks li::before{top:9px}
+.tile .tag{margin-top:auto;font-size:12px;color:var(--fog-dim);line-height:1.45}
+.tile .tag b{color:var(--fog);font-weight:500}
+
+/* perfis */
+.t.roles td{font-size:15px;padding:14px 14px;line-height:1.45}
+.t.roles td:first-child{font-weight:600}
+.t.roles .how{color:var(--fog)}
+
+/* online x offline */
+.lanes{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;flex:1 1 auto;min-height:0}
+.lane h3{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:600;letter-spacing:-0.012em;margin-bottom:6px}
+.lane .why{font-size:13.5px;color:var(--fog);margin-bottom:16px;line-height:1.45}
+.lane .t td{font-size:14px;padding:9px 10px}
+.lane .t td:last-child{color:var(--fog)}
+
+/* estados do registro local */
+.states{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.st{font-family:var(--mono);font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:-0.01em;white-space:nowrap}
+.st.p{background:oklch(0.82 0.15 78 / 15%);color:var(--amber)}
+.st.s{background:oklch(0.87 0.23 126 / 14%);color:var(--volt)}
+.st.d{background:oklch(0.65 0.22 25 / 14%);color:oklch(0.75 0.16 25)}
+.states .ar{color:var(--fog-dim);font-size:13px}
+
+/* serviços na nuvem */
+.t.svc td{font-size:14.5px;padding:12px 12px;line-height:1.45}
+.t.svc td:first-child b{display:block;font-weight:600}
+.t.svc td:first-child span{display:block;font-size:12.5px;color:var(--fog-dim);margin-top:2px}
+
+/* leitura em sala: corpo maior onde o slide tem folga */
+.tiles.c2 .tile{justify-content:center}
+.tiles.c2 .tile p{font-size:16px}
+.tiles.c2 .tile h3{font-size:19px}
+.tile .marks li{font-size:15px}
+.t.roles td{font-size:16.5px;padding:20px 14px}
+.lane .t td{font-size:15.5px;padding:12px 10px}
+.lane .why{font-size:14.5px}
+.split-center .panel{justify-content:center}
+.slide.cover.sx.pv .hero{margin-top:84px}
+.slide.cover.sx.pv .meta{margin-top:auto;margin-bottom:34px}
+.t.svc td{font-size:15.5px;padding:15px 12px}
+.feat .marks.dense li{font-size:16px}
+.feat .marks.dense{gap:16px}
